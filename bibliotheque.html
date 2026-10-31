@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+ Nom        : bibliotheque.html
+ Projet     : azs-cad - CAO de circuits imprimés
+ Objet      : Bibliothèque : composants (nom, gabarit, nom des pattes)
+              et gabarits normalisés
+ Auteur     : Eric PERRET
+ Date       : 2026-10-31
+ Version    : 0.4.0
+ Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
+ Historique :
+   0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
+   0.2.0  2026-10-31  Éditeur au format .lib
+   0.3.0  2026-10-31  Chantier 3a : double vue SCH (fond blanc, pattes vertes)
+                      et BRD (fond noir, cuivre rouge), assistant « Nouveau
+                      composant » (famille, nombre de pattes, aperçu, nom),
+                      gabarits normalisés DIL et CMS, ouverture/enregistrement
+   0.3.1  2026-10-31  Chantier 3b : nommage des pattes (clic : saisie, Tab =
+                      patte suivante ; clic droit : liste des fonctions),
+                      tableau Patte | Nom synchronisé, annuler/rétablir
+   0.3.2  2026-10-31  Chantier 3d : retouche des gabarits (barre d'outils
+                      verticale : pads DIL/CMS, trait, arc, cercle, point,
+                      texte ; sélection, cadre, déplacement, rotation,
+                      duplication, suppression, propriétés, grille)
+   0.3.3  2026-10-31  Chantier 3e : retouche = modifier l'existant (sélection,
+                      déplacement, poignées, rotation, suppression, type DIL/CMS
+                      changé sur place) ; création dans un mode « Dessiner » ;
+                      contour de boîtier en RECT ; >NOM et >VALEUR retirés
+   0.4.0  2026-10-31  Interface en français ou en anglais selon la langue du
+                      navigateur ; projet renommé azs-cad
+
+ Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
+   # commentaire
+   PACKAGE <gabarit>
+     PAD    <patte> <x> <y> <perçage> <diamètre> <ROND|CARRE|OVALE> [rot]   (DIL)
+     SMD    <patte> <x> <y> <largeur> <hauteur> [rot]                       (CMS)
+     TRAIT  <x1> <y1> <x2> <y2> <épaisseur>
+     RECT   <x1> <y1> <x2> <y2> <épaisseur>
+     ARC    <cx> <cy> <rayon> <angle début> <angle fin> <épaisseur>
+     CERCLE <cx> <cy> <rayon> <épaisseur>
+     POINT  <x> <y> <rayon>
+     TEXTE  <x> <y> <hauteur> <rot> <texte…>
+   FIN
+   COMPOSANT <nom> <gabarit> [gabarit…]
+     <fonction> => <patte> [patte…]
+   FIN
+ Gabarits décrits face dessus. Pads DIL : cuivres 1 à 4 et perçage ;
+ pads CMS : cuivre 1 ; traits, rectangles, arcs, cercles, points, textes :
+ Texte dessus.
+================================================================================
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>azs-cad - Bibliothèque</title>
+<style>
+  :root{
+    --fond:#e9ecf0; --panneau:#fff; --bord:#d6dbe2; --texte:#1f2328;
+    --discret:#6b7280; --accent:#1f6feb; --accentClair:#dbe7fd; --survol:#f2f5f9;
+    --err:#c62828; --avert:#b26a00; --ok:#2e7d32;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--fond); color:var(--texte);
+    font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:grid; grid-template-rows:auto 1fr auto; grid-template-columns:230px 1fr 280px;
+    grid-template-areas:"barre barre barre" "gauche centre droite" "etat etat etat";
+    overflow:hidden;
+  }
+  button,select,input{font:inherit; color:var(--texte); background:#fff; border:1px solid var(--bord); border-radius:5px; padding:4px 9px}
+  button{cursor:pointer; background:#f6f7f9}
+  button:hover:not(:disabled){border-color:var(--accent); background:#fff}
+  button:disabled{opacity:.45; cursor:default}
+  button.principal{background:var(--accent); border-color:var(--accent); color:#fff}
+  button.principal:hover:not(:disabled){background:#1a5fd0; color:#fff}
+  input:focus,select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accentClair)}
+
+  #barre{grid-area:barre; display:flex; align-items:center; gap:8px; padding:7px 12px; background:var(--panneau); border-bottom:1px solid var(--bord)}
+  #barre .titre{font-weight:700; font-size:15px; margin-right:8px}
+  #barre .titre span{color:var(--discret); font-weight:400; font-size:12px; margin-left:5px}
+  #nomFichier{width:190px}
+  #modif{color:var(--avert); font-size:18px; width:12px}
+  #fichier{display:none}
+
+  #gauche{grid-area:gauche; background:var(--panneau); border-right:1px solid var(--bord); display:flex; flex-direction:column; min-height:0}
+  #filtre{margin:10px 10px 4px; width:calc(100% - 20px)}
+  #listes{flex:1; overflow:auto; min-height:0; padding-bottom:10px}
+  .section h3{margin:10px 0 4px; padding:0 12px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--discret)}
+  .section .ajout{margin:0 10px 6px; width:calc(100% - 20px); text-align:left}
+  ul{list-style:none; margin:0; padding:0}
+  li.item{padding:5px 12px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; border-left:3px solid transparent; white-space:nowrap}
+  li.item:hover{background:var(--survol)}
+  li.item.sel{background:var(--accentClair); border-left-color:var(--accent)}
+  li.item .nom{overflow:hidden; text-overflow:ellipsis}
+  li.item .info{color:var(--discret); font-size:12px; flex:none}
+
+  #centre{grid-area:centre; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--bord); min-width:0; min-height:0}
+  .vue{position:relative; min-width:0; min-height:0; overflow:hidden}
+  .vue canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  #vueSch{background:#fff} #vueBrd{background:#000}
+  .etiquette{position:absolute; top:8px; left:10px; font-size:11px; font-weight:700; letter-spacing:.08em; padding:2px 7px; border-radius:4px; pointer-events:none}
+  #vueSch .etiquette{color:#15803d; background:#ecfdf3}
+  #vueBrd .etiquette{color:#f2b8b8; background:#2a1212}
+  .vide{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; pointer-events:none; padding:20px; font-size:14px; color:#9aa1ab}
+
+  #droite{grid-area:droite; background:var(--panneau); border-left:1px solid var(--bord); overflow:auto; min-height:0}
+  .bloc{padding:12px 14px; border-bottom:1px solid var(--bord)}
+  .bloc h4{margin:0 0 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--discret)}
+  .grandNom{font-size:18px; font-weight:700; width:100%; padding:5px 8px}
+  .stat{color:var(--discret); margin-top:6px}
+  .boutons{display:flex; flex-wrap:wrap; gap:6px}
+  .lien{color:var(--accent); cursor:pointer}
+  .lien:hover{text-decoration:underline}
+  .accueil{color:var(--discret); line-height:1.7}
+
+  #etat{grid-area:etat; display:flex; gap:18px; padding:4px 12px; background:var(--panneau); border-top:1px solid var(--bord); color:var(--discret); white-space:nowrap; overflow:hidden; font-size:12px}
+  #coord{font-family:ui-monospace,Consolas,monospace; color:var(--texte); min-width:200px}
+  #msg.erreur{color:var(--err)}
+  #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
+
+  #modale{position:fixed; inset:0; background:rgba(20,24,30,.45); display:none; align-items:center; justify-content:center; z-index:40}
+  #modale.visible{display:flex}
+  .boite{background:#fff; border-radius:10px; box-shadow:0 12px 40px rgba(0,0,0,.3); width:min(720px,95vw); overflow:hidden}
+  .boite h2{margin:0; padding:14px 18px; font-size:16px; border-bottom:1px solid var(--bord)}
+  .boite .corps{display:grid; grid-template-columns:1fr 300px; gap:16px; padding:16px 18px}
+  .champ{display:grid; grid-template-columns:100px 1fr; gap:6px; align-items:center; margin-bottom:8px}
+  .champ label{color:var(--discret)}
+  .champ input,.champ select{width:100%; min-width:0}
+  #apercu{width:300px; height:230px; background:#000; border-radius:6px; display:block}
+  #apercuInfo{color:var(--discret); font-size:12px; margin-top:6px; min-height:16px}
+  #assErreur{color:var(--err); font-size:12px; min-height:16px}
+  .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
+  #barre .espace{flex:1}
+  #barre label{color:var(--discret)}
+  #modes{position:absolute; top:6px; right:8px; display:flex; gap:6px}
+  #modes button{background:#1d1f23; color:#e6e6e6; border-color:#444; font-size:12px}
+  #modes button:hover:not(:disabled){border-color:#f2b8b8; background:#2a2d33}
+  #modes button.actif{background:#7a1f1f; border-color:#d63b3b; color:#fff}
+  #outils.retouche [data-g="d"], #outils.dessin [data-g="r"]{display:none}
+  #outils{position:absolute; left:8px; top:40px; display:none; flex-direction:column; gap:3px; background:#1d1f23; border:1px solid #3a3d44; border-radius:7px; padding:4px}
+  #outils.visible{display:flex}
+  #outils button{width:34px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; border-color:transparent; color:#cfd3da}
+  #outils button:hover:not(:disabled){background:#2c3036; border-color:#555}
+  #outils button.actif{background:#7a1f1f; border-color:#d63b3b; color:#fff}
+  #outils .sep{height:1px; background:#3a3d44; margin:3px 2px}
+  #outils svg{width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+  #aide{color:var(--texte)}
+  table.broches{border-collapse:collapse; width:100%}
+  table.broches td{padding:1px 0; border-bottom:1px solid #eef0f3}
+  table.broches td.p{width:46px; color:var(--discret); font-variant-numeric:tabular-nums; padding-left:6px}
+  table.broches tr.survol td{background:#fef9c3}
+  table.broches input{width:100%; border-color:transparent; background:transparent; padding:3px 6px; font-weight:600}
+  table.broches input:hover{border-color:var(--bord)}
+  table.broches input:focus{background:#fff}
+  #saisie{position:fixed; display:none; width:140px; z-index:20; box-shadow:0 3px 12px rgba(0,0,0,.25); font-weight:600}
+  #menu{position:fixed; display:none; z-index:30; background:#fff; border:1px solid var(--bord); border-radius:7px; box-shadow:0 6px 20px rgba(0,0,0,.18); padding:4px; min-width:190px}
+  #menu .titreMenu{padding:4px 8px 6px; color:var(--discret); font-size:11px; text-transform:uppercase; letter-spacing:.05em}
+  #menu .grilleMenu{display:grid; grid-template-columns:repeat(3,1fr); gap:1px}
+  #menu .op{padding:4px 8px; border-radius:4px; cursor:pointer; white-space:nowrap}
+  #menu .op:hover{background:var(--accentClair)}
+  #menu .op.actuel{font-weight:700; color:var(--accent)}
+  #menu .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
+</style>
+</head>
+<body>
+
+<div id="barre">
+  <span class="titre">azs-cad<span>Bibliothèque 0.4.0</span></span>
+  <button id="btNouveau">Nouvelle bibliothèque</button>
+  <button id="btOuvrir">Ouvrir…</button>
+  <input type="file" id="fichier" accept=".lib,.txt">
+  <button id="btEnregistrer" class="principal" title="Ctrl+S">Enregistrer</button>
+  <input type="text" id="nomFichier" value="bibliotheque.lib" spellcheck="false">
+  <span id="modif"></span>
+  <span class="espace"></span>
+  <label for="selGrille">Grille</label>
+  <select id="selGrille"></select>
+</div>
+
+<div id="gauche">
+  <input type="text" id="filtre" placeholder="Rechercher…" autocomplete="off">
+  <div id="listes">
+    <div class="section">
+      <h3 id="titreCmp">Composants</h3>
+      <button class="ajout principal" id="btNouvCmp">+ Nouveau composant</button>
+      <ul id="listeCmp"></ul>
+    </div>
+    <div class="section">
+      <h3 id="titrePkg">Gabarits</h3>
+      <button class="ajout" id="btNouvPkg">+ Nouveau gabarit</button>
+      <ul id="listePkg"></ul>
+    </div>
+  </div>
+</div>
+
+<div id="centre">
+  <div class="vue" id="vueSch">
+    <canvas id="cvSch"></canvas>
+    <span class="etiquette">SCHÉMA</span>
+    <div class="vide" id="videSch">Créer un composant ou ouvrir une bibliothèque</div>
+  </div>
+  <div class="vue" id="vueBrd">
+    <canvas id="cvBrd"></canvas>
+    <span class="etiquette">CIRCUIT</span>
+    <div id="modes"><button id="btRetouche" disabled>Retoucher</button><button id="btDessin" disabled>Dessiner</button></div>
+    <div id="outils">
+      <button data-g="r" data-outil="sel" title="Sélection"><svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-3 6z"/></svg></button>
+      <button data-g="d" data-outil="pad" title="Pad DIL"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button data-g="d" data-outil="smd" title="Pad CMS"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1"/></svg></button>
+      <button data-g="d" data-outil="trait" title="Trait (clic droit : fin)"><svg viewBox="0 0 24 24"><path d="M4 19L20 5"/></svg></button>
+      <button data-g="d" data-outil="rect" title="Rectangle : deux coins"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12"/></svg></button>
+      <button data-g="d" data-outil="arc" title="Arc : centre, début, fin"><svg viewBox="0 0 24 24"><path d="M4 18A10 10 0 0 1 20 10"/></svg></button>
+      <button data-g="d" data-outil="cercle" title="Cercle : centre, rayon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></button>
+      <button data-g="d" data-outil="point" title="Point (repère patte 1)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></button>
+      <button data-g="d" data-outil="texte" title="Texte"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13"/></svg></button>
+      <span class="sep"></span>
+      <button data-g="r" id="btRot" title="Rotation 90° (R)"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2-5"/><path d="M19 4v4h-4"/></svg></button>
+      <button data-g="r" id="btSuppr" title="Supprimer (Suppr)"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg></button>
+      <span data-g="r" class="sep"></span>
+      <button id="btAnnuler" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button id="btRetablir" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="droite"><div id="fiche"></div></div>
+
+<div id="etat">
+  <span id="coord">X — Y —</span>
+  <span id="aide"></span>
+  <span id="msg"></span>
+</div>
+<div id="bulle"></div>
+<input type="text" id="saisie" list="fonctions" spellcheck="false" autocomplete="off">
+<datalist id="fonctions"></datalist>
+<div id="menu"></div>
+
+<div id="modale">
+  <div class="boite">
+    <h2 id="assTitre">Nouveau composant</h2>
+    <div class="corps">
+      <div>
+        <div class="champ" id="assLigneNom"><label for="assNom">Nom</label><input type="text" id="assNom" placeholder="ex. NE555" spellcheck="false"></div>
+        <div class="champ"><label for="assFamille">Famille</label><select id="assFamille"></select></div>
+        <div class="champ"><label for="assVariante">Pattes</label><select id="assVariante"></select></div>
+        <div class="champ"><label for="assGab">Gabarit</label><input type="text" id="assGab" spellcheck="false"></div>
+        <div id="assErreur"></div>
+      </div>
+      <div>
+        <canvas id="apercu"></canvas>
+        <div id="apercuInfo"></div>
+      </div>
+    </div>
+    <div class="pied">
+      <button id="assAnnuler">Annuler</button>
+      <button id="assCreer" class="principal">Créer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   Langue : français si le navigateur est réglé en français, anglais sinon.
+   Les textes affichés (page, menus, fiches, messages, bulles, confirmations)
+   sont traduits au fil des changements de la page, par fragments, du plus
+   long au plus court ; nombres décimaux et ponctuation mis à l'anglaise.
+   ====================================================================== */
+var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
+var TRAD_EN = [
+  /* phrases d'aide et messages */
+  ['Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · 1-4 : couche (via)', 'Click a pad: start · click: 45°/90° bend · junction with the same net (any layer): end · right-click / Esc: stop · double-click: cancel the trace or unroute · 1-4: layer (via)'],
+  ['Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le décaler, double-clic = recentrer · T : texte libre', 'Click: select · drag: move · R: rotate · F: top/bottom · Shift + drag the text: offset it, double-click = recenter · T: free text'],
+  ['Clic : sélection · Maj+clic : ajout · poignées : redimensionner · glisser : déplacer ou cadre · R : rotation · Suppr', 'Click: select · Shift+click: add · handles: resize · drag: move or box · R: rotate · Del'],
+  ['clic droit / Échap : arrêter · double-clic : annuler le tracé · 1-4 : couche (via)', 'right-click / Esc: stop · double-click: cancel the trace · 1-4: layer (via)'],
+  ['patte(s) · Ctrl+clic : ajouter/retirer · Maj+clic : plage · puis second groupe sur un autre composant', 'pin(s) · Ctrl+click: add/remove · Shift+click: range · then a second group on another component'],
+  ['Circuit vide : import ; sinon mise à jour (seul ce qui a changé repart en chevelu)', 'Empty board: import; otherwise update (only what changed goes back to the ratsnest)'],
+  ['Clic 1 : centre · clic 2 : début · clic 3 : fin (sens trigonométrique)', 'Click 1: center · click 2: start · click 3: end (counter-clockwise)'],
+  ['« + Nouveau composant » : choisir la famille et le nombre de pattes, donner le nom.', '“+ New component”: choose the family and the pin count, then give the name.'],
+  ['Carré : déplacer le coude · rond : nouveau coude · double-clic sur le fil : effacer', 'Square: move the bend · circle: new bend · double-click on the wire: delete'],
+  ['Second groupe déjà commencé sur un autre composant : Échap pour recommencer.', 'Second group already started on another component: Esc to start again.'],
+  ['Clic : poser un texte de sérigraphie · Échap : annuler', 'Click: place a silkscreen text · Esc: cancel'],
+  ['Clic : poser · R : rotation · Échap ou clic droit : annuler', 'Click: place · R: rotate · Esc or right-click: cancel'],
+  ['Glisser : déplacer le segment · clic sur l\'extrémité libre : prolonger', 'Drag: move the segment · click the free end: extend'],
+  ['Clic : point suivant · clic droit ou Échap : fin du tracé', 'Click: next point · right-click or Esc: end of line'],
+  ['(Ctrl ou Maj + clic sur l\'autre composant) · Échap : annuler', '(Ctrl or Shift + click on the other component) · Esc: cancel'],
+  ['Ouvrir d\'abord une bibliothèque contenant des composants.', 'First open a library that contains components.'],
+  ['Le second groupe se choisit sur un autre composant.', 'The second group is picked on another component.'],
+  ['Pastille CMS sur l\'autre face : changer de couche.', 'SMD pad on the other side: change layer.'],
+  ['Gerber RS-274X et Excellon, une couche par fichier', 'Gerber RS-274X and Excellon, one layer per file'],
+  ['Ouvrir la bibliothèque, puis choisir R, C, D, L ou IC', 'Open the library, then choose R, C, D, L or IC'],
+  ['Ouvrir la bibliothèque, puis importer le schéma', 'Open the library, then import the schematic'],
+  ['Remplacer le placement actuel par le contenu de', 'Replace the current placement with the content of'],
+  ['Créer un composant ou ouvrir une bibliothèque', 'Create a component or open a library'],
+  ['Gabarit vide (dessin à venir avec la retouche)', 'Empty footprint (to be drawn in edit mode)'],
+  ['Abandonner les modifications non enregistrées ?', 'Discard unsaved changes?'],
+  ['Clic 1 : un coin · clic 2 : coin opposé', 'Click 1: a corner · click 2: opposite corner'],
+  ['Aucun schéma lié : importer d\'abord un schéma.', 'No linked schematic: import a schematic first.'],
+  ['Ouvrir le schéma lié (suivi automatique)', 'Open the linked schematic (automatic sync)'],
+  ['Ouvrir le circuit lié (suivi automatique)', 'Open the linked board (automatic sync)'],
+  ['Gabarit absent de la bibliothèque ouverte.', 'Footprint missing from the open library.'],
+  ['Clic 1 : centre · clic 2 : rayon', 'Click 1: center · click 2: radius'],
+  ['ligne(s) illisible(s) dans la bibliothèque', 'unreadable line(s) in the library'],
+  ['Donner un nom au composant (ex. NE555).', 'Give the component a name (e.g. NE555).'],
+  ['Choisir le composant dans la bibliothèque.', 'Choose the component in the library.'],
+  ['Patte non reliée dans le schéma.', 'Pin not connected in the schematic.'],
+  ['mm (FR4 εr 4,5, cuivre 35 µm, microruban)', 'mm (FR4 εr 4.5, 35 µm copper, microstrip)'],
+  ['Clic : poser un texte', 'Click: place a text'],
+  ['Clic : poser un pad CMS', 'Click: place an SMD pad'],
+  ['Clic : poser un pad DIL', 'Click: place a THT pad'],
+  ['Clic : poser un repère', 'Click: place a marker'],
+  ['clic sur la patte d\'arrivée · Échap : annuler', 'click the destination pin · Esc: cancel'],
+  ['Clic dans le vide : reposer', 'Click in empty space: place again'],
+  ['mm comprise) dépasse ce format.', 'mm included) exceeds this format.'],
+  ['le projet dépasse le format', 'the project exceeds the format'],
+  ['Le projet (marge', 'The project (margin'],
+  ['Fin de fichier : FIN manquant pour', 'End of file: FIN missing for'],
+  ['PACKAGE ou COMPOSANT attendu', 'PACKAGE or COMPOSANT expected'],
+  ['« fonction => patte » attendu', '“function => pin” expected'],
+  ['instruction invalide', 'invalid instruction'],
+  ['Circuit vide : rien à exporter.', 'Empty board: nothing to export.'],
+  ['Arc : centre, début, fin', 'Arc: center, start, end'],
+  ['Cercle : centre, rayon', 'Circle: center, radius'],
+  ['Rectangle : deux coins', 'Rectangle: two corners'],
+  ['(Maj + clic : point de référence)', '(Shift + click: reference point)'],
+  ['Liaisons restant à router', 'Connections left to route'],
+  ['Liaison déjà existante.', 'Connection already exists.'],
+  ['Repère vide ou déjà utilisé.', 'Reference empty or already used.'],
+  ['Nom vide ou déjà utilisé.', 'Name empty or already used.'],
+  ['Nom de gabarit vide.', 'Empty footprint name.'],
+  ['Aucun composant posé.', 'No component placed.'],
+  ['Saisir la valeur.', 'Enter the value.'],
+  ['Valeur vide.', 'Empty value.'],
+  ['introuvable dans ce navigateur.', 'not found in this browser.'],
+  ['absent de la bibliothèque ouverte.', 'missing from the open library.'],
+  ['absent de la bibliothèque.', 'missing from the library.'],
+  ['Il est utilisé par', 'It is used by'],
+  ['déjà dans la bibliothèque', 'already in the library'],
+  ['gabarit partagé par', 'footprint shared by'],
+  ['créé sur le gabarit', 'created on footprint'],
+  ['pattes pour un premier groupe de', 'pins for a first group of'],
+  ['Second groupe de', 'Second group of'],
+  ['Aucun circuit azs-cad dans', 'No azs-cad board in'],
+  ['Aucun schéma azs-cad dans', 'No azs-cad schematic in'],
+  ['élément(s) de cuivre retiré(s)', 'copper item(s) removed'],
+  ['élément(s) retiré(s)', 'item(s) removed'],
+  ['éléments sélectionnés', 'selected items'],
+  ['Ligne 50 Ω : largeur imposée', '50 Ω line: imposed width'],
+  ['Schéma (import / mise à jour)…', 'Schematic (import / update)…'],
+  ['Texte de sérigraphie (T)', 'Silkscreen text (T)'],
+  ['Texte · sérigraphie', 'Text · silkscreen'],
+  ['Recentrer le texte', 'Recenter the text'],
+  ['Dessus / dessous (F)', 'Top / bottom (F)'],
+  ['Auto (format supérieur)', 'Auto (next size up)'],
+  ['Carte de crédit', 'Credit card'],
+  ['Hors format (auto)', 'Non-standard (auto)'],
+  ['Modifications non enregistrées', 'Unsaved changes'],
+  ['bibliothèque attendue', 'expected library'],
+  ['bibliothèque du schéma', 'schematic library'],
+  ['Pas de bibliothèque', 'No library'],
+  ['aucune bibliothèque', 'no library'],
+  ['Nouvelle bibliothèque', 'New library'],
+  ['Bibliothèque chargée.', 'Library loaded.'],
+  ['Circuit de la bibliothèque', 'Library IC'],
+  ['Composant absent de la bibliothèque.', 'Component missing from the library.'],
+  ['(aucun gabarit compatible)', '(no compatible footprint)'],
+  ['gabarit(s) absent(s)', 'footprint(s) missing'],
+  ['gabarit(s) chargés.', 'footprint(s) loaded.'],
+  ['Pad simple (une patte)', 'Single pad (one pin)'],
+  ['Point (repère patte 1)', 'Dot (pin 1 marker)'],
+  ['Trait (clic droit : fin)', 'Line (right-click: end)'],
+  ['Polarisé : patte 1 = +', 'Polarized: pin 1 = +'],
+  ['Diode CMS (patte 1 = cathode)', 'SMD diode (pin 1 = cathode)'],
+  ['QFN pas 0,5 (+ pastille centrale)', 'QFN pitch 0.5 (+ center pad)'],
+  ['Vierge (dessin libre)', 'Blank (free drawing)'],
+  ['DIL (traversant)', 'THT (through-hole)'],
+  ['DIP étroit', 'DIP narrow'], ['DIP large', 'DIP wide'], ['SOIC étroit', 'SOIC narrow'], ['SOIC large', 'SOIC wide'],
+  ['HE10 2 rangées', 'HE10 2 rows'], ['Bornier à vis', 'Screw terminal'], ['Quartz HC-49', 'Crystal HC-49'],
+  ['Passifs DIL', 'THT passives'], ['Passifs CMS', 'SMD passives'], ['Boîtiers DIL', 'THT packages'], ['Circuits CMS', 'SMD ICs'],
+  ['Diodes CMS', 'SMD diodes'], ['Transistors CMS', 'SMD transistors'], ['CMS 2 pattes', 'SMD 2 pins'],
+  ['Pastille traversante', 'Through-hole pad'], ['Pastille CMS', 'SMD pad'],
+  ['Vernis épargne', 'Solder mask'], ['Vernis dessus', 'Top solder mask'], ['Vernis dessous', 'Bottom solder mask'],
+  ['Sérigraphie dessus', 'Top silkscreen'], ['Sérigraphie dessous', 'Bottom silkscreen'],
+  ['Segment de piste', 'Track segment'], ['Tracé automatique', 'Automatic path'], ['Tracé annulé', 'Trace cancelled'],
+  ['Routage complet', 'Routing complete'], ['liaison(s) à router', 'connection(s) to route'],
+  ['Annuler (Ctrl+Z)', 'Undo (Ctrl+Z)'], ['Rétablir (Ctrl+Y)', 'Redo (Ctrl+Y)'], ['Supprimer (Suppr)', 'Delete (Del)'],
+  ['Supprimer le composant', 'Delete component'], ['Supprimer le gabarit', 'Delete footprint'],
+  ['Créer le composant', 'Create component'], ['Créer le gabarit', 'Create footprint'], ['Créer un composant', 'Create a component'],
+  ['+ Nouveau composant', '+ New component'], ['+ Nouveau gabarit', '+ New footprint'],
+  ['Nouveau composant', 'New component'], ['Nouveau gabarit', 'New footprint'],
+  ['Effacer le nom', 'Clear the name'], ['Retouche en cours', 'Editing'], ['Dessin en cours', 'Drawing'],
+  ['Autre équipotentielle', 'Other net'], ['non reliée', 'not connected'], ['Non polarisé', 'Non-polarized'],
+  ['Ligne 50 Ω', '50 Ω line'], ['Lignes 50 Ω', '50 Ω lines'], ['ligne(s) 50 Ω', '50 Ω line(s)'],
+  ['Aperçu Gerber', 'Gerber preview'], ['Télécharger le zip', 'Download zip'], ['vue de dessus', 'top view'], ['non dessiné', 'not drawn'],
+  ['Via perçage', 'Via drill'], ['Perçage Ø', 'Drill Ø'], ['Ø via', 'Via Ø'], ['mm imposé', 'mm imposed'],
+  ['Liaison depuis', 'Connection from'], ['Lecture impossible', 'Cannot read'], ['aucun changement', 'no change'],
+  ['pad(s) DIL', 'THT pad(s)'], ['pad(s) CMS', 'SMD pad(s)'], ['Pad CMS', 'SMD pad'], ['Pad DIL', 'THT pad'],
+  ['Centre X', 'Center X'], ['Centre Y', 'Center Y'], ['Début °', 'Start °'], ['Fin °', 'End °'],
+  ['Hauteur (mm)', 'Height (mm)'], ['Largeur (mm)', 'Width (mm)'], ['Autre (mm)', 'Other (mm)'],
+  ['Utilisé par', 'Used by'], ['existe déjà.', 'already exists.'], ['Le composant', 'The component'],
+  ['Groupe 1', 'Group 1'], ['groupe 2', 'group 2'], ['Bus de', 'Bus of'], ['mise à jour', 'update'],
+  ['Circuit ↗', 'Board ↗'], ['Schéma ↗', 'Schematic ↗'], ['← Miniatures', '← Thumbnails'], ['ex. NE555', 'e.g. NE555'],
+  ['à router', 'to route'], ['Dé-routé', 'Unrouted'],
+  /* mots */
+  ['CIRCUIT', 'BOARD'], ['Bibliothèque', 'Library'], ['bibliothèque', 'library'], ['Rechercher', 'Search'], ['Ouvrir', 'Open'], ['Enregistrer', 'Save'],
+  ['Enregistré', 'Saved'], ['Nouveau', 'New'], ['Annuler', 'Cancel'], ['Appliquer', 'Apply'], ['Créer', 'Create'], ['Dupliquer', 'Duplicate'],
+  ['Supprimer', 'Delete'], ['Retoucher', 'Edit'], ['Modifier', 'Edit'], ['Dessiner', 'Draw'], ['Sélection', 'Selection'], ['Fermer', 'Close'],
+  ['Composants', 'Components'], ['composants', 'components'], ['Composant', 'Component'], ['composant(s)', 'component(s)'], ['composant', 'component'],
+  ['Gabarits', 'Footprints'], ['Gabarit', 'Footprint'], ['gabarit(s)', 'footprint(s)'], ['gabarit', 'footprint'], ['Normalisés', 'Standard'],
+  ['Famille', 'Family'], ['Forme', 'Shape'], ['Nom', 'Name'], ['Valeur', 'Value'], ['Repère', 'Reference'], ['Pattes', 'Pins'], ['Patte', 'Pin'],
+  ['pattes', 'pins'], ['patte(s)', 'pin(s)'], ['patte', 'pin'], ['Rond', 'Round'], ['Carré', 'Square'], ['Ovale', 'Oval'], ['Diamètre', 'Diameter'],
+  ['Perçage', 'Drill'], ['Rayon', 'Radius'], ['Épaisseur', 'Thickness'], ['Hauteur', 'Height'], ['Largeur', 'Width'], ['Trait', 'Line'],
+  ['Cercle', 'Circle'], ['Texte', 'Text'], ['texte', 'text'], ['Résistances', 'Resistors'], ['Condensateurs', 'Capacitors'], ['Inductances', 'Inductors'], ['Résistance', 'Resistor'], ['Condensateur', 'Capacitor'], ['Inductance', 'Inductor'],
+  ['Polarisé', 'Polarized'], ['Oui', 'Yes'], ['Non', 'No'], ['oui', 'yes'], ['non', 'no'], ['Autre…', 'Other…'], ['Électrique', 'Electrical'],
+  ['Liaisons', 'Connections'], ['Liaison', 'Connection'], ['liaisons', 'connections'], ['liaison(s)', 'connection(s)'], ['Ligne', 'Line'],
+  ['ligne(s)', 'line(s)'], ['Groupe', 'Group'], ['élément(s)', 'item(s)'], ['Poser', 'Place'], ['posé', 'placed'], ['Placer', 'Place'],
+  ['Router', 'Route'], ['Routage', 'Routing'], ['Schéma', 'Schematic'], ['schéma', 'schematic'], ['SCHÉMA', 'SCHEMATIC'],
+  ['Circuit', 'Board'], ['attendue', 'expected'], ['introuvable', 'not found'], ['erreur(s)', 'error(s)'], ['nommée(s)', 'named'],
+  ['refusé', 'refused'], ['équipotentielle(s)', 'net(s)'], ['équipot.', 'nets'], ['Pastille', 'Pad'], ['Dessus', 'Top'], ['Dessous', 'Bottom'],
+  ['dessus', 'top'], ['dessous', 'bottom'], ['interne', 'inner'], ['Cuivre', 'Copper'], ['touche', 'key'], ['Couche', 'Layer'], ['couche', 'layer'],
+  ['Substrat', 'Substrate'], ['Isolement', 'Clearance'], ['Couronne', 'Annular ring'], ['Contour', 'Outline'], ['Personnalisé', 'Custom'],
+  ['Aperçu', 'Preview'], ['fichier(s)', 'file(s)'], ['fichiers', 'files'], ['trait(s)', 'line(s)'], ['région(s)', 'region(s)'], ['trou(s)', 'hole(s)'],
+  ['ouvertures', 'openings'], ['Sérigraphie', 'Silkscreen'], ['Grille', 'Grid'], ['actuel', 'current'], ['dont', 'including'],
+  ['Aucun', 'No'], ['aucun', 'no'], ['aucune', 'none'], ['absent', 'missing'], ['chevelu', 'ratsnest'], ['Fichier', 'File'],
+  ['pas', 'pitch'], ['CMS', 'SMD'], ['DIL', 'THT']
+];
+var TRAD_IDX = null;
+if (window.TRAD_PAGE) TRAD_EN = window.TRAD_PAGE.concat(TRAD_EN);
+function estMot(c) { return !!c && /[A-Za-z0-9À-ſ]/.test(c); }
+function traduire(s) {
+  var r = '', i = 0, k, l, e, f, n, ok;
+  if (LANGUE === 'fr' || !s || !/[A-Za-zÀ-ÿ]/.test(s)) return s;
+  if (!TRAD_IDX) {
+    TRAD_IDX = {};
+    TRAD_EN.slice().sort(function (a, b) { return b[0].length - a[0].length; }).forEach(function (p) { (TRAD_IDX[p[0].charAt(0)] = TRAD_IDX[p[0].charAt(0)] || []).push(p); });
+  }
+  n = s.length;
+  while (i < n) {
+    l = TRAD_IDX[s.charAt(i)]; ok = false;
+    if (l && !(estMot(s.charAt(i)) && estMot(s.charAt(i - 1)))) {
+      for (k = 0; k < l.length; k++) {
+        f = l[k][0];
+        if (s.substr(i, f.length) !== f) continue;
+        e = s.charAt(i + f.length);
+        if (estMot(f.charAt(f.length - 1)) && estMot(e)) continue;
+        r += l[k][1]; i += f.length; ok = true; break;
+      }
+    }
+    if (!ok) { r += s.charAt(i); i++; }
+  }
+  return r.replace(/(\d),(\d)/g, '$1.$2').replace(/ ([:;?!])/g, '$1').replace(/« ?/g, '“').replace(/ ?»/g, '”');
+}
+(function () {
+  var conf = window.confirm, ATTR = ['title', 'placeholder', 'label'];
+  if (LANGUE === 'fr') return;
+  document.documentElement.lang = 'en';
+  document.title = traduire(document.title);
+  window.confirm = function (m) { return conf.call(window, traduire(m)); };
+  function attr(el, a) { var v = el.getAttribute(a), t; if (v) { t = traduire(v); if (t !== v) el.setAttribute(a, t); } }
+  function noeud(n) {
+    var i, v;
+    if (n.nodeType === 3) {
+      /* jamais le code : le texte d'un script en cours de chargement passe aussi par ici */
+      if (!n.parentNode || /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName) || (n.parentNode.hasAttribute && n.parentNode.hasAttribute('data-brut'))) return;
+      v = traduire(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; return;
+    }
+    if (n.nodeType !== 1 || /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName) || n.hasAttribute('data-brut')) return;
+    for (i = 0; i < ATTR.length; i++) attr(n, ATTR[i]);
+    for (i = 0; i < n.childNodes.length; i++) noeud(n.childNodes[i]);
+  }
+  noeud(document.body);
+  new MutationObserver(function (l) {
+    var i, j, m;
+    for (i = 0; i < l.length; i++) {
+      m = l[i];
+      if (m.type === 'characterData') noeud(m.target);
+      else if (m.type === 'attributes') attr(m.target, m.attributeName);
+      else for (j = 0; j < m.addedNodes.length; j++) noeud(m.addedNodes[j]);
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTR });
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+
+  /* ======================================================================
+     Constantes et état
+     ====================================================================== */
+  var COUL = {
+    schGrille: '#eef1f5', schCroix: '#c9ced6', schCorps: '#4b5563', schPatte: '#16a34a',
+    schTexte: '#14532d', schNum: '#9ca3af', schNom: '#1f2328',
+    brdGrille: '#1a1a1a', brdCroix: '#555', cuivre: '#D63B3B', serigraphie: '#E6E6E6', survol: '#FACC15'
+  };
+  var LIB = { packages: [], composants: [] };
+  var FONCTIONS = ['VCC+', 'GND', '+5V', '+3V3', '+12V', '-12V', 'VEE', 'NC', 'IN', 'IN+', 'IN-', 'OUT',
+                   'CLK', 'RESET', 'EN', 'A', 'K', 'B', 'C', 'E', 'G', 'D', 'S'];
+  var S = { vue: null, survol: null, pan: null, modifie: false, edition: null, editionVue: null, annul: [], retab: [],
+            retouche: false, mode: null, poignee: null, outil: 'sel', constr: null, curseur: null, sel: [], drag: null, cadre: null,
+            defauts: { pad: { perc: 0.8, diam: 1.6, forme: 'ROND', rot: 0 }, smd: { dx: 1.5, dy: 0.8, rot: 0 }, trait: { w: 0.2 }, rect: { w: 0.2 },
+                       arc: { w: 0.2 }, cercle: { w: 0.2 }, point: { r: 0.3 }, texte: { h: 1.0, rot: 0 } }, grille: 1.27, z: 20, ox: 0, oy: 0, dpr: 1, W: 0, H: 0 };
+  var $ = function (id) { return document.getElementById(id); };
+  var V = {
+    sch: { cv: $('cvSch'), ctx: $('cvSch').getContext('2d') },
+    brd: { cv: $('cvBrd'), ctx: $('cvBrd').getContext('2d') }
+  };
+  var ctx = V.brd.ctx;
+
+  /* ======================================================================
+     Utilitaires
+     ====================================================================== */
+  function arr(v) { return Math.round(v * 10000) / 10000; }
+  function ecrireNb(v) { return String(arr(v)); }
+  function lireNb(s) { var n = parseFloat(String(s).replace(',', '.')); return isNaN(n) ? null : n; }
+  function normAng(a) { a = a % 360; if (a < 0) a += 360; return arr(a); }
+  function triNat(a, b) { return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+  function nettoyerNom(s) { return String(s).replace(/^\s+|\s+$/g, '').replace(/\s+/g, '_'); }
+  function copieEls(a) {
+    var r = [], i, o, k;
+    for (i = 0; i < a.length; i++) { o = {}; for (k in a[i]) if (a[i].hasOwnProperty(k)) o[k] = a[i][k]; r.push(o); }
+    return r;
+  }
+
+  /* ======================================================================
+     Géométrie
+     ====================================================================== */
+  function transPts(loc, cx, cy, ang) {
+    var a = ang * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), r = [], i;
+    for (i = 0; i < loc.length; i++) r.push([cx + loc[i][0] * c - loc[i][1] * s, cy + loc[i][0] * s + loc[i][1] * c]);
+    return r;
+  }
+  function rectArrondi(cx, cy, w, h, r, ang) {
+    var hw = w / 2, hh = h / 2, loc = [], i, k, a, cs;
+    r = Math.min(r, hw, hh);
+    if (r <= 1e-9) loc = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
+    else {
+      cs = [[hw - r, -hh + r, -90], [hw - r, hh - r, 0], [-hw + r, hh - r, 90], [-hw + r, -hh + r, 180]];
+      for (i = 0; i < 4; i++) for (k = 0; k <= 6; k++) {
+        a = (cs[i][2] + 15 * k) * Math.PI / 180;
+        loc.push([cs[i][0] + r * Math.cos(a), cs[i][1] + r * Math.sin(a)]);
+      }
+    }
+    return transPts(loc, cx, cy, ang);
+  }
+  function estPad(e) { return e.t === 'pad' || e.t === 'smd'; }
+  function formePad(e) {
+    if (e.t === 'smd') return { pts: rectArrondi(e.x, e.y, e.dx, e.dy, 0, e.rot) };
+    if (e.forme === 'CARRE') return { pts: rectArrondi(e.x, e.y, e.diam, e.diam, 0, e.rot) };
+    if (e.forme === 'OVALE') return { pts: rectArrondi(e.x, e.y, 2 * e.diam, e.diam, e.diam / 2, e.rot) };
+    return { disque: { x: e.x, y: e.y, r: e.diam / 2 } };
+  }
+  function largeurTexte(e) { return Math.max(1, e.txt.length) * e.h * 0.68; }
+  function bboxEl(e) {
+    var r, p, i, b = [1e9, 1e9, -1e9, -1e9], pts;
+    function aj(x, y) { if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (x > b[2]) b[2] = x; if (y > b[3]) b[3] = y; }
+    switch (e.t) {
+      case 'pad': case 'smd':
+        p = formePad(e);
+        if (p.disque) { aj(e.x - p.disque.r, e.y - p.disque.r); aj(e.x + p.disque.r, e.y + p.disque.r); }
+        else for (i = 0; i < p.pts.length; i++) aj(p.pts[i][0], p.pts[i][1]);
+        break;
+      case 'trait': case 'rect': aj(e.x1, e.y1); aj(e.x2, e.y2); break;
+      case 'arc': case 'cercle': r = e.r + e.w / 2; aj(e.cx - r, e.cy - r); aj(e.cx + r, e.cy + r); break;
+      case 'point': aj(e.x - e.r, e.y - e.r); aj(e.x + e.r, e.y + e.r); break;
+      case 'texte':
+        pts = transPts([[0, 0], [largeurTexte(e), 0], [largeurTexte(e), e.h], [0, e.h]], e.x, e.y, e.rot);
+        for (i = 0; i < 4; i++) aj(pts[i][0], pts[i][1]);
+        break;
+    }
+    return b;
+  }
+  function unionBbox(liste, filtre) {
+    var b = [1e9, 1e9, -1e9, -1e9], i, e;
+    for (i = 0; i < liste.length; i++) {
+      if (filtre && !filtre(liste[i])) continue;
+      e = bboxEl(liste[i]);
+      if (e[0] < b[0]) b[0] = e[0]; if (e[1] < b[1]) b[1] = e[1];
+      if (e[2] > b[2]) b[2] = e[2]; if (e[3] > b[3]) b[3] = e[3];
+    }
+    return b[0] > b[2] ? null : b;
+  }
+  function dansPad(e, x, y, tol) {
+    var p = formePad(e), l, a, hw, hh;
+    if (p.disque) return Math.sqrt((x - e.x) * (x - e.x) + (y - e.y) * (y - e.y)) <= p.disque.r + tol;
+    a = -e.rot * Math.PI / 180;
+    l = [(x - e.x) * Math.cos(a) - (y - e.y) * Math.sin(a), (x - e.x) * Math.sin(a) + (y - e.y) * Math.cos(a)];
+    if (e.t === 'smd') { hw = e.dx / 2; hh = e.dy / 2; }
+    else if (e.forme === 'OVALE') { hw = e.diam; hh = e.diam / 2; }
+    else { hw = e.diam / 2; hh = e.diam / 2; }
+    return Math.abs(l[0]) <= hw + tol && Math.abs(l[1]) <= hh + tol;
+  }
+
+  /* ======================================================================
+     Générateurs de gabarits normalisés
+     ====================================================================== */
+  function Gab(nom) { return { nom: nom, el: [] }; }
+  function gPad(g, n, x, y, perc, diam, forme, rot) { g.el.push({ t: 'pad', nom: String(n), x: arr(x), y: arr(y), perc: perc, diam: diam, forme: forme, rot: rot || 0 }); }
+  function gSmd(g, n, x, y, dx, dy) { g.el.push({ t: 'smd', nom: String(n), x: arr(x), y: arr(y), dx: dx, dy: dy, rot: 0 }); }
+  function gTrait(g, x1, y1, x2, y2, w) { g.el.push({ t: 'trait', x1: arr(x1), y1: arr(y1), x2: arr(x2), y2: arr(y2), w: w || 0.2 }); }
+  function gRect(g, x1, y1, x2, y2, w) { g.el.push({ t: 'rect', x1: arr(Math.min(x1, x2)), y1: arr(Math.min(y1, y2)), x2: arr(Math.max(x1, x2)), y2: arr(Math.max(y1, y2)), w: w || 0.2 }); }
+  function gArc(g, cx, cy, r, a1, a2, w) { g.el.push({ t: 'arc', cx: arr(cx), cy: arr(cy), r: arr(r), a1: normAng(a1), a2: normAng(a2), w: w || 0.2 }); }
+  function gCercle(g, cx, cy, r, w) { g.el.push({ t: 'cercle', cx: arr(cx), cy: arr(cy), r: arr(r), w: w || 0.2 }); }
+  function gPoint(g, x, y, r) { g.el.push({ t: 'point', x: arr(x), y: arr(y), r: r || 0.3 }); }
+  function gTextes(g) { return g; }
+  /* Double rangée : 1..k en bas de gauche à droite, k+1..n en haut de droite à gauche */
+  function doubleRangee(n, pas, ecart, poser) {
+    var k = n / 2, i;
+    for (i = 0; i < k; i++) poser(i + 1, (i - (k - 1) / 2) * pas, -ecart / 2);
+    for (i = 0; i < k; i++) poser(k + i + 1, ((k - 1) / 2 - i) * pas, ecart / 2);
+  }
+  /* Quatre côtés, sens trigonométrique vu de dessus.
+     'gauche' : patte 1 en haut du côté gauche (QFP, QFN) ; 'haut' : patte 1 au milieu du haut (PLCC) */
+  function quatreCotes(n, pas, c, poser, depart) {
+    var k = n / 4, j, m, liste, i, ga = [], ba = [], dr = [], ha = [];
+    function v(j) { return (j - (k - 1) / 2) * pas; }
+    for (j = 0; j < k; j++) { ga.push([-c, -v(j), 'h']); ba.push([v(j), -c, 'v']); dr.push([c, v(j), 'h']); ha.push([-v(j), c, 'v']); }
+    if (depart === 'gauche') liste = ga.concat(ba, dr, ha);
+    else { m = (k - 1) / 2; liste = ha.slice(m).concat(ga, ba, dr, ha.slice(0, m)); }
+    for (i = 0; i < liste.length; i++) poser(i + 1, liste[i][0], liste[i][1], liste[i][2]);
+  }
+  function genDip(n, ecart, nom) {
+    var g = Gab(nom), L = n / 2 * 1.27, s = ecart / 2 - 1.6;
+    doubleRangee(n, 2.54, ecart, function (p, x, y) { gPad(g, p, x, y, 0.8, 1.3, 'OVALE', 90); });
+    gRect(g, -L, -s, L, s);
+    gArc(g, -L, 0, 0.8, 270, 90);
+    gPoint(g, -(n / 2 - 1) * 1.27, -s + 0.6, 0.25);
+    return gTextes(g);
+  }
+  function genSil(n) {
+    var g = Gab('SIL' + n), i;
+    for (i = 0; i < n; i++) gPad(g, i + 1, (i - (n - 1) / 2) * 2.54, 0, 1.0, 1.7, i ? 'ROND' : 'CARRE');
+    gRect(g, -n * 1.27, -1.27, n * 1.27, 1.27);
+    return gTextes(g);
+  }
+  function genHe10(n) {
+    var g = Gab('HE10-' + n), k = n / 2, i, x, L = k * 1.27 + 3.8;
+    for (i = 0; i < k; i++) {
+      x = (i - (k - 1) / 2) * 2.54;
+      gPad(g, 2 * i + 1, x, -1.27, 1.0, 1.7, i ? 'ROND' : 'CARRE');
+      gPad(g, 2 * i + 2, x, 1.27, 1.0, 1.7, 'ROND');
+    }
+    gRect(g, -L, -4.45, L, 4.45);
+    gTrait(g, -2.2, -4.45, -2.2, -3.6); gTrait(g, -2.2, -3.6, 2.2, -3.6); gTrait(g, 2.2, -3.6, 2.2, -4.45);
+    gPoint(g, -(k - 1) * 1.27 - 1.9, -2.6, 0.3);
+    return gTextes(g);
+  }
+  function genBornier(n) {
+    var g = Gab('BORNIER' + n), i;
+    for (i = 0; i < n; i++) gPad(g, i + 1, (i - (n - 1) / 2) * 5.08, 0, 1.3, 2.6, i ? 'ROND' : 'CARRE');
+    gRect(g, -n * 2.54, -3.6, n * 2.54, 4.4);
+    gTrait(g, -n * 2.54, 2.6, n * 2.54, 2.6);
+    return gTextes(g);
+  }
+  function genAxial(p) {
+    var g = Gab('AXIAL' + p), e = p / 2, gros = p >= 10, d = gros ? 1.8 : 1.6, L = Math.max(p - 3.6, 2.4) / 2;
+    gPad(g, 1, -e, 0, gros ? 1.0 : 0.8, d, 'ROND');
+    gPad(g, 2, e, 0, gros ? 1.0 : 0.8, d, 'ROND');
+    gRect(g, -L, -1.1, L, 1.1);
+    if (e - d / 2 - 0.3 > L) { gTrait(g, -e + d / 2 + 0.3, 0, -L, 0); gTrait(g, L, 0, e - d / 2 - 0.3, 0); }
+    return gTextes(g);
+  }
+  function genRadial(p) {
+    var g = Gab('RADIAL' + p), r = { 2.5: 2.5, 3.5: 3.15, 5: 4, 7.5: 5 }[p] || p,
+        dr = p >= 5 ? 1.0 : 0.8, d = p >= 5 ? 2.0 : 1.6, px = -p / 2, py = Math.min(1.7, r * 0.55) + d / 2;
+    gPad(g, 1, -p / 2, 0, dr, d, 'CARRE');
+    gPad(g, 2, p / 2, 0, dr, d, 'ROND');
+    gCercle(g, 0, 0, r);
+    gTrait(g, px - 0.4, py, px + 0.4, py, 0.15);
+    gTrait(g, px, py - 0.4, px, py + 0.4, 0.15);
+    return gTextes(g);
+  }
+  function genTo92() {
+    var g = Gab('TO92'), a = 35, r = 2.6, yy = -r * Math.sin(a * Math.PI / 180), xx = r * Math.cos(a * Math.PI / 180);
+    gPad(g, 1, -2.54, 0, 0.8, 1.4, 'ROND'); gPad(g, 2, 0, 0, 0.8, 1.4, 'ROND'); gPad(g, 3, 2.54, 0, 0.8, 1.4, 'ROND');
+    gArc(g, 0, 0, r, -a, 180 + a);
+    gTrait(g, -xx, yy, xx, yy);
+    return gTextes(g);
+  }
+  function genTo126() {
+    var g = Gab('TO126');
+    gPad(g, 1, -2.29, 0, 1.0, 1.8, 'CARRE'); gPad(g, 2, 0, 0, 1.0, 1.8, 'ROND'); gPad(g, 3, 2.29, 0, 1.0, 1.8, 'ROND');
+    gRect(g, -4, -1.4, 4, 1.8);
+    return gTextes(g);
+  }
+  function genTo220() {
+    var g = Gab('TO220');
+    gPad(g, 1, -2.54, 0, 1.1, 1.7, 'OVALE', 90); gPad(g, 2, 0, 0, 1.1, 1.7, 'OVALE', 90); gPad(g, 3, 2.54, 0, 1.1, 1.7, 'OVALE', 90);
+    gRect(g, -5.2, -2.2, 5.2, 2.8);
+    gTrait(g, -5.2, 1.6, -3.6, 1.6); gTrait(g, 3.6, 1.6, 5.2, 1.6);
+    return gTextes(g);
+  }
+  function genHc49() {
+    var g = Gab('HC49');
+    gPad(g, 1, -2.44, 0, 0.8, 1.6, 'ROND'); gPad(g, 2, 2.44, 0, 0.8, 1.6, 'ROND');
+    gTrait(g, -3.5, -2.3, 3.5, -2.3); gTrait(g, -3.5, 2.3, 3.5, 2.3);
+    gArc(g, -3.5, 0, 2.3, 90, 270); gArc(g, 3.5, 0, 2.3, 270, 90);
+    return gTextes(g);
+  }
+  function genSo(n, pas, centre, larg, long, s, L, nom) {
+    var g = Gab(nom);
+    doubleRangee(n, pas, 2 * centre, function (p, x, y) { gSmd(g, p, x, y, larg, long); });
+    gRect(g, -L / 2, -s, L / 2, s);
+    gPoint(g, -L / 2 + 0.6, -s + 0.6, 0.25);
+    return gTextes(g);
+  }
+  function genPlcc(n) {
+    var g = Gab('PLCC' + n), corps = n / 4 * 1.27 + 2.6, c = corps / 2 - 0.1, s = corps / 2 + 1.2;
+    quatreCotes(n, 1.27, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 2.0, 0.65); else gSmd(g, p, x, y, 0.65, 2.0); }, 'haut');
+    gRect(g, -s, -s, s, s); gTrait(g, -s, s - 1, -s + 1, s);
+    gPoint(g, 0, s - 1.6, 0.35);
+    return gTextes(g);
+  }
+  function genQfp(n, pas, corps) {
+    var g = Gab('TQFP' + n + '-' + pas), c = corps / 2 + 0.85, larg = pas >= 0.8 ? 0.55 : 0.3, s = corps / 2;
+    quatreCotes(n, pas, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 1.5, larg); else gSmd(g, p, x, y, larg, 1.5); }, 'gauche');
+    gRect(g, -s, -s, s, s);
+    gPoint(g, -s + 0.9, s - 0.9, 0.35);
+    return gTextes(g);
+  }
+  function genQfn(n) {
+    var corps = { 16: 3, 20: 4, 24: 4, 32: 5, 48: 7 }[n], g = Gab('QFN' + n), c = corps / 2 - 0.3, s = corps / 2 + 0.3, ep = corps * 0.55;
+    quatreCotes(n, 0.5, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 0.8, 0.28); else gSmd(g, p, x, y, 0.28, 0.8); }, 'gauche');
+    gSmd(g, n + 1, 0, 0, ep, ep);
+    gRect(g, -s, -s, s, s);
+    gPoint(g, -s - 0.45, s - 0.1, 0.25);
+    return gTextes(g);
+  }
+  /* Composants CMS à 2 pattes : [entraxe, largeur pad, hauteur pad] */
+  var CMS2 = {
+    '0402': [1.0, 0.6, 0.7], '0603': [1.6, 0.9, 0.95], '0805': [1.9, 1.0, 1.45], '1206': [3.0, 1.15, 1.8],
+    '1210': [3.0, 1.15, 2.7], '2010': [4.6, 1.2, 2.7], '2512': [6.0, 1.4, 3.4],
+    'MiniMELF': [3.4, 1.2, 1.6], 'MELF': [5.2, 1.4, 2.6], 'SOD-123': [3.4, 1.0, 1.2], 'SOD-323': [2.4, 0.7, 0.6],
+    'SMA': [4.0, 1.5, 1.7], 'SMB': [4.4, 2.0, 2.3], 'SMC': [6.8, 2.4, 3.3]
+  };
+  function genDeux(code, nom, cathode) {
+    var d = CMS2[code], g = Gab(nom), xr = d[0] / 2 + d[1] / 2 + 0.2, yr = d[2] / 2 + 0.2;
+    gSmd(g, 1, -d[0] / 2, 0, d[1], d[2]); gSmd(g, 2, d[0] / 2, 0, d[1], d[2]);
+    gRect(g, -xr, -yr, xr, yr, 0.15);
+    if (cathode) gTrait(g, -xr - 0.35, -yr, -xr - 0.35, yr, 0.3);
+    return gTextes(g);
+  }
+  function genSot(code) {
+    var g = Gab(code.replace('SOT-', 'SOT'));
+    function ligne3() { gSmd(g, 1, -0.95, -1.15, 0.6, 1.0); gSmd(g, 2, 0, -1.15, 0.6, 1.0); gSmd(g, 3, 0.95, -1.15, 0.6, 1.0); }
+    switch (code) {
+      case 'SOT-23': gSmd(g, 1, -0.95, -1.15, 0.6, 1.0); gSmd(g, 2, 0.95, -1.15, 0.6, 1.0); gSmd(g, 3, 0, 1.15, 0.6, 1.0); break;
+      case 'SOT-23-5': ligne3(); gSmd(g, 4, 0.95, 1.15, 0.6, 1.0); gSmd(g, 5, -0.95, 1.15, 0.6, 1.0); break;
+      case 'SOT-23-6': ligne3(); gSmd(g, 4, 0.95, 1.15, 0.6, 1.0); gSmd(g, 5, 0, 1.15, 0.6, 1.0); gSmd(g, 6, -0.95, 1.15, 0.6, 1.0); break;
+      case 'SOT-89':
+        gSmd(g, 1, -1.5, -1.85, 0.8, 1.4); gSmd(g, 2, 0, -1.85, 0.8, 1.4); gSmd(g, 3, 1.5, -1.85, 0.8, 1.4); gSmd(g, 2, 0, 0.9, 1.8, 2.6);
+        gRect(g, -2.4, -0.9, 2.4, 2.5, 0.15); gPoint(g, -2.2, -1.85, 0.25); return gTextes(g);
+      case 'SOT-223':
+        gSmd(g, 1, -2.3, -3.15, 1.0, 2.0); gSmd(g, 2, 0, -3.15, 1.0, 2.0); gSmd(g, 3, 2.3, -3.15, 1.0, 2.0); gSmd(g, 4, 0, 3.15, 3.3, 2.0);
+        gRect(g, -3.4, -1.8, 3.4, 1.8, 0.15); gPoint(g, -3.3, -3.15, 0.3); return gTextes(g);
+      case 'DPAK':
+        gSmd(g, 1, -2.28, -3.1, 1.2, 2.0); gSmd(g, 3, 2.28, -3.1, 1.2, 2.0); gSmd(g, 2, 0, 2.4, 6.0, 6.2);
+        gRect(g, -3.4, -1.6, 3.4, 5.8, 0.15); gPoint(g, -3.6, -3.1, 0.3); return gTextes(g);
+    }
+    gRect(g, -1.5, -0.45, 1.5, 0.45, 0.15); gPoint(g, -1.9, -1.15, 0.25);
+    return gTextes(g);
+  }
+  function plage(a, b) { var r = [], i; for (i = a; i <= b; i++) r.push(i); return r; }
+  function pattes(v) { return v + ' pattes'; }
+  function brut(v) { return String(v); }
+  function pasMm(v) { return 'pas ' + String(v).replace('.', ',') + ' mm'; }
+  var FAMILLES = [
+    { g: 'Gabarit', nom: 'Vierge (dessin libre)', v: [''], lib: function () { return '—'; }, gen: function () { return Gab('GABARIT'); } },
+    { g: 'DIL', nom: 'DIP étroit 7,62 mm', v: [4, 6, 8, 14, 16, 18, 20, 22, 24, 28], lib: pattes, gen: function (n) { return genDip(n, 7.62, 'DIP' + n); } },
+    { g: 'DIL', nom: 'DIP large 15,24 mm', v: [24, 28, 32, 40, 48], lib: pattes, gen: function (n) { return genDip(n, 15.24, 'DIP' + n + 'L'); } },
+    { g: 'DIL', nom: 'SIL pas 2,54', v: plage(1, 40), lib: pattes, gen: genSil },
+    { g: 'DIL', nom: 'HE10 2 rangées', v: [6, 8, 10, 14, 16, 20, 26, 34, 40, 50, 64], lib: pattes, gen: genHe10 },
+    { g: 'DIL', nom: 'Bornier à vis 5,08', v: plage(2, 12), lib: pattes, gen: genBornier },
+    { g: 'Passifs DIL', nom: 'Axial', v: [7.62, 10.16, 12.7, 15.24], lib: pasMm, gen: genAxial },
+    { g: 'Passifs DIL', nom: 'Radial', v: [2.5, 3.5, 5, 7.5], lib: pasMm, gen: genRadial },
+    { g: 'Boîtiers DIL', nom: 'TO-92', v: [3], lib: pattes, gen: genTo92 },
+    { g: 'Boîtiers DIL', nom: 'TO-126', v: [3], lib: pattes, gen: genTo126 },
+    { g: 'Boîtiers DIL', nom: 'TO-220', v: [3], lib: pattes, gen: genTo220 },
+    { g: 'Boîtiers DIL', nom: 'Quartz HC-49', v: [2], lib: pattes, gen: genHc49 },
+    { g: 'Circuits CMS', nom: 'SOIC étroit', v: [8, 14, 16], lib: pattes, gen: function (n) { return genSo(n, 1.27, 2.7, 0.6, 1.55, 1.65, n / 2 * 1.27, 'SOIC' + n); } },
+    { g: 'Circuits CMS', nom: 'SOIC large', v: [14, 16, 18, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 1.27, 4.65, 0.6, 2.0, 3.4, n / 2 * 1.27 + 0.2, 'SOIC' + n + 'L'); } },
+    { g: 'Circuits CMS', nom: 'TSSOP', v: [8, 14, 16, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 0.65, 2.9, 0.4, 1.5, 1.95, n / 2 * 0.65 + 0.4, 'TSSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'PLCC', v: [20, 28, 44, 52, 68, 84], lib: pattes, gen: genPlcc },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,8', v: [32, 44, 64], lib: pattes, gen: function (n) { return genQfp(n, 0.8, { 32: 7, 44: 10, 64: 14 }[n]); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,5', v: [48, 64, 100, 144], lib: pattes, gen: function (n) { return genQfp(n, 0.5, { 48: 7, 64: 10, 100: 14, 144: 20 }[n]); } },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,5 (+ pastille centrale)', v: [16, 20, 24, 32, 48], lib: pattes, gen: genQfn },
+    { g: 'Passifs CMS', nom: 'CMS 2 pattes', v: ['0402', '0603', '0805', '1206', '1210', '2010', '2512'], lib: brut, gen: function (c) { return genDeux(c, 'CMS' + c, false); } },
+    { g: 'Diodes CMS', nom: 'Diode CMS (patte 1 = cathode)', v: ['MiniMELF', 'MELF', 'SOD-123', 'SOD-323', 'SMA', 'SMB', 'SMC'], lib: brut, gen: function (c) { return genDeux(c, c.toUpperCase().replace('-', ''), true); } },
+    { g: 'Transistors CMS', nom: 'SOT / DPAK', v: ['SOT-23', 'SOT-23-5', 'SOT-23-6', 'SOT-89', 'SOT-223', 'DPAK'], lib: brut, gen: genSot }
+  ];
+
+  /* ======================================================================
+     Format .lib
+     ====================================================================== */
+  function lireLib(texte) {
+    var lignes = texte.split(/\r?\n/), lib = { packages: [], composants: [] }, err = [], cour = null,
+        i, l, m, mots, t, e, n, j, k, ok, pts;
+    function nb(k) { var v = lireNb(mots[k]); if (v === null) ok = false; return v; }
+    for (i = 0; i < lignes.length; i++) {
+      l = lignes[i].replace(/^\s+|\s+$/g, '');
+      if (!l || l.charAt(0) === '#') continue;
+      mots = l.split(/\s+/); t = mots[0].toUpperCase(); n = i + 1;
+      if (!cour) {
+        if (t === 'PACKAGE' && mots[1]) cour = { type: 'p', o: { nom: mots[1], el: [] } };
+        else if (t === 'COMPOSANT' && mots[1]) cour = { type: 'c', o: { nom: mots[1], pkgs: mots.slice(2), f: {} } };
+        else err.push('Ligne ' + n + ' : PACKAGE ou COMPOSANT attendu');
+        continue;
+      }
+      if (t === 'FIN') { (cour.type === 'p' ? lib.packages : lib.composants).push(cour.o); cour = null; continue; }
+      if (cour.type === 'c') {
+        m = l.match(/^(.+?)\s*=>\s*(.+)$/);
+        if (!m) { err.push('Ligne ' + n + ' : « fonction => patte » attendu'); continue; }
+        pts = m[2].split(/[\s,;]+/);
+        for (k = 0; k < pts.length; k++) if (pts[k]) cour.o.f[pts[k]] = m[1];
+        continue;
+      }
+      ok = true; e = null;
+      switch (t) {
+        case 'PAD':
+          e = { t: 'pad', nom: mots[1] || '', x: nb(2), y: nb(3), perc: nb(4), diam: nb(5), forme: (mots[6] || 'ROND').toUpperCase(), rot: mots[7] ? nb(7) : 0 };
+          if (['ROND', 'CARRE', 'OVALE'].indexOf(e.forme) < 0) ok = false;
+          break;
+        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] ? nb(6) : 0 }; break;
+        case 'TRAIT': e = { t: 'trait', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
+        case 'RECT': e = { t: 'rect', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
+        case 'ARC': e = { t: 'arc', cx: nb(1), cy: nb(2), r: nb(3), a1: nb(4), a2: nb(5), w: nb(6) }; break;
+        case 'CERCLE': e = { t: 'cercle', cx: nb(1), cy: nb(2), r: nb(3), w: nb(4) }; break;
+        case 'POINT': e = { t: 'point', x: nb(1), y: nb(2), r: nb(3) }; break;
+        case 'TEXTE':
+          m = l.match(/^\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*)$/);
+          if (m) { mots = ['', m[1], m[2], m[3], m[4]]; e = { t: 'texte', x: nb(1), y: nb(2), h: nb(3), rot: nb(4), txt: m[5] }; }
+          else ok = false;
+          break;
+        default: ok = false;
+      }
+      if (e && e.t === 'texte' && /^>(NOM|VALEUR)$/i.test(e.txt)) continue;
+      if (e && ok) for (j in e) if (e.hasOwnProperty(j) && e[j] === null) ok = false;
+      if (e && ok) cour.o.el.push(e); else err.push('Ligne ' + n + ' : instruction invalide « ' + l + ' »');
+    }
+    if (cour) err.push('Fin de fichier : FIN manquant pour ' + cour.o.nom);
+    return { lib: lib, err: err };
+  }
+  function ecrireLib() {
+    var o = [], i, j, p, e, c, d = new Date(), ordre, groupes, cles;
+    o.push('# azs-cad - bibliothèque');
+    o.push('# Fichier : ' + $('nomFichier').value);
+    o.push('# Date    : ' + d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2));
+    o.push('# Format  : azs-cad .lib v1 (mm, degrés)');
+    o.push('');
+    for (i = 0; i < LIB.packages.length; i++) {
+      p = LIB.packages[i];
+      o.push('PACKAGE ' + p.nom);
+      for (j = 0; j < p.el.length; j++) {
+        e = p.el[j];
+        switch (e.t) {
+          case 'pad': o.push('  PAD ' + [e.nom, ecrireNb(e.x), ecrireNb(e.y), ecrireNb(e.perc), ecrireNb(e.diam), e.forme, ecrireNb(e.rot)].join(' ')); break;
+          case 'smd': o.push('  SMD ' + [e.nom, ecrireNb(e.x), ecrireNb(e.y), ecrireNb(e.dx), ecrireNb(e.dy), ecrireNb(e.rot)].join(' ')); break;
+          case 'trait': o.push('  TRAIT ' + [e.x1, e.y1, e.x2, e.y2, e.w].map(ecrireNb).join(' ')); break;
+          case 'rect': o.push('  RECT ' + [e.x1, e.y1, e.x2, e.y2, e.w].map(ecrireNb).join(' ')); break;
+          case 'arc': o.push('  ARC ' + [e.cx, e.cy, e.r, e.a1, e.a2, e.w].map(ecrireNb).join(' ')); break;
+          case 'cercle': o.push('  CERCLE ' + [e.cx, e.cy, e.r, e.w].map(ecrireNb).join(' ')); break;
+          case 'point': o.push('  POINT ' + [e.x, e.y, e.r].map(ecrireNb).join(' ')); break;
+          case 'texte': o.push('  TEXTE ' + [e.x, e.y, e.h, e.rot].map(ecrireNb).join(' ') + ' ' + e.txt); break;
+        }
+      }
+      o.push('FIN'); o.push('');
+    }
+    for (i = 0; i < LIB.composants.length; i++) {
+      c = LIB.composants[i];
+      o.push('COMPOSANT ' + c.nom + (c.pkgs.length ? ' ' + c.pkgs.join(' ') : ''));
+      cles = Object.keys(c.f).sort(triNat); ordre = []; groupes = {};
+      for (j = 0; j < cles.length; j++) {
+        if (!groupes[c.f[cles[j]]]) { groupes[c.f[cles[j]]] = []; ordre.push(c.f[cles[j]]); }
+        groupes[c.f[cles[j]]].push(cles[j]);
+      }
+      for (j = 0; j < ordre.length; j++) o.push('  ' + ordre[j] + ' => ' + groupes[ordre[j]].join(' '));
+      o.push('FIN'); o.push('');
+    }
+    return o.join('\n');
+  }
+
+  /* ======================================================================
+     Recherche dans la bibliothèque
+     ====================================================================== */
+  function chercher(liste, nom) { var i; for (i = 0; i < liste.length; i++) if (liste[i].nom === nom) return liste[i]; return null; }
+  function pkgParNom(nom) { return chercher(LIB.packages, nom); }
+  function cmpParNom(nom) { return chercher(LIB.composants, nom); }
+  function pattesPkg(p) {
+    var r = [], i;
+    for (i = 0; i < p.el.length; i++) if (estPad(p.el[i]) && r.indexOf(p.el[i].nom) < 0) r.push(p.el[i].nom);
+    return r.sort(triNat);
+  }
+  function nomLibre(base, existe) {
+    var n = 2;
+    base = nettoyerNom(base) || 'SANS_NOM';
+    if (!existe(base)) return base;
+    while (existe(base + '_' + n)) n++;
+    return base + '_' + n;
+  }
+  function utilisateurs(p) { return LIB.composants.filter(function (c) { return c.pkgs.indexOf(p.nom) >= 0; }); }
+  function trierLib() { var f = function (a, b) { return triNat(a.nom, b.nom); }; LIB.packages.sort(f); LIB.composants.sort(f); }
+
+  /* ======================================================================
+     Rendu commun
+     ====================================================================== */
+  function ecran() { ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0); }
+  function monde() { ctx.setTransform(S.dpr * S.z, 0, 0, -S.dpr * S.z, S.dpr * S.ox, S.dpr * S.oy); }
+  function versMonde(sx, sy) { return { x: (sx - S.ox) / S.z, y: (S.oy - sy) / S.z }; }
+  function versEcran(x, y) { return { x: S.ox + x * S.z, y: S.oy - y * S.z }; }
+  function redimensionner() {
+    var r = $('vueSch').getBoundingClientRect(), n;
+    S.dpr = window.devicePixelRatio || 1;
+    S.W = r.width; S.H = r.height;
+    for (n in V) { V[n].cv.width = Math.max(1, Math.round(r.width * S.dpr)); V[n].cv.height = Math.max(1, Math.round(r.height * S.dpr)); }
+    dessiner();
+  }
+  function dessinerGrille(coul, croix) {
+    var pas = S.grille, lim = 0, x0, x1, y0, y1, x, y, sx, sy;
+    while (pas * S.z < 9 && lim++ < 40) pas *= 2;
+    x0 = -S.ox / S.z; x1 = (S.W - S.ox) / S.z; y1 = S.oy / S.z; y0 = (S.oy - S.H) / S.z;
+    ecran();
+    ctx.strokeStyle = coul; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (x = Math.floor(x0 / pas) * pas; x <= x1; x += pas) { sx = Math.round(S.ox + x * S.z) + 0.5; ctx.moveTo(sx, 0); ctx.lineTo(sx, S.H); }
+    for (y = Math.floor(y0 / pas) * pas; y <= y1; y += pas) { sy = Math.round(S.oy - y * S.z) + 0.5; ctx.moveTo(0, sy); ctx.lineTo(S.W, sy); }
+    ctx.stroke();
+    sx = Math.round(S.ox) + 0.5; sy = Math.round(S.oy) + 0.5;
+    ctx.strokeStyle = croix;
+    ctx.beginPath(); ctx.moveTo(sx - 8, sy); ctx.lineTo(sx + 8, sy); ctx.moveTo(sx, sy - 8); ctx.lineTo(sx, sy + 8); ctx.stroke();
+  }
+  function cheminForme(f) {
+    var i;
+    ctx.beginPath();
+    if (f.disque) { ctx.arc(f.disque.x, f.disque.y, f.disque.r, 0, Math.PI * 2); return; }
+    ctx.moveTo(f.pts[0][0], f.pts[0][1]);
+    for (i = 1; i < f.pts.length; i++) ctx.lineTo(f.pts[i][0], f.pts[i][1]);
+    ctx.closePath();
+  }
+  /* Texte en coordonnées monde, toujours lisible */
+  function texteMonde(x, y, h, rot, txt, coul, centre, gras) {
+    var ang = rot, a = normAng(rot), inv = false, px = h * S.z, p = versEcran(x, y);
+    if (px < 3) return;
+    if (a > 90 && a <= 270) { ang = a - 180; inv = true; }
+    ecran();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(-ang * Math.PI / 180);
+    ctx.font = (gras ? '600 ' : '') + (px / 0.72).toFixed(2) + 'px sans-serif';
+    ctx.fillStyle = coul;
+    if (centre) { ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, 0, 0); return; }
+    ctx.textAlign = inv ? 'right' : 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(txt, 0, inv ? px : 0);
+  }
+  /* fixe : épaisseur écran constante (vue SCHÉMA) au lieu de l'épaisseur réelle */
+  function tracerGraphique(e, coul, epMin, fixe) {
+    var fin = (epMin || 1) / S.z;
+    function ep(w) { return fixe ? fin : Math.max(w, fin); }
+    if (e.t === 'texte') { texteMonde(e.x, e.y, e.h, e.rot, e.txt, coul, false); return; }
+    monde();
+    ctx.strokeStyle = coul; ctx.fillStyle = coul; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    switch (e.t) {
+      case 'trait': ctx.lineWidth = ep(e.w); ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke(); break;
+      case 'arc': ctx.lineWidth = ep(e.w); ctx.beginPath(); ctx.arc(e.cx, e.cy, e.r, e.a1 * Math.PI / 180, e.a2 * Math.PI / 180, false); ctx.stroke(); break;
+      case 'cercle': ctx.lineWidth = ep(e.w); ctx.beginPath(); ctx.arc(e.cx, e.cy, e.r, 0, Math.PI * 2); ctx.stroke(); break;
+      case 'point': ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); break;
+      case 'rect':
+        ctx.lineWidth = ep(e.w);
+        ctx.strokeRect(Math.min(e.x1, e.x2), Math.min(e.y1, e.y2), Math.abs(e.x2 - e.x1), Math.abs(e.y2 - e.y1));
+        break;
+    }
+  }
+
+  /* ======================================================================
+     Vue CIRCUIT : fond noir, cuivre rouge, sérigraphie blanche
+     ====================================================================== */
+  function dessinerBrd(p, apercu) {
+    var i, e, f;
+    ecran();
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, S.W, S.H);
+    if (!apercu) dessinerGrille(COUL.brdGrille, COUL.brdCroix);
+    if (!p) return;
+    monde();
+    ctx.fillStyle = COUL.cuivre;
+    for (i = 0; i < p.el.length; i++) if (estPad(p.el[i])) { cheminForme(formePad(p.el[i])); ctx.fill(); }
+    ctx.fillStyle = '#000';
+    for (i = 0; i < p.el.length; i++) {
+      e = p.el[i];
+      if (e.t === 'pad') { ctx.beginPath(); ctx.arc(e.x, e.y, e.perc / 2, 0, Math.PI * 2); ctx.fill(); }
+    }
+    for (i = 0; i < p.el.length; i++) if (!estPad(p.el[i])) tracerGraphique(p.el[i], COUL.serigraphie);
+    for (i = 0; i < p.el.length; i++) {
+      e = p.el[i];
+      if (!estPad(e)) continue;
+      f = Math.min(e.t === 'smd' ? Math.min(e.dx, e.dy) : e.diam, 1.2) * 0.55;
+      texteMonde(e.x, e.y, f, 0, e.nom, '#fff', true);
+    }
+    if (apercu) return;
+    if (S.retouche) dessinerRetouche();
+    monde();
+    ctx.strokeStyle = COUL.survol; ctx.lineWidth = 2.5 / S.z;
+    for (i = 0; i < p.el.length; i++) {
+      e = p.el[i];
+      if (estPad(e) && e.nom === (S.edition || S.survol)) { cheminForme(formePad(e)); ctx.stroke(); }
+    }
+  }
+
+  /* ======================================================================
+     Vue SCHÉMA : fond blanc, corps du gabarit, pattes en points verts
+     ====================================================================== */
+  /* Côté de l'étiquette d'après la position du centre de la patte parmi les centres (b) */
+  function centresPads(p) {
+    var b = [1e9, 1e9, -1e9, -1e9], i, e;
+    for (i = 0; i < p.el.length; i++) {
+      e = p.el[i];
+      if (!estPad(e)) continue;
+      if (e.x < b[0]) b[0] = e.x; if (e.y < b[1]) b[1] = e.y; if (e.x > b[2]) b[2] = e.x; if (e.y > b[3]) b[3] = e.y;
+    }
+    return b[0] > b[2] ? null : b;
+  }
+  function coteEtiquette(e, b) {
+    var t = 0.05;
+    if (b[3] - b[1] < t) return e.x - b[0] < t && b[2] - b[0] > t ? 'gauche' : (b[2] - e.x < t && b[2] - b[0] > t ? 'droite' : 'bas');
+    if (b[3] - e.y < t) return 'haut';
+    if (e.y - b[1] < t) return 'bas';
+    if (e.x - b[0] < t) return 'gauche';
+    if (b[2] - e.x < t) return 'droite';
+    return 'centre';
+  }
+  function dessinerSch(p, c) {
+    var i, e, b, bp, s, nom, cote, px, pt, gap = 9, h;
+    ecran();
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S.W, S.H);
+    dessinerGrille(COUL.schGrille, COUL.schCroix);
+    if (!p) return;
+    for (i = 0; i < p.el.length; i++) { e = p.el[i]; if (!estPad(e) && e.t !== 'texte') tracerGraphique(e, COUL.schCorps, 2, true); }
+    b = unionBbox(p.el, function (x) { return !estPad(x) && x.t !== 'texte'; }) || unionBbox(p.el, estPad);
+    bp = centresPads(p);
+    if (b) {
+      h = Math.min(1.6, Math.max(0.6, Math.min(b[2] - b[0], b[3] - b[1]) * 0.22));
+      h = Math.min(h, 20 / S.z);
+      texteMonde((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, h, 0, c ? c.nom : p.nom, COUL.schNom, true, true);
+    }
+    if (!bp) return;
+    px = Math.max(10, Math.min(13, S.z * 0.9));
+    for (i = 0; i < p.el.length; i++) {
+      e = p.el[i];
+      if (!estPad(e)) continue;
+      pt = versEcran(e.x, e.y);
+      nom = c ? c.f[e.nom] : '';
+      ecran();
+      if (e.nom === (S.edition || S.survol)) { ctx.fillStyle = COUL.survol; ctx.beginPath(); ctx.arc(pt.x, pt.y, 9, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = COUL.schPatte; ctx.strokeStyle = '#0f5132'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      cote = coteEtiquette(e, bp);
+      s = nom || e.nom;
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      ctx.font = '600 ' + px + 'px sans-serif';
+      ctx.fillStyle = nom ? COUL.schTexte : COUL.schNum;
+      ctx.textBaseline = 'middle';
+      if (cote === 'gauche') { ctx.textAlign = 'right'; ctx.fillText(s, -gap, 0); }
+      else if (cote === 'droite') { ctx.textAlign = 'left'; ctx.fillText(s, gap, 0); }
+      else if (cote === 'centre') { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(s, 0, gap); }
+      else {
+        ctx.rotate(-Math.PI / 2);
+        if (cote === 'haut') { ctx.textAlign = 'left'; ctx.fillText(s, gap, 0); }
+        else { ctx.textAlign = 'right'; ctx.fillText(s, -gap, 0); }
+      }
+      ctx.restore();
+    }
+  }
+
+  function dessiner() {
+    var p = S.vue ? S.vue.p : null, c = S.vue ? S.vue.c : null;
+    ctx = V.sch.ctx; dessinerSch(p, c);
+    ctx = V.brd.ctx; dessinerBrd(p, false);
+    $('videSch').style.display = p ? 'none' : 'flex';
+    majOutils();
+  }
+  function ajuster() {
+    var p = S.vue ? S.vue.p : null, b = (p && unionBbox(p.el)) || [-5, -5, 5, 5], w, h;
+    w = Math.max(b[2] - b[0], 6); h = Math.max(b[3] - b[1], 6);
+    S.z = Math.max(1, Math.min((S.W - 140) / w, (S.H - 140) / h));
+    S.ox = S.W / 2 - (b[0] + b[2]) / 2 * S.z;
+    S.oy = S.H / 2 + (b[1] + b[3]) / 2 * S.z;
+    dessiner();
+  }
+
+  /* ======================================================================
+     Listes et affichage
+     ====================================================================== */
+  function itemListe(nom, info, sel) {
+    var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
+    li.className = 'item' + (sel ? ' sel' : '');
+    a.className = 'nom'; a.textContent = nom;
+    b.className = 'info'; b.textContent = info;
+    li.appendChild(a); li.appendChild(b); li.title = nom;
+    return li;
+  }
+  function remplirListes() {
+    var f = $('filtre').value.replace(/^\s+|\s+$/g, '').toLowerCase(), ul, i, o, li;
+    ul = $('listeCmp'); ul.textContent = '';
+    for (i = 0; i < LIB.composants.length; i++) {
+      o = LIB.composants[i];
+      if (f && (o.nom + ' ' + o.pkgs.join(' ')).toLowerCase().indexOf(f) < 0) continue;
+      li = itemListe(o.nom, o.pkgs.join(', '), S.vue && S.vue.c === o);
+      li._o = o;
+      li.addEventListener('click', function () { afficherComposant(this._o); });
+      ul.appendChild(li);
+    }
+    $('titreCmp').textContent = 'Composants (' + LIB.composants.length + ')';
+    ul = $('listePkg'); ul.textContent = '';
+    for (i = 0; i < LIB.packages.length; i++) {
+      o = LIB.packages[i];
+      if (f && o.nom.toLowerCase().indexOf(f) < 0) continue;
+      li = itemListe(o.nom, pattesPkg(o).length + ' p.', S.vue && !S.vue.c && S.vue.p === o);
+      li._o = o;
+      li.addEventListener('click', function () { afficherGabarit(this._o); });
+      ul.appendChild(li);
+    }
+    $('titrePkg').textContent = 'Gabarits (' + LIB.packages.length + ')';
+  }
+  function afficherComposant(c) {
+    fermerSaisie(true);
+    quitterRetouche();
+    S.vue = { c: c, p: pkgParNom(c.pkgs[0] || '') };
+    S.survol = null;
+    remplirListes(); fiche(); ajuster();
+  }
+  function afficherGabarit(p) {
+    fermerSaisie(true);
+    quitterRetouche();
+    S.vue = { c: null, p: p };
+    S.survol = null;
+    remplirListes(); fiche(); ajuster();
+  }
+
+  /* ======================================================================
+     Fiche (colonne droite)
+     ====================================================================== */
+  function E(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+  function bloc(titre) { var b = E('div', 'bloc'); if (titre) b.appendChild(E('h4', '', titre)); $('fiche').appendChild(b); return b; }
+  function grandNom(val, quandChange) {
+    var i = E('input', 'grandNom'); i.type = 'text'; i.value = val; i.spellcheck = false;
+    i.addEventListener('change', quandChange);
+    i.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') this.blur(); });
+    return i;
+  }
+  function fiche() {
+    $('fiche').textContent = '';
+    if (!S.vue) { ficheAccueil(); return; }
+    if (S.retouche && S.sel.length === 1) { ficheElement(S.sel[0]); return; }
+    if (S.vue.c && (!S.retouche || !S.vue.p)) ficheComposant(S.vue.c); else ficheGabarit(S.vue.p);
+  }
+  function ficheAccueil() {
+    var b = bloc('Bibliothèque');
+    b.appendChild(E('div', 'accueil', '« + Nouveau composant » : choisir la famille et le nombre de pattes, donner le nom.'));
+  }
+  function ficheComposant(c) {
+    var b = bloc('Composant'), bs, bt, n, nomme = 0, i, pp;
+    b.appendChild(grandNom(c.nom, function () {
+      var v = nettoyerNom(this.value);
+      if (!v || (v !== c.nom && cmpParNom(v))) { this.value = c.nom; message('Nom vide ou déjà utilisé.', true); return; }
+      c.nom = v; marquer(); trierLib(); remplirListes(); dessiner();
+    }));
+    b = bloc('Gabarit');
+    if (S.vue.p) {
+      n = E('div', 'lien', S.vue.p.nom);
+      n.addEventListener('click', function () { afficherGabarit(S.vue.p); });
+      b.appendChild(n);
+      pp = pattesPkg(S.vue.p);
+      for (i = 0; i < pp.length; i++) if (c.f[pp[i]]) nomme++;
+      b.appendChild(E('div', 'stat', pp.length + ' pattes · ' + nomme + ' nommée(s)'));
+      b.lastChild.id = 'statPattes';
+    } else b.appendChild(E('div', 'stat', c.pkgs.length ? 'Gabarit ' + c.pkgs[0] + ' introuvable' : 'Aucun gabarit'));
+    if (S.vue.p) tableBrochage(c, S.vue.p);
+    b = bloc();
+    bs = E('div', 'boutons');
+    bt = E('button', '', 'Dupliquer');
+    bt.addEventListener('click', function () {
+      var f = {}, k, d;
+      for (k in c.f) if (c.f.hasOwnProperty(k)) f[k] = c.f[k];
+      d = { nom: nomLibre(c.nom, cmpParNom), pkgs: c.pkgs.slice(), f: f };
+      LIB.composants.push(d); trierLib(); marquer(); afficherComposant(d);
+    });
+    bs.appendChild(bt);
+    bt = E('button', '', 'Supprimer');
+    bt.addEventListener('click', function () {
+      if (!confirm('Supprimer le composant ' + c.nom + ' ?')) return;
+      LIB.composants.splice(LIB.composants.indexOf(c), 1);
+      S.annul = S.annul.filter(function (x) { return x.o !== c; });
+      S.retab = S.retab.filter(function (x) { return x.o !== c; });
+      S.vue = null; marquer(); remplirListes(); fiche(); dessiner();
+    });
+    bs.appendChild(bt);
+    b.appendChild(bs);
+  }
+  function ficheGabarit(p) {
+    var b = bloc('Gabarit'), u = utilisateurs(p), bs, bt, nd = 0, nc = 0, i;
+    b.appendChild(grandNom(p.nom, function () {
+      var v = nettoyerNom(this.value), j, k;
+      if (!v || (v !== p.nom && pkgParNom(v))) { this.value = p.nom; message('Nom vide ou déjà utilisé.', true); return; }
+      for (j = 0; j < LIB.composants.length; j++) for (k = 0; k < LIB.composants[j].pkgs.length; k++) if (LIB.composants[j].pkgs[k] === p.nom) LIB.composants[j].pkgs[k] = v;
+      p.nom = v; marquer(); trierLib(); remplirListes(); dessiner();
+    }));
+    for (i = 0; i < p.el.length; i++) { if (p.el[i].t === 'pad') nd++; else if (p.el[i].t === 'smd') nc++; }
+    b.appendChild(E('div', 'stat', nd + ' pad(s) DIL · ' + nc + ' pad(s) CMS'));
+    if (S.retouche) b.appendChild(E('div', 'stat', (S.mode === 'dessin' ? 'Dessin en cours' : (S.sel.length > 1 ? S.sel.length + ' éléments sélectionnés' : 'Retouche en cours')) +
+      (u.length > 1 ? ' · gabarit partagé par ' + u.length + ' composants' : '')));
+    if (u.length) {
+      b = bloc('Utilisé par');
+      u.forEach(function (c) {
+        var s = E('div', 'lien', c.nom);
+        s.addEventListener('click', function () { afficherComposant(c); });
+        b.appendChild(s);
+      });
+    }
+    b = bloc();
+    bs = E('div', 'boutons');
+    bt = E('button', 'principal', 'Créer un composant');
+    bt.addEventListener('click', function () { ouvrirAssistant('composant', p); });
+    bs.appendChild(bt);
+    bt = E('button', '', 'Supprimer');
+    bt.addEventListener('click', function () {
+      if (!confirm('Supprimer le gabarit ' + p.nom + ' ?' + (u.length ? '\nIl est utilisé par ' + u.length + ' composant(s).' : ''))) return;
+      LIB.packages.splice(LIB.packages.indexOf(p), 1);
+      S.annul = S.annul.filter(function (x) { return x.o !== p; });
+      S.retab = S.retab.filter(function (x) { return x.o !== p; });
+      quitterRetouche();
+      S.vue = null; marquer(); remplirListes(); fiche(); dessiner();
+    });
+    bs.appendChild(bt);
+    b.appendChild(bs);
+  }
+
+  /* ======================================================================
+     Nommage des pattes
+     ====================================================================== */
+  function tableBrochage(c, p) {
+    var b = bloc('Pattes'), t = E('table', 'broches'), pp = pattesPkg(p), i, tr, td, inp;
+    for (i = 0; i < pp.length; i++) {
+      tr = E('tr'); tr.setAttribute('data-p', pp[i]);
+      tr.appendChild(E('td', 'p', pp[i]));
+      td = E('td');
+      inp = E('input'); inp.type = 'text'; inp.spellcheck = false; inp.setAttribute('list', 'fonctions');
+      inp.value = c.f[pp[i]] || ''; inp.placeholder = '—'; inp._p = pp[i];
+      inp.addEventListener('focus', function () { this.select(); S.survol = this._p; surlignerLigne(this._p); dessiner(); });
+      inp.addEventListener('change', function () { definirFonction(this._p, this.value, true); });
+      inp.addEventListener('keydown', function (ev) {
+        var suiv;
+        if (ev.key !== 'Enter') return;
+        ev.preventDefault();
+        suiv = this.parentNode.parentNode.nextSibling;
+        if (suiv) suiv.querySelector('input').focus(); else this.blur();
+      });
+      td.appendChild(inp); tr.appendChild(td); t.appendChild(tr);
+    }
+    b.appendChild(t);
+  }
+  function surlignerLigne(patte) {
+    var trs = document.querySelectorAll('#fiche table.broches tr'), i;
+    for (i = 0; i < trs.length; i++) trs[i].className = trs[i].getAttribute('data-p') === patte ? 'survol' : '';
+  }
+  function majStat() {
+    var st = $('statPattes'), pp, i, n = 0;
+    if (!st || !S.vue || !S.vue.p) return;
+    pp = pattesPkg(S.vue.p);
+    for (i = 0; i < pp.length; i++) if (S.vue.c.f[pp[i]]) n++;
+    st.textContent = pp.length + ' pattes · ' + n + ' nommée(s)';
+  }
+  function definirFonction(patte, val, depuisTableau) {
+    var c = S.vue && S.vue.c;
+    if (!c) return;
+    val = String(val || '').replace(/^\s+|\s+$/g, '').replace(/\s+/g, '_');
+    if ((c.f[patte] || '') === val) return;
+    empiler(instCmp(c));
+    if (val) c.f[patte] = val; else delete c.f[patte];
+    if (depuisTableau) majStat(); else fiche();
+    dessiner();
+  }
+  function ouvrirSaisie(patte, n) {
+    var p = S.vue.p, e = null, i, r, pt, s = $('saisie');
+    for (i = 0; i < p.el.length; i++) if (estPad(p.el[i]) && p.el[i].nom === patte) { e = p.el[i]; break; }
+    if (!e) return;
+    fermerMenu();
+    S.edition = patte; S.editionVue = n;
+    r = V[n].cv.getBoundingClientRect();
+    pt = versEcran(e.x, e.y);
+    s.style.left = Math.max(4, Math.min(window.innerWidth - 150, r.left + pt.x + 12)) + 'px';
+    s.style.top = Math.max(4, Math.min(window.innerHeight - 40, r.top + pt.y - 14)) + 'px';
+    s.value = S.vue.c.f[patte] || '';
+    s.placeholder = 'Patte ' + patte;
+    s.style.display = 'block';
+    s.focus(); s.select();
+    surlignerLigne(patte);
+    dessiner();
+  }
+  function fermerSaisie(valider) {
+    var s = $('saisie'), p = S.edition;
+    if (!p) return;
+    S.edition = null;
+    s.style.display = 'none';
+    if (valider) definirFonction(p, s.value, false);
+    dessiner();
+  }
+  function patteVoisine(patte, sens) {
+    var l = pattesPkg(S.vue.p), i = l.indexOf(patte);
+    return l[(i + sens + l.length) % l.length];
+  }
+  $('saisie').addEventListener('keydown', function (ev) {
+    var p = S.edition, n = S.editionVue, val = this.value;
+    if (ev.key === 'Enter') { ev.preventDefault(); fermerSaisie(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); fermerSaisie(false); }
+    else if (ev.key === 'Tab') {
+      ev.preventDefault();
+      S.edition = null;
+      definirFonction(p, val, false);
+      ouvrirSaisie(patteVoisine(p, ev.shiftKey ? -1 : 1), n);
+    }
+  });
+  $('saisie').addEventListener('blur', function () { if (S.edition) fermerSaisie(true); });
+
+  /* Menu du clic droit */
+  function ouvrirMenu(ev, patte, n) {
+    var m = $('menu'), g, d, actuel = S.vue.c.f[patte] || '';
+    function option(txt, cls, action) {
+      var o = E('div', 'op' + (cls ? ' ' + cls : ''), txt);
+      o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); action(); });
+      return o;
+    }
+    m.textContent = '';
+    m.appendChild(E('div', 'titreMenu', 'Patte ' + patte + (actuel ? ' : ' + actuel : '')));
+    g = E('div', 'grilleMenu');
+    FONCTIONS.forEach(function (f) { g.appendChild(option(f, f === actuel ? 'actuel' : '', function () { definirFonction(patte, f, false); })); });
+    m.appendChild(g);
+    m.appendChild(E('div', 'sepMenu'));
+    m.appendChild(option('Autre…', '', function () { ouvrirSaisie(patte, n); }));
+    if (actuel) m.appendChild(option('Effacer le nom', '', function () { definirFonction(patte, '', false); }));
+    m.style.display = 'block';
+    m.style.left = Math.max(4, Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8)) + 'px';
+    m.style.top = Math.max(4, Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 8)) + 'px';
+  }
+  function fermerMenu() { $('menu').style.display = 'none'; }
+  document.addEventListener('mousedown', function (ev) { if (!$('menu').contains(ev.target)) fermerMenu(); }, true);
+
+  /* Annuler / rétablir les noms de pattes */
+  function instCmp(c) { var f = {}, k; for (k in c.f) if (c.f.hasOwnProperty(k)) f[k] = c.f[k]; return { o: c, f: f }; }
+  function empiler(i) { S.annul.push(i); if (S.annul.length > 300) S.annul.shift(); S.retab = []; marquer(); majOutils(); }
+  function restaurer(de, vers) {
+    var i = de.pop();
+    if (!i) return;
+    fermerSaisie(false);
+    if (i.el) {
+      vers.push(instGab(i.o));
+      i.o.el = i.el;
+      S.sel = []; S.constr = null;
+      marquer();
+      if (!S.vue || S.vue.p !== i.o) afficherGabarit(i.o); else { fiche(); dessiner(); }
+      remplirListes();
+      return;
+    }
+    vers.push(instCmp(i.o));
+    i.o.f = i.f;
+    marquer();
+    if (!S.vue || S.vue.c !== i.o) afficherComposant(i.o); else { fiche(); dessiner(); }
+  }
+
+  /* ======================================================================
+     Retouche des gabarits
+     ====================================================================== */
+  var AIDE = {
+    sel: 'Clic : sélection · Maj+clic : ajout · poignées : redimensionner · glisser : déplacer ou cadre · R : rotation · Suppr',
+    rect: 'Clic 1 : un coin · clic 2 : coin opposé',
+    pad: 'Clic : poser un pad DIL', smd: 'Clic : poser un pad CMS',
+    trait: 'Clic : point suivant · clic droit ou Échap : fin du tracé',
+    arc: 'Clic 1 : centre · clic 2 : début · clic 3 : fin (sens trigonométrique)',
+    cercle: 'Clic 1 : centre · clic 2 : rayon', point: 'Clic : poser un repère', texte: 'Clic : poser un texte'
+  };
+  /* Propriétés éditables : [clé, libellé, type] (L longueur mm, A angle, S texte, F forme) */
+  var CHAMPS = {
+    pad: [['t', 'Type', 'T'], ['nom', 'Patte', 'S'], ['x', 'X', 'L'], ['y', 'Y', 'L'], ['perc', 'Perçage Ø', 'L'], ['diam', 'Diamètre', 'L'], ['forme', 'Forme', 'F'], ['rot', 'Rotation °', 'A']],
+    smd: [['t', 'Type', 'T'], ['nom', 'Patte', 'S'], ['x', 'X', 'L'], ['y', 'Y', 'L'], ['dx', 'Largeur', 'L'], ['dy', 'Hauteur', 'L'], ['rot', 'Rotation °', 'A']],
+    trait: [['x1', 'X1', 'L'], ['y1', 'Y1', 'L'], ['x2', 'X2', 'L'], ['y2', 'Y2', 'L'], ['w', 'Épaisseur', 'L']],
+    arc: [['cx', 'Centre X', 'L'], ['cy', 'Centre Y', 'L'], ['r', 'Rayon', 'L'], ['a1', 'Début °', 'A'], ['a2', 'Fin °', 'A'], ['w', 'Épaisseur', 'L']],
+    rect: [['x1', 'X1', 'L'], ['y1', 'Y1', 'L'], ['x2', 'X2', 'L'], ['y2', 'Y2', 'L'], ['w', 'Épaisseur', 'L']],
+    cercle: [['cx', 'Centre X', 'L'], ['cy', 'Centre Y', 'L'], ['r', 'Rayon', 'L'], ['w', 'Épaisseur', 'L']],
+    point: [['x', 'X', 'L'], ['y', 'Y', 'L'], ['r', 'Rayon', 'L']],
+    texte: [['txt', 'Texte', 'S'], ['x', 'X', 'L'], ['y', 'Y', 'L'], ['h', 'Hauteur', 'L'], ['rot', 'Rotation °', 'A']]
+  };
+  var NOMS_TYPE = { pad: 'Pad DIL', smd: 'Pad CMS', trait: 'Trait', rect: 'Rectangle', arc: 'Arc', cercle: 'Cercle', point: 'Point', texte: 'Texte' };
+  var DEFAUTS_CLES = { pad: ['perc', 'diam', 'forme', 'rot'], smd: ['dx', 'dy', 'rot'], trait: ['w'], rect: ['w'], arc: ['w'], cercle: ['w'], point: ['r'], texte: ['h', 'rot'] };
+  var POSITIFS = ['perc', 'diam', 'dx', 'dy', 'r', 'h'];
+
+  function accroche(v) { return arr(Math.round(v / S.grille) * S.grille); }
+  function copieEl(e) { var o = {}, k; for (k in e) if (e.hasOwnProperty(k)) o[k] = e[k]; return o; }
+  function affecter(dst, src) { var k; for (k in src) if (src.hasOwnProperty(k)) dst[k] = src[k]; }
+  function translater(e, dx, dy) {
+    if (e.t === 'trait' || e.t === 'rect') { e.x1 = arr(e.x1 + dx); e.y1 = arr(e.y1 + dy); e.x2 = arr(e.x2 + dx); e.y2 = arr(e.y2 + dy); }
+    else if (e.t === 'arc' || e.t === 'cercle') { e.cx = arr(e.cx + dx); e.cy = arr(e.cy + dy); }
+    else { e.x = arr(e.x + dx); e.y = arr(e.y + dy); }
+  }
+  function tourner90(e, px, py) {
+    function r(x, y) { return [arr(px - (y - py)), arr(py + (x - px))]; }
+    var a, b;
+    if (e.t === 'trait') { a = r(e.x1, e.y1); b = r(e.x2, e.y2); e.x1 = a[0]; e.y1 = a[1]; e.x2 = b[0]; e.y2 = b[1]; }
+    else if (e.t === 'rect') { a = r(e.x1, e.y1); b = r(e.x2, e.y2); e.x1 = Math.min(a[0], b[0]); e.y1 = Math.min(a[1], b[1]); e.x2 = Math.max(a[0], b[0]); e.y2 = Math.max(a[1], b[1]); }
+    else if (e.t === 'arc') { a = r(e.cx, e.cy); e.cx = a[0]; e.cy = a[1]; e.a1 = normAng(e.a1 + 90); e.a2 = normAng(e.a2 + 90); }
+    else if (e.t === 'cercle') { a = r(e.cx, e.cy); e.cx = a[0]; e.cy = a[1]; }
+    else { a = r(e.x, e.y); e.x = a[0]; e.y = a[1]; if (e.rot !== undefined) e.rot = normAng(e.rot + 90); }
+  }
+  function distSeg(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy, t = l ? ((px - x1) * dx + (py - y1) * dy) / l : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    dx = px - (x1 + t * dx); dy = py - (y1 + t * dy);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function distEl(e, x, y) {
+    var d, a, l, w;
+    switch (e.t) {
+      case 'pad': case 'smd': return dansPad(e, x, y, 0) ? 0 : 1e9;
+      case 'trait': return Math.max(0, distSeg(x, y, e.x1, e.y1, e.x2, e.y2) - e.w / 2);
+      case 'rect':
+        return Math.max(0, Math.min(distSeg(x, y, e.x1, e.y1, e.x2, e.y1), distSeg(x, y, e.x2, e.y1, e.x2, e.y2),
+                                    distSeg(x, y, e.x2, e.y2, e.x1, e.y2), distSeg(x, y, e.x1, e.y2, e.x1, e.y1)) - e.w / 2);
+      case 'cercle': d = Math.sqrt((x - e.cx) * (x - e.cx) + (y - e.cy) * (y - e.cy)); return Math.max(0, Math.abs(d - e.r) - e.w / 2);
+      case 'arc':
+        d = Math.sqrt((x - e.cx) * (x - e.cx) + (y - e.cy) * (y - e.cy));
+        a = normAng(Math.atan2(y - e.cy, x - e.cx) * 180 / Math.PI - e.a1);
+        if (a > (normAng(e.a2 - e.a1) || 360) + 1e-6) return 1e9;
+        return Math.max(0, Math.abs(d - e.r) - e.w / 2);
+      case 'point': return Math.max(0, Math.sqrt((x - e.x) * (x - e.x) + (y - e.y) * (y - e.y)) - e.r);
+      case 'texte':
+        a = -e.rot * Math.PI / 180;
+        l = [(x - e.x) * Math.cos(a) - (y - e.y) * Math.sin(a), (x - e.x) * Math.sin(a) + (y - e.y) * Math.cos(a)];
+        w = largeurTexte(e);
+        return Math.max(0, -l[0], l[0] - w, -l[1], l[1] - e.h);
+    }
+    return 1e9;
+  }
+  function instGab(p) { return { o: p, el: copieEls(p.el) }; }
+  function pattePrecedente(p) {
+    var max = 0, i, v;
+    for (i = 0; i < p.el.length; i++) if (estPad(p.el[i])) { v = parseInt(p.el[i].nom, 10); if (!isNaN(v) && v > max) max = v; }
+    return String(max + 1);
+  }
+
+  /* Deux modes : 'retouche' (modifier l'existant) et 'dessin' (ajouter des éléments) */
+  function entrerMode(m) {
+    if (S.mode === m) { quitterRetouche(); fiche(); dessiner(); return; }
+    if (!S.vue || !S.vue.p) return;
+    fermerSaisie(true);
+    S.retouche = true; S.mode = m; S.constr = null; S.poignee = null;
+    if (m === 'dessin') S.sel = [];
+    $('btRetouche').className = m === 'retouche' ? 'actif' : '';
+    $('btDessin').className = m === 'dessin' ? 'actif' : '';
+    $('outils').className = 'visible ' + m;
+    choisirOutil(m === 'dessin' ? (S.outil !== 'sel' ? S.outil : 'pad') : 'sel');
+    fiche();
+  }
+  function quitterRetouche() {
+    S.retouche = false; S.mode = null; S.sel = []; S.constr = null; S.drag = null; S.cadre = null; S.poignee = null;
+    $('btRetouche').className = ''; $('btDessin').className = '';
+    $('outils').className = '';
+    $('aide').textContent = '';
+  }
+  function choisirOutil(o) {
+    var bs = document.querySelectorAll('#outils button[data-outil]'), i;
+    S.outil = o; S.constr = null;
+    for (i = 0; i < bs.length; i++) bs[i].className = bs[i].getAttribute('data-outil') === o ? 'actif' : '';
+    $('aide').textContent = AIDE[o];
+    dessiner();
+  }
+  function majOutils() {
+    var r = S.retouche, s = S.sel.length > 0;
+    $('btRetouche').disabled = $('btDessin').disabled = !(S.vue && S.vue.p);
+    $('btRot').disabled = $('btSuppr').disabled = S.mode !== 'retouche' || !s;
+    $('btAnnuler').disabled = !S.annul.length;
+    $('btRetablir').disabled = !S.retab.length;
+  }
+  function ajouterEl(e) {
+    var p = S.vue.p;
+    empiler(instGab(p));
+    p.el.push(e);
+    S.sel = [e];
+    fiche(); dessiner();
+    if (estPad(e)) remplirListes();
+  }
+  function creerA(x, y) {
+    var p = S.vue.p, d = S.defauts, c = S.constr, r, inp;
+    switch (S.outil) {
+      case 'pad': ajouterEl({ t: 'pad', nom: pattePrecedente(p), x: x, y: y, perc: d.pad.perc, diam: d.pad.diam, forme: d.pad.forme, rot: d.pad.rot }); break;
+      case 'smd': ajouterEl({ t: 'smd', nom: pattePrecedente(p), x: x, y: y, dx: d.smd.dx, dy: d.smd.dy, rot: d.smd.rot }); break;
+      case 'point': ajouterEl({ t: 'point', x: x, y: y, r: d.point.r }); break;
+      case 'texte':
+        ajouterEl({ t: 'texte', x: x, y: y, h: d.texte.h, rot: d.texte.rot, txt: 'TEXTE' });
+        inp = document.querySelector('#fiche input'); if (inp) { inp.focus(); inp.select(); }
+        break;
+      case 'trait':
+        if (c && (x !== c.x || y !== c.y)) ajouterEl({ t: 'trait', x1: c.x, y1: c.y, x2: x, y2: y, w: d.trait.w });
+        S.constr = { x: x, y: y };
+        break;
+      case 'rect':
+        if (!c) { S.constr = { x: x, y: y }; break; }
+        if (x !== c.x && y !== c.y) ajouterEl({ t: 'rect', x1: Math.min(c.x, x), y1: Math.min(c.y, y), x2: Math.max(c.x, x), y2: Math.max(c.y, y), w: d.rect.w });
+        S.constr = null;
+        break;
+      case 'cercle':
+        if (!c) { S.constr = { x: x, y: y }; break; }
+        r = arr(Math.sqrt((x - c.x) * (x - c.x) + (y - c.y) * (y - c.y)));
+        if (r > 0) ajouterEl({ t: 'cercle', cx: c.x, cy: c.y, r: r, w: d.cercle.w });
+        S.constr = null;
+        break;
+      case 'arc':
+        if (!c) { S.constr = { x: x, y: y }; break; }
+        if (c.r === undefined) {
+          r = arr(Math.sqrt((x - c.x) * (x - c.x) + (y - c.y) * (y - c.y)));
+          if (r > 0) { c.r = r; c.a1 = normAng(Math.atan2(y - c.y, x - c.x) * 180 / Math.PI); }
+          break;
+        }
+        ajouterEl({ t: 'arc', cx: c.x, cy: c.y, r: c.r, a1: c.a1, a2: normAng(Math.atan2(y - c.y, x - c.x) * 180 / Math.PI), w: d.arc.w });
+        S.constr = null;
+        break;
+    }
+    dessiner();
+  }
+  function tournerSel() {
+    var b, pv, i;
+    if (!S.retouche || !S.sel.length) return;
+    empiler(instGab(S.vue.p));
+    if (S.sel.length === 1 && S.sel[0].x !== undefined) pv = { x: S.sel[0].x, y: S.sel[0].y };
+    else { b = unionBbox(S.sel); pv = { x: accroche((b[0] + b[2]) / 2), y: accroche((b[1] + b[3]) / 2) }; }
+    for (i = 0; i < S.sel.length; i++) tourner90(S.sel[i], pv.x, pv.y);
+    fiche(); dessiner();
+  }
+  function supprimerSel() {
+    var p = S.vue.p;
+    if (!S.retouche || !S.sel.length) return;
+    empiler(instGab(p));
+    p.el = p.el.filter(function (e) { return S.sel.indexOf(e) < 0; });
+    S.sel = [];
+    fiche(); dessiner(); remplirListes();
+  }
+  function elementSous(x, y) {
+    var p = S.vue.p, i, d, best = null, bd = 6 / S.z;
+    for (i = p.el.length - 1; i >= 0; i--) {
+      d = distEl(p.el[i], x, y);
+      if (d === 0) return p.el[i];
+      if (d < bd) { bd = d; best = p.el[i]; }
+    }
+    return best;
+  }
+  function finAction() {
+    if (S.constr) { S.constr = null; dessiner(); return; }
+    if (S.mode === 'retouche' && S.sel.length) { S.sel = []; fiche(); dessiner(); }
+  }
+  function appuiRetouche(ev, m) {
+    var w = versMonde(m.x, m.y), x = accroche(w.x), y = accroche(w.y), h, id;
+    if (S.mode === 'dessin') { creerA(x, y); return; }
+    id = poigneeSous(m);
+    if (id) { S.poignee = { id: id, e: S.sel[0], orig: copieEl(S.sel[0]), avant: instGab(S.vue.p), bouge: false }; return; }
+    h = elementSous(w.x, w.y);
+    if (h) {
+      if (ev.shiftKey) { if (S.sel.indexOf(h) >= 0) S.sel.splice(S.sel.indexOf(h), 1); else S.sel.push(h); }
+      else {
+        if (S.sel.indexOf(h) < 0) S.sel = [h];
+        S.drag = { x0: x, y0: y, orig: copieEls(S.sel), avant: instGab(S.vue.p), bouge: false };
+      }
+    } else {
+      if (!ev.shiftKey) S.sel = [];
+      S.cadre = { sx0: m.x, sy0: m.y, sx1: m.x, sy1: m.y };
+    }
+    fiche(); dessiner();
+  }
+  function deplacerRetouche(ev) {
+    var m = pos(ev, 'brd'), w = versMonde(m.x, m.y), dx, dy, i;
+    if (S.poignee) {
+      tirerPoignee(w);
+      S.poignee.bouge = true;
+      $('coord').textContent = 'X ' + accroche(w.x).toFixed(2) + ' mm   Y ' + accroche(w.y).toFixed(2) + ' mm';
+      dessiner();
+      return;
+    }
+    if (S.drag) {
+      dx = arr(accroche(w.x) - S.drag.x0); dy = arr(accroche(w.y) - S.drag.y0);
+      if (dx || dy) S.drag.bouge = true;
+      for (i = 0; i < S.sel.length; i++) { affecter(S.sel[i], S.drag.orig[i]); translater(S.sel[i], dx, dy); }
+      $('coord').textContent = 'X ' + accroche(w.x).toFixed(2) + ' mm   Y ' + accroche(w.y).toFixed(2) + ' mm';
+    } else { S.cadre.sx1 = m.x; S.cadre.sy1 = m.y; }
+    dessiner();
+  }
+  function relacherRetouche() {
+    var p = S.vue.p, c, a, b, i, bb;
+    if (S.poignee) {
+      if (S.poignee.bouge) empiler(S.poignee.avant);
+      S.poignee = null;
+      fiche(); dessiner();
+      return;
+    }
+    if (S.drag) {
+      if (S.drag.bouge) { empiler(S.drag.avant); fiche(); }
+      S.drag = null;
+    } else if (S.cadre) {
+      c = S.cadre;
+      a = versMonde(Math.min(c.sx0, c.sx1), Math.max(c.sy0, c.sy1));
+      b = versMonde(Math.max(c.sx0, c.sx1), Math.min(c.sy0, c.sy1));
+      if (Math.abs(c.sx1 - c.sx0) > 3 || Math.abs(c.sy1 - c.sy0) > 3) {
+        for (i = 0; i < p.el.length; i++) {
+          bb = bboxEl(p.el[i]);
+          if (bb[0] >= a.x && bb[2] <= b.x && bb[1] >= a.y && bb[3] <= b.y && S.sel.indexOf(p.el[i]) < 0) S.sel.push(p.el[i]);
+        }
+      }
+      S.cadre = null;
+      fiche();
+    }
+    dessiner();
+  }
+  function dessinerRetouche() {
+    var i, e, b, l, c = S.constr, m = S.curseur, r, a, bleu = '#4FA3FF';
+    for (i = 0; i < S.sel.length; i++) {
+      e = S.sel[i];
+      if (estPad(e)) { monde(); ctx.strokeStyle = COUL.survol; ctx.lineWidth = 2 / S.z; cheminForme(formePad(e)); ctx.stroke(); }
+      else if (e.t === 'texte') {
+        b = transPts([[0, 0], [largeurTexte(e), 0], [largeurTexte(e), e.h], [0, e.h]], e.x, e.y, e.rot);
+        monde(); ctx.strokeStyle = COUL.survol; ctx.lineWidth = 1 / S.z; cheminForme({ pts: b }); ctx.stroke();
+        tracerGraphique(e, COUL.survol);
+      } else tracerGraphique(e, COUL.survol);
+    }
+    if (c && m) {
+      monde();
+      ctx.strokeStyle = bleu; ctx.lineWidth = Math.max(S.defauts.trait.w, 1 / S.z); ctx.lineCap = 'round';
+      ctx.beginPath();
+      if (S.outil === 'trait') { ctx.moveTo(c.x, c.y); ctx.lineTo(m.x, m.y); }
+      else if (S.outil === 'rect') { ctx.rect(c.x, c.y, m.x - c.x, m.y - c.y); }
+      else if (S.outil === 'cercle') { r = Math.sqrt((m.x - c.x) * (m.x - c.x) + (m.y - c.y) * (m.y - c.y)); ctx.arc(c.x, c.y, r, 0, Math.PI * 2); }
+      else if (S.outil === 'arc') {
+        if (c.r === undefined) { ctx.lineWidth = 1 / S.z; ctx.moveTo(c.x, c.y); ctx.lineTo(m.x, m.y); }
+        else { a = Math.atan2(m.y - c.y, m.x - c.x); ctx.arc(c.x, c.y, c.r, c.a1 * Math.PI / 180, a, false); }
+      }
+      ctx.stroke();
+    }
+    if (S.cadre) {
+      ecran();
+      ctx.strokeStyle = bleu; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.strokeRect(Math.min(S.cadre.sx0, S.cadre.sx1) + 0.5, Math.min(S.cadre.sy0, S.cadre.sy1) + 0.5,
+                     Math.abs(S.cadre.sx1 - S.cadre.sx0), Math.abs(S.cadre.sy1 - S.cadre.sy0));
+      ctx.setLineDash([]);
+    }
+    if (S.mode === 'retouche' && S.sel.length === 1) {
+      l = poignees(S.sel[0]);
+      ecran();
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1f6feb'; ctx.lineWidth = 1.5;
+      for (i = 0; i < l.length; i++) {
+        b = versEcran(l[i].x, l[i].y);
+        ctx.fillRect(b.x - 4, b.y - 4, 8, 8); ctx.strokeRect(b.x - 4, b.y - 4, 8, 8);
+      }
+    }
+  }
+
+  /* Poignées de l'élément sélectionné (coordonnées monde) */
+  function versLocalE(w, e) {
+    var a = -e.rot * Math.PI / 180;
+    return [(w.x - e.x) * Math.cos(a) - (w.y - e.y) * Math.sin(a), (w.x - e.x) * Math.sin(a) + (w.y - e.y) * Math.cos(a)];
+  }
+  function poignees(e) {
+    var r = [], l, k, p, x1, x2, y1, y2, a, mi;
+    switch (e.t) {
+      case 'rect':
+        x1 = Math.min(e.x1, e.x2); x2 = Math.max(e.x1, e.x2); y1 = Math.min(e.y1, e.y2); y2 = Math.max(e.y1, e.y2);
+        return [{ id: 'sw', x: x1, y: y1 }, { id: 's', x: (x1 + x2) / 2, y: y1 }, { id: 'se', x: x2, y: y1 }, { id: 'e', x: x2, y: (y1 + y2) / 2 },
+                { id: 'ne', x: x2, y: y2 }, { id: 'n', x: (x1 + x2) / 2, y: y2 }, { id: 'nw', x: x1, y: y2 }, { id: 'w', x: x1, y: (y1 + y2) / 2 }];
+      case 'smd':
+        l = [[-1, -1, 'sw'], [0, -1, 's'], [1, -1, 'se'], [1, 0, 'e'], [1, 1, 'ne'], [0, 1, 'n'], [-1, 1, 'nw'], [-1, 0, 'w']];
+        for (k = 0; k < l.length; k++) { p = transPts([[l[k][0] * e.dx / 2, l[k][1] * e.dy / 2]], e.x, e.y, e.rot)[0]; r.push({ id: l[k][2], x: p[0], y: p[1] }); }
+        return r;
+      case 'pad':
+        p = transPts([[e.forme === 'OVALE' ? e.diam : e.diam / 2, 0]], e.x, e.y, e.rot)[0];
+        return [{ id: 'd', x: p[0], y: p[1] }];
+      case 'trait': return [{ id: 'p1', x: e.x1, y: e.y1 }, { id: 'p2', x: e.x2, y: e.y2 }];
+      case 'cercle': return [{ id: 'r', x: e.cx + e.r, y: e.cy }];
+      case 'point': return [{ id: 'r', x: e.x + e.r, y: e.y }];
+      case 'arc':
+        a = e.a1 * Math.PI / 180; mi = (e.a1 + (normAng(e.a2 - e.a1) || 360) / 2) * Math.PI / 180;
+        r.push({ id: 'a1', x: e.cx + e.r * Math.cos(a), y: e.cy + e.r * Math.sin(a) });
+        a = e.a2 * Math.PI / 180;
+        r.push({ id: 'a2', x: e.cx + e.r * Math.cos(a), y: e.cy + e.r * Math.sin(a) });
+        r.push({ id: 'r', x: e.cx + e.r * Math.cos(mi), y: e.cy + e.r * Math.sin(mi) });
+        return r;
+    }
+    return r;
+  }
+  function poigneeSous(m) {
+    var l, i, p;
+    if (S.mode !== 'retouche' || S.sel.length !== 1) return null;
+    l = poignees(S.sel[0]);
+    for (i = 0; i < l.length; i++) { p = versEcran(l[i].x, l[i].y); if (Math.abs(p.x - m.x) <= 6 && Math.abs(p.y - m.y) <= 6) return l[i].id; }
+    return null;
+  }
+  function tirerPoignee(w) {
+    var e = S.poignee.e, o = S.poignee.orig, id = S.poignee.id, gx = accroche(w.x), gy = accroche(w.y), l, v, x1, x2, y1, y2;
+    function pas(v) { return arr(Math.max(0.05, Math.round(v / 0.05) * 0.05)); }
+    affecter(e, o);
+    switch (e.t) {
+      case 'rect':
+        x1 = Math.min(o.x1, o.x2); x2 = Math.max(o.x1, o.x2); y1 = Math.min(o.y1, o.y2); y2 = Math.max(o.y1, o.y2);
+        if (id.indexOf('w') >= 0) x1 = gx;
+        if (id.indexOf('e') >= 0) x2 = gx;
+        if (id.indexOf('s') >= 0) y1 = gy;
+        if (id.indexOf('n') >= 0) y2 = gy;
+        e.x1 = Math.min(x1, x2); e.x2 = Math.max(x1, x2); e.y1 = Math.min(y1, y2); e.y2 = Math.max(y1, y2);
+        break;
+      case 'smd':
+        l = versLocalE(w, e);
+        if (/[ew]/.test(id)) e.dx = pas(2 * Math.abs(l[0]));
+        if (/[ns]/.test(id)) e.dy = pas(2 * Math.abs(l[1]));
+        break;
+      case 'pad':
+        v = Math.abs(versLocalE(w, e)[0]);
+        e.diam = arr(Math.max(pas(e.forme === 'OVALE' ? v : 2 * v), e.perc + 0.2));
+        break;
+      case 'trait':
+        if (id === 'p1') { e.x1 = gx; e.y1 = gy; } else { e.x2 = gx; e.y2 = gy; }
+        break;
+      case 'cercle':
+        e.r = pas(Math.sqrt((w.x - e.cx) * (w.x - e.cx) + (w.y - e.cy) * (w.y - e.cy)));
+        break;
+      case 'point':
+        e.r = pas(Math.sqrt((w.x - e.x) * (w.x - e.x) + (w.y - e.y) * (w.y - e.y)));
+        break;
+      case 'arc':
+        if (id === 'r') e.r = pas(Math.sqrt((w.x - e.cx) * (w.x - e.cx) + (w.y - e.cy) * (w.y - e.cy)));
+        else e[id] = normAng(Math.round(Math.atan2(w.y - e.cy, w.x - e.cx) * 180 / Math.PI / 5) * 5);
+        break;
+    }
+  }
+  /* Changement de type d'un pad, sur place */
+  function convertir(e, t) {
+    var n;
+    if (t === e.t) return;
+    empiler(instGab(S.vue.p));
+    if (t === 'smd') n = { t: 'smd', nom: e.nom, x: e.x, y: e.y, dx: e.forme === 'OVALE' ? 2 * e.diam : e.diam, dy: e.diam, rot: e.rot };
+    else n = { t: 'pad', nom: e.nom, x: e.x, y: e.y, perc: S.defauts.pad.perc, diam: arr(Math.max(Math.min(e.dx, e.dy), S.defauts.pad.perc + 0.4)),
+               forme: e.dx === e.dy ? 'CARRE' : 'OVALE', rot: e.dx >= e.dy ? e.rot : normAng(e.rot + 90) };
+    Object.keys(e).forEach(function (k) { delete e[k]; });
+    affecter(e, n);
+    fiche(); dessiner(); remplirListes();
+  }
+  function ficheElement(e) {
+    var b = bloc(NOMS_TYPE[e.t]), defs = CHAMPS[e.t], i, d, ctrl, avant = null, p = S.vue.p, ligne;
+    for (i = 0; i < defs.length; i++) {
+      d = defs[i];
+      if (d[2] === 'T') {
+        ctrl = E('select');
+        [['pad', 'DIL (traversant)'], ['smd', 'CMS']].forEach(function (f) { var o = E('option', '', f[1]); o.value = f[0]; ctrl.appendChild(o); });
+        ctrl.value = e.t;
+      } else if (d[2] === 'F') {
+        ctrl = E('select');
+        [['ROND', 'Rond'], ['CARRE', 'Carré'], ['OVALE', 'Ovale']].forEach(function (f) { var o = E('option', '', f[1]); o.value = f[0]; ctrl.appendChild(o); });
+        ctrl.value = e[d[0]];
+      } else { ctrl = E('input'); ctrl.type = 'text'; ctrl.spellcheck = false; ctrl.value = e[d[0]]; }
+      ctrl._def = d;
+      ctrl.addEventListener('focus', function () { avant = instGab(p); });
+      ctrl.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') this.blur(); });
+      ctrl.addEventListener('change', function () {
+        var def = this._def, val = this.value, n;
+        if (def[2] === 'T') { convertir(e, val); return; }
+        if (def[2] === 'L' || def[2] === 'A') {
+          n = lireNb(val);
+          if (n === null || (POSITIFS.indexOf(def[0]) >= 0 && n <= 0)) { this.value = e[def[0]]; return; }
+          val = def[2] === 'L' ? arr(n) : normAng(n);
+          if (def[0] === 'w' && val < 0) val = 0;
+        } else if (def[0] === 'nom') {
+          val = val.replace(/\s+/g, '');
+          if (!val) { this.value = e.nom; return; }
+        } else if (def[0] === 'txt' && !val) { this.value = e.txt; return; }
+        empiler(avant || instGab(p));
+        avant = instGab(p);
+        e[def[0]] = val;
+        if (DEFAUTS_CLES[e.t].indexOf(def[0]) >= 0) S.defauts[e.t][def[0]] = val;
+        if (def[0] === 'nom') remplirListes();
+        dessiner();
+      });
+      ligne = E('div', 'champ');
+      ligne.appendChild(E('label', '', d[1] + (d[2] === 'L' ? ' (mm)' : '')));
+      ligne.appendChild(ctrl);
+      b.appendChild(ligne);
+    }
+  }
+
+  /* ======================================================================
+     Assistant « Nouveau composant » / « Nouveau gabarit »
+     ====================================================================== */
+  var ASS = { mode: 'composant', gab: null, existant: null };
+  function remplirFamilles() {
+    var sel = $('assFamille'), i, grp = null, og = null, o;
+    for (i = 0; i < FAMILLES.length; i++) {
+      if (FAMILLES[i].g !== grp) { grp = FAMILLES[i].g; og = document.createElement('optgroup'); og.label = grp; sel.appendChild(og); }
+      o = E('option', '', FAMILLES[i].nom); o.value = i; og.appendChild(o);
+    }
+  }
+  function remplirVariantes(defaut) {
+    var f = FAMILLES[+$('assFamille').value], sel = $('assVariante'), i, o;
+    sel.textContent = '';
+    for (i = 0; i < f.v.length; i++) { o = E('option', '', f.lib(f.v[i])); o.value = i; sel.appendChild(o); }
+    i = f.v.indexOf(defaut);
+    sel.selectedIndex = i >= 0 ? i : 0;
+    sel.disabled = f.v.length < 2;
+    majApercu();
+  }
+  function apercu(g) {
+    var cv = $('apercu'), sv = { z: S.z, ox: S.ox, oy: S.oy, W: S.W, H: S.H, dpr: S.dpr, survol: S.survol }, b, w, h;
+    S.dpr = window.devicePixelRatio || 1; S.W = 300; S.H = 230; S.survol = null;
+    cv.width = S.W * S.dpr; cv.height = S.H * S.dpr;
+    b = unionBbox(g.el) || [-5, -5, 5, 5];
+    w = Math.max(b[2] - b[0], 4); h = Math.max(b[3] - b[1], 4);
+    S.z = Math.min((S.W - 30) / w, (S.H - 30) / h);
+    S.ox = S.W / 2 - (b[0] + b[2]) / 2 * S.z; S.oy = S.H / 2 + (b[1] + b[3]) / 2 * S.z;
+    ctx = cv.getContext('2d');
+    dessinerBrd(g, true);
+    S.z = sv.z; S.ox = sv.ox; S.oy = sv.oy; S.W = sv.W; S.H = sv.H; S.dpr = sv.dpr; S.survol = sv.survol;
+  }
+  function majApercu() {
+    var f = FAMILLES[+$('assFamille').value], g = f.gen(f.v[+$('assVariante').value]), b, existe;
+    ASS.gab = g;
+    $('assGab').value = g.nom;
+    existe = pkgParNom(g.nom);
+    apercu(existe || g);
+    b = unionBbox(g.el, estPad);
+    $('apercuInfo').textContent = g.el.length
+      ? pattesPkg(g).length + ' pattes · ' + (b[2] - b[0]).toFixed(2) + ' × ' + (b[3] - b[1]).toFixed(2) + ' mm' + (existe ? ' · déjà dans la bibliothèque' : '')
+      : 'Gabarit vide (dessin à venir avec la retouche)';
+    $('assErreur').textContent = '';
+  }
+  function ouvrirAssistant(mode, existant) {
+    ASS.mode = mode; ASS.existant = existant || null;
+    $('assTitre').textContent = mode === 'composant' ? 'Nouveau composant' : 'Nouveau gabarit';
+    $('assLigneNom').style.display = mode === 'composant' ? 'grid' : 'none';
+    $('assNom').value = '';
+    $('assCreer').textContent = mode === 'composant' ? 'Créer le composant' : 'Créer le gabarit';
+    $('assFamille').disabled = $('assVariante').disabled = $('assGab').disabled = !!existant;
+    if (existant) {
+      ASS.gab = existant; $('assGab').value = existant.nom; apercu(existant);
+      $('apercuInfo').textContent = pattesPkg(existant).length + ' pattes'; $('assErreur').textContent = '';
+    } else {
+      if ($('assFamille').value === '' || +$('assFamille').value === 0) $('assFamille').value = 1;
+      remplirVariantes(8);
+    }
+    $('modale').className = 'visible';
+    setTimeout(function () { (mode === 'composant' ? $('assNom') : $('assFamille')).focus(); }, 30);
+  }
+  function fermerAssistant() { $('modale').className = ''; }
+  function validerAssistant() {
+    var nomG = nettoyerNom($('assGab').value), nomC = '', p, c;
+    if (ASS.mode === 'composant') {
+      nomC = nettoyerNom($('assNom').value);
+      if (!nomC) { $('assErreur').textContent = 'Donner un nom au composant (ex. NE555).'; $('assNom').focus(); return; }
+      if (cmpParNom(nomC)) { $('assErreur').textContent = 'Le composant ' + nomC + ' existe déjà.'; $('assNom').focus(); return; }
+    }
+    if (ASS.existant) p = ASS.existant;
+    else {
+      if (!nomG) { $('assErreur').textContent = 'Nom de gabarit vide.'; return; }
+      p = pkgParNom(nomG);
+      if (!p) { p = { nom: nomG, el: copieEls(ASS.gab.el) }; LIB.packages.push(p); }
+    }
+    marquer(); fermerAssistant();
+    if (ASS.mode === 'composant') {
+      c = { nom: nomC, pkgs: [p.nom], f: {} };
+      LIB.composants.push(c); trierLib(); afficherComposant(c);
+      if (pattesPkg(p).length) ouvrirSaisie(pattesPkg(p)[0], 'sch'); else entrerMode('dessin');
+      message('Composant ' + nomC + ' créé sur le gabarit ' + p.nom + '.');
+    } else { trierLib(); afficherGabarit(p); if (!p.el.length) entrerMode('dessin'); }
+  }
+  $('assFamille').addEventListener('change', function () { remplirVariantes(); });
+  $('assVariante').addEventListener('change', majApercu);
+  $('assAnnuler').addEventListener('click', fermerAssistant);
+  $('assCreer').addEventListener('click', validerAssistant);
+  $('modale').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { ev.stopPropagation(); fermerAssistant(); }
+    else if (ev.key === 'Enter' && ev.target.tagName !== 'SELECT') { ev.preventDefault(); validerAssistant(); }
+  });
+  $('modale').addEventListener('mousedown', function (ev) { if (ev.target === this) fermerAssistant(); });
+
+  /* ======================================================================
+     Souris : survol synchronisé, déplacement, zoom
+     ====================================================================== */
+  function pos(ev, n) { var r = V[n].cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+  function patteSous(n, w) {
+    var p = S.vue ? S.vue.p : null, i, e, d, best = null, bd = 1e9;
+    if (!p) return null;
+    for (i = p.el.length - 1; i >= 0; i--) {
+      e = p.el[i];
+      if (!estPad(e)) continue;
+      if (n === 'sch') {
+        d = Math.sqrt((w.x - e.x) * (w.x - e.x) + (w.y - e.y) * (w.y - e.y));
+        if (d <= 9 / S.z && d < bd) { bd = d; best = e; }
+      } else if (dansPad(e, w.x, w.y, 2 / S.z)) return e;
+    }
+    return best;
+  }
+  function texteBulle(e) {
+    if (S.vue.c) return 'Patte ' + e.nom + ' : ' + (S.vue.c.f[e.nom] || '(sans nom)');
+    if (e.t === 'pad') return 'Patte ' + e.nom + ' · DIL Ø ' + e.diam + ' mm, perçage ' + e.perc + ' mm';
+    return 'Patte ' + e.nom + ' · CMS ' + e.dx + ' × ' + e.dy + ' mm';
+  }
+  function bulle(ev, t) {
+    var b = $('bulle');
+    if (!t) { b.style.display = 'none'; return; }
+    b.textContent = t; b.style.display = 'block';
+    b.style.left = (ev.clientX + 14) + 'px'; b.style.top = (ev.clientY + 16) + 'px';
+  }
+  function brancher(n) {
+    var cv = V[n].cv;
+    cv.addEventListener('wheel', function (ev) {
+      var m = pos(ev, n), f = ev.deltaY < 0 ? 1.2 : 1 / 1.2, nz = Math.min(Math.max(S.z * f, 0.5), 20000);
+      ev.preventDefault();
+      fermerSaisie(true);
+      f = nz / S.z;
+      S.ox = m.x - (m.x - S.ox) * f; S.oy = m.y - (m.y - S.oy) * f; S.z = nz;
+      dessiner();
+    }, { passive: false });
+    cv.addEventListener('mousedown', function (ev) {
+      var m = pos(ev, n), pt = patteSous(n, versMonde(m.x, m.y)), avec = S.vue && S.vue.c;
+      ev.preventDefault();
+      bulle(null, '');
+      if (document.activeElement && document.activeElement.blur && document.activeElement.id !== 'saisie') document.activeElement.blur();
+      if (S.edition) fermerSaisie(true);
+      if (n === 'brd' && S.retouche && ev.button !== 1) {
+        if (ev.button === 2) { S.pan = { n: n, x: m.x, y: m.y, ox: S.ox, oy: S.oy, droit: true, bouge: false }; return; }
+        if (ev.button === 0) appuiRetouche(ev, m);
+        return;
+      }
+      if (pt && avec && ev.button === 0) { ouvrirSaisie(pt.nom, n); return; }
+      if (pt && avec && ev.button === 2) { ouvrirMenu(ev, pt.nom, n); return; }
+      S.pan = { n: n, x: m.x, y: m.y, ox: S.ox, oy: S.oy };
+      cv.style.cursor = 'grabbing';
+    });
+    cv.addEventListener('mousemove', function (ev) {
+      var m = pos(ev, n), w = versMonde(m.x, m.y), pt, nv;
+      if (S.pan || S.drag || S.cadre || S.poignee) return;
+      if (n === 'brd' && S.retouche && S.constr) { S.curseur = { x: accroche(w.x), y: accroche(w.y) }; dessiner(); }
+      $('coord').textContent = 'X ' + w.x.toFixed(2) + ' mm   Y ' + w.y.toFixed(2) + ' mm';
+      pt = patteSous(n, w);
+      nv = pt ? pt.nom : null;
+      bulle(ev, pt ? texteBulle(pt) : '');
+      cv.style.cursor = n === 'brd' && S.retouche ? 'crosshair' : (pt && S.vue.c ? 'pointer' : 'default');
+      if (nv !== S.survol) { S.survol = nv; if (!S.edition) surlignerLigne(nv); dessiner(); }
+    });
+    cv.addEventListener('mouseleave', function () { bulle(null, ''); if (S.survol) { S.survol = null; dessiner(); } });
+    cv.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+    cv.addEventListener('dblclick', function () { if (!(n === 'brd' && S.mode === 'dessin')) ajuster(); });
+  }
+  window.addEventListener('mousemove', function (ev) {
+    var m;
+    if (S.drag || S.cadre || S.poignee) { deplacerRetouche(ev); return; }
+    if (!S.pan) return;
+    m = pos(ev, S.pan.n);
+    if (Math.abs(m.x - S.pan.x) + Math.abs(m.y - S.pan.y) > 3) S.pan.bouge = true;
+    S.ox = S.pan.ox + m.x - S.pan.x; S.oy = S.pan.oy + m.y - S.pan.y;
+    dessiner();
+  });
+  window.addEventListener('mouseup', function () {
+    if (S.drag || S.cadre || S.poignee) { relacherRetouche(); return; }
+    if (!S.pan) return;
+    V[S.pan.n].cv.style.cursor = 'default';
+    if (S.pan.droit && !S.pan.bouge) finAction();
+    S.pan = null;
+  });
+
+  /* ======================================================================
+     Fichiers
+     ====================================================================== */
+  function message(t, err) { var m = $('msg'); m.textContent = t || ''; m.className = err ? 'erreur' : ''; }
+  function marquer() { S.modifie = true; $('modif').textContent = '●'; $('modif').title = 'Modifications non enregistrées'; }
+  function nettoyer() { S.modifie = false; $('modif').textContent = ''; $('modif').title = ''; }
+  function chargerTexte(texte, nom) {
+    var r = lireLib(texte);
+    LIB = r.lib; trierLib();
+    fermerSaisie(false);
+    quitterRetouche();
+    S.vue = null; S.survol = null; S.annul = []; S.retab = [];
+    $('nomFichier').value = nom;
+    nettoyer();
+    remplirListes(); fiche();
+    if (LIB.composants.length) afficherComposant(LIB.composants[0]);
+    else if (LIB.packages.length) afficherGabarit(LIB.packages[0]);
+    else ajuster();
+    if (r.err.length) message(r.err.length + ' erreur(s) : ' + r.err.slice(0, 3).join(' · ') + (r.err.length > 3 ? ' …' : ''), true);
+    else message(texte ? LIB.composants.length + ' composant(s), ' + LIB.packages.length + ' gabarit(s) chargés.' : '');
+  }
+  function enregistrer() {
+    var nom = nettoyerNom($('nomFichier').value) || 'bibliotheque.lib', a, url;
+    if (!/\.lib$/i.test(nom)) nom += '.lib';
+    $('nomFichier').value = nom;
+    url = URL.createObjectURL(new Blob([ecrireLib()], { type: 'text/plain;charset=utf-8' }));
+    a = document.createElement('a'); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    nettoyer();
+    message('Enregistré : ' + nom);
+  }
+  $('btNouveau').addEventListener('click', function () {
+    if (S.modifie && !confirm('Abandonner les modifications non enregistrées ?')) return;
+    chargerTexte('', 'bibliotheque.lib');
+  });
+  $('btOuvrir').addEventListener('click', function () {
+    if (S.modifie && !confirm('Abandonner les modifications non enregistrées ?')) return;
+    $('fichier').click();
+  });
+  $('fichier').addEventListener('change', function () {
+    var f = this.files && this.files[0], lr;
+    if (!f) return;
+    lr = new FileReader();
+    lr.onload = function () { chargerTexte(lr.result, f.name); };
+    lr.onerror = function () { message('Lecture impossible : ' + f.name, true); };
+    lr.readAsText(f, 'utf-8');
+    this.value = '';
+  });
+  $('btEnregistrer').addEventListener('click', enregistrer);
+  document.addEventListener('keydown', function (ev) {
+    var t = ev.target.tagName, k = ev.key;
+    if ((ev.ctrlKey || ev.metaKey) && (k === 's' || k === 'S')) { ev.preventDefault(); fermerSaisie(true); enregistrer(); return; }
+    if (k === 'Escape') fermerMenu();
+    if (t === 'INPUT' || t === 'SELECT' || $('modale').className) return;
+    if (S.retouche && k === 'Escape') { finAction(); return; }
+    if (S.mode === 'retouche') {
+      if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); supprimerSel(); return; }
+      if ((k === 'r' || k === 'R') && !ev.ctrlKey && !ev.metaKey) { tournerSel(); return; }
+    }
+    if ((ev.ctrlKey || ev.metaKey) && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) restaurer(S.retab, S.annul); else restaurer(S.annul, S.retab); }
+    else if ((ev.ctrlKey || ev.metaKey) && (k === 'y' || k === 'Y')) { ev.preventDefault(); restaurer(S.retab, S.annul); }
+  });
+  window.addEventListener('beforeunload', function (ev) { if (S.modifie) { ev.preventDefault(); ev.returnValue = ''; } });
+  $('filtre').addEventListener('input', remplirListes);
+  $('btNouvCmp').addEventListener('click', function () { ouvrirAssistant('composant'); });
+  $('btNouvPkg').addEventListener('click', function () { ouvrirAssistant('gabarit'); });
+  window.addEventListener('resize', redimensionner);
+  brancher('sch');
+  brancher('brd');
+
+  /* Démarrage */
+  FONCTIONS.forEach(function (f) { var o = document.createElement('option'); o.value = f; $('fonctions').appendChild(o); });
+  [0.05, 0.1, 0.127, 0.25, 0.5, 0.635, 1, 1.27, 2.54, 5].forEach(function (g) {
+    var o = document.createElement('option'); o.value = g; o.textContent = String(g).replace('.', ',') + ' mm'; $('selGrille').appendChild(o);
+  });
+  $('selGrille').value = '1.27';
+  $('selGrille').addEventListener('change', function () { S.grille = parseFloat(this.value); dessiner(); });
+  $('btRetouche').addEventListener('click', function () { entrerMode('retouche'); });
+  $('btDessin').addEventListener('click', function () { entrerMode('dessin'); });
+  Array.prototype.forEach.call(document.querySelectorAll('#outils button[data-outil]'), function (b) {
+    b.addEventListener('click', function () { choisirOutil(this.getAttribute('data-outil')); });
+  });
+  $('btRot').addEventListener('click', tournerSel);
+  $('btSuppr').addEventListener('click', supprimerSel);
+  $('btAnnuler').addEventListener('click', function () { restaurer(S.annul, S.retab); });
+  $('btRetablir').addEventListener('click', function () { restaurer(S.retab, S.annul); });
+  remplirFamilles();
+  remplirListes();
+  fiche();
+  redimensionner();
+  ajuster();
+})();
+</script>
+</body>
+</html>
