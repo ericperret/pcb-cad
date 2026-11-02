@@ -6,12 +6,12 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.2.0
+ Version    : 1.11.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.0.0, Schéma 1.1.0, Circuit 1.1.0 (cartouche et
+ Modules    : Bibliothèque 1.1.0, Schéma 1.6.1, Circuit 1.8.1 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -27,6 +27,40 @@
                       LICENCE)
    1.2.0  2026-11-02  Chantier 8a (Circuit 1.1.0) : grille Auto du circuit =
                       moitié du pas le plus fin des gabarits posés
+   1.3.0  2026-11-02  Chantiers 8d et 8e (Circuit 1.2.0) : textes de sérigraphie
+                      au vrai (taille, rotation, police du Gerber) ; aucun texte
+                      sur une pastille (placement automatique, contrôle, export
+                      Gerber refusé tant qu'il en reste)
+   1.4.0  2026-11-02  Chantier 8f (Circuit 1.3.0) : contour fixe, coin
+                      bas-gauche fixe, bouton Recentrer le contour
+   1.5.0  2026-11-02  Chantier 9a (Schéma 1.2.0) : passifs deux fois plus petits,
+                      valeurs courantes au clic droit
+   1.5.1  2026-11-02  Schéma 1.2.1 : pose directe des passifs, valeur au clic
+                      droit ensuite
+   1.5.2  2026-11-02  Circuit 1.3.1 : « µ » dessiné sur le circuit et dans le
+                      Gerber (sortait en « ? »)
+   1.6.0  2026-11-02  Chantiers 5 et 7a (Circuit 1.4.0) : nomenclature
+                      <projet>.bom.csv ; circuit en 2, 4 ou 6 couches avec
+                      plans GND et VCC (dégagements, rayons thermiques)
+   1.7.0  2026-11-02  Chantier P1 (Schéma 1.3.0, Circuit 1.5.0) : patch diviseur
+                      Wilkinson 2 voies en phase 50 Ω (400 à 3000 MHz), cuivre
+                      calculé, zone avec masse pleine dessous et vias de couture
+   1.8.0  2026-11-02  Chantier P1b (Schéma 1.4.0, Circuit 1.6.0) : patch diviseur
+                      en T sans résistance, 2, 4 ou 8 sorties en phase au pas
+                      λ0/2 (alimentation d'un réseau d'antennes)
+   1.9.0  2026-11-02  Chantiers P1c et P2 (Schéma 1.5.0, Circuit 1.7.0) :
+                      coupleur directionnel 10, 20, 30 dB ; filtres imprimés
+                      passe-bas (sauts d'impédance) et passe-bande (lignes
+                      couplées), Tchebychev 0,5 dB
+   1.10.0 2026-11-02  Chantier P3 (Schéma 1.6.0, Circuit 1.8.0) : antennes patch
+                      rectangulaire alimentée par encoche et monopôle λ/4
+                      imprimé (zone dégagée)
+   1.10.1 2026-11-02  Patchs : choix limités à ce qui se fabrique sur 1,6 mm
+                      (coupleur 15 dB au lieu de 10, passe-bande 7 % au lieu
+                      de 10) ; motif d'un calcul impossible écrit sur le circuit
+   1.11.0 2026-11-02  Chantier 8b (Bibliothèque 1.1.0) : import d'empreintes
+                      KiCad (.kicad_mod, ancien .mod) et de leur brochage
+                      (.kicad_sym, ancien .lib), seules ou dans un zip
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -144,7 +178,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.0.0
+ Version    : 1.1.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -199,6 +233,13 @@
                       (Ctrl+S) passent par la page ; plus de bibliothèque
                       fictive : sans bibliothèque de gabarits ouverte,
                       Nouveau composant et Nouveau gabarit sont grisés
+   1.1.0  2026-11-02  Chantier 8b : import KiCad ; empreinte .kicad_mod (format
+                      KiCad 5 à 8) ou ancien .mod, brochage .kicad_sym ou ancien
+                      .lib ; fichiers seuls (sélection multiple) ou zip
+                      fournisseur (EAGLE prioritaire, KiCad sinon) ; pastilles
+                      CMS et traversantes, perçage oblong repris en rond ;
+                      sérigraphie du dessus (traits, rectangles, cercles, arcs
+                      à 3 points ou par angle, polygones) ; axe Y retourné
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -384,11 +425,11 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.0.0</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.1.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
-  <input type="file" id="fichierImport" accept=".zip,.lbr">
+  <input type="file" id="fichierImport" accept=".zip,.lbr,.kicad_mod,.mod,.kicad_sym,.lib" multiple>
   <label for="nomFichier">Bibliothèque</label>
   <input type="text" id="nomFichier" value="" placeholder="aucune : Fichier ▸ Ouvrir ou Nouvelle bibliothèque" spellcheck="false">
   <span id="modif"></span>
@@ -405,7 +446,7 @@
   <div class="op" data-action="ouvrLib">Ouvrir une bibliothèque…</div>
   <div class="op" data-action="enrLib">Enregistrer la bibliothèque</div>
   <div class="sepMenu"></div>
-  <div class="op" data-action="importer">Importer un composant (.zip / .lbr)…</div>
+  <div class="op" data-action="importer">Importer un composant (.zip, EAGLE, KiCad)…</div>
 </div>
 
 <div id="gauche">
@@ -555,7 +596,9 @@ var TRAD_EN = [
   ['Abandonner les modifications du projet', 'Discard changes to project'],
   ['Abandonner les modifications de', 'Discard changes to'],
   ['gabarit utilisé dans le projet par', 'footprint used in the project by'],
-  ['Importer un composant (.zip / .lbr)…', 'Import a component (.zip / .lbr)…'],
+  ['Importer un composant (.zip, EAGLE, KiCad)…', 'Import a component (.zip, EAGLE, KiCad)…'],
+  ['Aucune empreinte EAGLE ou KiCad dans', 'No EAGLE or KiCad footprint in'], ['Empreinte KiCad illisible', 'Unreadable KiCad footprint'],
+  ['Choisir une empreinte .kicad_mod ou .mod (et son .kicad_sym ou .lib).', 'Choose a .kicad_mod or .mod footprint (and its .kicad_sym or .lib).'],
   ['Ouvrir une bibliothèque…', 'Open a library…'], ['Enregistrer la bibliothèque', 'Save library'],
   ['Ouvrir un projet…', 'Open a project…'], ['Enregistrer le projet', 'Save project'], ['Nouveau projet…', 'New project…'],
   ['Retirer du projet', 'Remove from project'], ['Importés (session)', 'Imported (session)'], ['lecture seule', 'read-only'],
@@ -2606,9 +2649,9 @@ function traduire(s) {
   brancher('brd');
 
   /* ======================================================================
-     Import externe : .zip fournisseur (SamacSys, Ultra Librarian, SnapEDA…)
-     ou .lbr EAGLE XML. Source retenue : EAGLE (XML natif, mm, axe Y vers le
-     haut, table patte -> pad directe).
+     Import externe : .zip fournisseur (SamacSys, Ultra Librarian, SnapEDA…),
+     .lbr EAGLE XML ou empreinte KiCad. Dans un zip : EAGLE d'abord (XML natif,
+     mm, axe Y vers le haut, table patte -> pad directe), KiCad sinon.
      ====================================================================== */
   var IMP = { r: null, e: null, gab: null, f: null, st: null, partInfo: {}, source: '', lic: 'non-diffusable' };
   var ALIAS_FABRICANTS = { microsemi: 'Microchip', atmel: 'Microchip' };
@@ -2647,11 +2690,188 @@ function traduire(s) {
     part = ent.filter(function (e) { return /(^|\/)part_info\.txt$/i.test(e.nom); })[0];
     lic = ent.filter(function (e) { return /(^|\/)licen[cs]e[^\/]*\.txt$/i.test(e.nom); })[0];
     function essayer(k) {
-      if (k >= cands.length) return Promise.reject(new Error('Aucun fichier EAGLE .lbr dans ' + nom));
+      if (k >= cands.length) return Promise.resolve(null);
       return extraireZip(buf, cands[k]).then(function (u) { var t = texteOctets(u); return /<eagle[\s>]/.test(t) ? t : essayer(k + 1); });
     }
+    /* sans EAGLE : empreinte KiCad (.kicad_mod, sinon .mod) et brochage (.kicad_sym, sinon .lib EESchema) */
+    function kicad() {
+      var mod = ent.filter(function (e) { return /\.kicad_mod$/i.test(e.nom); })[0] || ent.filter(function (e) { return /\.mod$/i.test(e.nom); })[0],
+          sym = ent.filter(function (e) { return /\.kicad_sym$/i.test(e.nom); })[0] || ent.filter(function (e) { return /(^|\/)kicad\/[^\/]+\.lib$/i.test(e.nom); })[0];
+      if (!mod) return Promise.reject(new Error('Aucune empreinte EAGLE ou KiCad dans ' + nom));
+      return Promise.all([extraireZip(buf, mod).then(texteOctets), sym ? extraireZip(buf, sym).then(texteOctets) : '']).then(function (v) { return { mod: v[0], sym: v[1] }; });
+    }
     return Promise.all([essayer(0), part ? extraireZip(buf, part).then(texteOctets) : '', lic ? extraireZip(buf, lic).then(texteOctets) : ''])
-      .then(function (v) { return { nom: nom, lbr: v[0], part: v[1], lic: v[2] }; });
+      .then(function (v) {
+        if (v[0]) return { nom: nom, src: { lbr: v[0] }, part: v[1], lic: v[2] };
+        return kicad().then(function (k) { return { nom: nom, src: k, part: v[1], lic: v[2] }; });
+      });
+  }
+
+  /* --- Lecture KiCad : expressions entre parenthèses (KiCad 5 à 8) et anciens formats .mod / .lib --- */
+  function lireSexp(t) {
+    var i = 0, n = t.length, pile = [[]], c, m, ch, re = /[^\s()"]+/y;
+    while (i < n) {
+      c = t.charAt(i);
+      if (c === '(') { pile.push([]); i++; }
+      else if (c === ')') { ch = pile.pop(); if (!pile.length) break; pile[pile.length - 1].push(ch); i++; }
+      else if (c === '"') { ch = ''; i++; while (i < n && t.charAt(i) !== '"') { if (t.charAt(i) === '\\') i++; ch += t.charAt(i); i++; } i++; pile[pile.length - 1].push(ch); }
+      else if (c === ' ' || c === '\n' || c === '\r' || c === '\t') i++;
+      else { re.lastIndex = i; m = re.exec(t); pile[pile.length - 1].push(m[0]); i += m[0].length; }
+    }
+    return pile[0][0];
+  }
+  function sousS(l, nom) { var i; for (i = 1; i < l.length; i++) if (Array.isArray(l[i]) && l[i][0] === nom) return l[i]; return null; }
+  function tousS(l, nom, r) {
+    var i;
+    r = r || [];
+    for (i = 1; i < l.length; i++) if (Array.isArray(l[i])) { if (l[i][0] === nom) r.push(l[i]); else tousS(l[i], nom, r); }
+    return r;
+  }
+  function ptS(l) { return l ? [parseFloat(l[1]), -parseFloat(l[2])] : [0, 0]; }
+  function arc3(p1, p2, p3, w) {
+    var ax = p1[0], ay = p1[1], bx = p2[0], by = p2[1], cx = p3[0], cy = p3[1], d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by)), ux, uy, a1, am, a2;
+    if (Math.abs(d) < 1e-9) return { t: 'trait', x1: arr(ax), y1: arr(ay), x2: arr(cx), y2: arr(cy), w: w };
+    ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+    uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+    a1 = normAng(Math.atan2(ay - uy, ax - ux) * 180 / Math.PI); am = normAng(Math.atan2(by - uy, bx - ux) * 180 / Math.PI); a2 = normAng(Math.atan2(cy - uy, cx - ux) * 180 / Math.PI);
+    if (normAng(am - a1) > normAng(a2 - a1)) { var t = a1; a1 = a2; a2 = t; }
+    return { t: 'arc', cx: arr(ux), cy: arr(uy), r: arr(Math.sqrt((ax - ux) * (ax - ux) + (ay - uy) * (ay - uy))), a1: a1, a2: a2, w: w };
+  }
+  /* Arc par centre, point de départ et angle (KiCad 5 : angle positif = sens horaire à l'écran) */
+  function arcAngle(c, p, ang, w) {
+    var a = normAng(Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI), r = Math.sqrt((p[0] - c[0]) * (p[0] - c[0]) + (p[1] - c[1]) * (p[1] - c[1]));
+    if (Math.abs(ang) >= 359.99) return { t: 'cercle', cx: arr(c[0]), cy: arr(c[1]), r: arr(r), w: w };
+    return ang > 0 ? { t: 'arc', cx: arr(c[0]), cy: arr(c[1]), r: arr(r), a1: normAng(a - ang), a2: a, w: w }
+                   : { t: 'arc', cx: arr(c[0]), cy: arr(c[1]), r: arr(r), a1: a, a2: normAng(a - ang), w: w };
+  }
+  /* Pastille KiCad -> azs ; rot : degrés sens trigonométrique (inchangé par le retournement de l'axe Y) */
+  function padKicad(num, type, forme, x, y, rot, w, h, perc, couches, st) {
+    var t, k, d;
+    rot = normAng(rot || 0);
+    if (type === 'np_thru_hole' || type === 'HOLE') { st.trous++; return null; }
+    if (!num) return null;
+    if (type === 'smd' || type === 'connect' || type === 'SMD' || type === 'CONN') {
+      if (!couches.front) { st.dessous++; return null; }
+      if (rot % 180 === 0) rot = 0; else if (rot % 90 === 0) { t = w; w = h; h = t; rot = 0; }
+      return { t: 'smd', nom: nettoyerNom(num), x: arr(x), y: arr(y), dx: arr(w), dy: arr(h), rot: rot };
+    }
+    k = forme === 'rect' || forme === 'square' || forme === 'R' ? 'CARRE' : ((forme === 'oval' || forme === 'O') && Math.abs(w - h) > 1e-3 ? 'OVALE' : 'ROND');
+    if (k === 'OVALE') { d = Math.min(w, h); if (h > w) rot = normAng(rot + 90); }
+    else d = Math.max(w, h);
+    if ((k !== 'OVALE' && rot % 90 === 0) || (k === 'OVALE' && rot % 180 === 0)) rot = 0;
+    return { t: 'pad', nom: nettoyerNom(num), x: arr(x), y: arr(y), perc: arr(perc || 0.8), diam: arr(d), forme: k, rot: rot };
+  }
+  function convKicad(fp) {
+    var pads = [], gr = [], tr = [], st = { trous: 0, dessous: 0, miroir: 0 };
+    fp.slice(2).forEach(function (n) {
+      var h, lay, w, a, b, p, q, dr, cs, sz, at, l, k, txt, fill;
+      if (!Array.isArray(n)) return;
+      h = n[0];
+      if (h === 'pad') {
+        at = sousS(n, 'at'); sz = sousS(n, 'size'); dr = sousS(n, 'drill'); cs = (sousS(n, 'layers') || []).slice(1);
+        dr = dr ? dr.slice(1).filter(function (v) { return !isNaN(parseFloat(v)); }).map(parseFloat) : [];
+        p = padKicad(String(n[1]), n[2], n[3], parseFloat(at[1]), -parseFloat(at[2]), at[3] ? parseFloat(at[3]) : 0,
+                     parseFloat(sz[1]), parseFloat(sz[2]), dr.length ? Math.max.apply(null, dr) : 0,
+                     { front: cs.some(function (c) { return c === 'F.Cu' || c === '*.Cu' || c === 'F&B.Cu'; }) }, st);
+        if (p) pads.push(p);
+        return;
+      }
+      lay = (sousS(n, 'layer') || [])[1] || '';
+      if (lay !== 'F.SilkS' && lay !== 'F.Silkscreen') return;
+      w = sousS(n, 'width') || sousS(sousS(n, 'stroke') || [], 'width');
+      w = arr(w ? parseFloat(w[1]) || 0.12 : 0.12);
+      fill = sousS(n, 'fill'); fill = fill && (fill[1] === 'solid' || fill[1] === 'yes');
+      switch (h) {
+        case 'fp_line': a = ptS(sousS(n, 'start')); b = ptS(sousS(n, 'end')); tr.push({ t: 'trait', x1: arr(a[0]), y1: arr(a[1]), x2: arr(b[0]), y2: arr(b[1]), w: w }); break;
+        case 'fp_rect': a = ptS(sousS(n, 'start')); b = ptS(sousS(n, 'end'));
+          gr.push({ t: 'rect', x1: arr(Math.min(a[0], b[0])), y1: arr(Math.min(a[1], b[1])), x2: arr(Math.max(a[0], b[0])), y2: arr(Math.max(a[1], b[1])), w: w }); break;
+        case 'fp_circle': a = ptS(sousS(n, 'center')); b = ptS(sousS(n, 'end')); k = Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]));
+          gr.push(fill || k <= w ? { t: 'point', x: arr(a[0]), y: arr(a[1]), r: arr(fill ? k : k + w / 2) } : { t: 'cercle', cx: arr(a[0]), cy: arr(a[1]), r: arr(k), w: w }); break;
+        case 'fp_arc':
+          if (sousS(n, 'mid')) gr.push(arc3(ptS(sousS(n, 'start')), ptS(sousS(n, 'mid')), ptS(sousS(n, 'end')), w));
+          else gr.push(arcAngle(ptS(sousS(n, 'start')), ptS(sousS(n, 'end')), parseFloat((sousS(n, 'angle') || [0, 0])[1]), w));
+          break;
+        case 'fp_poly':
+          l = tousS(sousS(n, 'pts') || [], 'xy').map(ptS);
+          for (k = 0; k < l.length; k++) { q = l[(k + 1) % l.length]; tr.push({ t: 'trait', x1: arr(l[k][0]), y1: arr(l[k][1]), x2: arr(q[0]), y2: arr(q[1]), w: w }); }
+          break;
+        case 'fp_text':
+          txt = String(n[2] || '');
+          if (n[1] !== 'user' || !txt || txt.charAt(0) === '%' || n.indexOf('hide') >= 0) break;
+          at = sousS(n, 'at'); sz = sousS(sousS(sousS(n, 'effects') || [], 'font') || [], 'size');
+          gr.push({ t: 'texte', x: arr(parseFloat(at[1])), y: arr(-parseFloat(at[2])), h: arr(sz ? parseFloat(sz[1]) : 1), rot: at[3] ? normAng(parseFloat(at[3])) : 0, txt: txt });
+          break;
+      }
+    });
+    return { el: pads.concat(regrouperRects(tr), gr), st: st };
+  }
+  /* Ancien format PCBNEW-LibModule (.mod) : mm si « Units mm », sinon 1/10000 de pouce */
+  function convModLegacy(t) {
+    var l = t.split(/\r?\n/), u = /^Units\s+mm/m.test(t) ? 1 : 0.00254, pads = [], gr = [], tr = [], st = { trous: 0, dessous: 0, miroir: 0 }, nom = '', i, m, pd = null, v, p;
+    function nb(x) { return parseFloat(x) * u; }
+    for (i = 0; i < l.length; i++) {
+      v = l[i].replace(/^\s+|\s+$/g, '');
+      if ((m = /^\$MODULE\s+(.+)$/.exec(v)) && !nom) { nom = m[1]; continue; }
+      if (/^\$EndMODULE/.test(v)) break;
+      if (v === '$PAD') { pd = { masque: 0 }; continue; }
+      if (pd) {
+        if ((m = /^Sh\s+"([^"]*)"\s+(\S)\s+(\S+)\s+(\S+)\s+\S+\s+\S+\s+(\S+)/.exec(v))) { pd.num = m[1]; pd.forme = m[2]; pd.w = nb(m[3]); pd.h = nb(m[4]); pd.rot = parseFloat(m[5]) / 10; }
+        else if ((m = /^Dr\s+(\S+)(?:\s+\S+\s+\S+\s+O\s+(\S+)\s+(\S+))?/.exec(v))) pd.perc = Math.max(nb(m[1]), m[2] ? nb(m[2]) : 0, m[3] ? nb(m[3]) : 0);
+        else if ((m = /^At\s+(\S+)\s+\S+\s+([0-9A-Fa-f]+)/.exec(v))) { pd.type = m[1]; pd.masque = parseInt(m[2], 16); }
+        else if ((m = /^Po\s+(\S+)\s+(\S+)/.exec(v))) { pd.x = nb(m[1]); pd.y = -nb(m[2]); }
+        else if (v === '$EndPAD') {
+          p = padKicad(pd.num, pd.type, pd.forme, pd.x, pd.y, pd.rot, pd.w, pd.h, pd.perc, { front: !!(pd.masque & 0x8000) || pd.type === 'STD' }, st);
+          if (p) pads.push(p);
+          pd = null;
+        }
+        continue;
+      }
+      m = v.split(/\s+/);
+      if (m[0] === 'DS' && m[6] === '21') tr.push({ t: 'trait', x1: arr(nb(m[1])), y1: arr(-nb(m[2])), x2: arr(nb(m[3])), y2: arr(-nb(m[4])), w: arr(nb(m[5]) || 0.12) });
+      else if (m[0] === 'DC' && m[6] === '21') { p = Math.sqrt(Math.pow(nb(m[3]) - nb(m[1]), 2) + Math.pow(nb(m[4]) - nb(m[2]), 2)); gr.push({ t: 'cercle', cx: arr(nb(m[1])), cy: arr(-nb(m[2])), r: arr(p), w: arr(nb(m[5]) || 0.12) }); }
+      else if (m[0] === 'DA' && m[7] === '21') gr.push(arcAngle([nb(m[1]), -nb(m[2])], [nb(m[3]), -nb(m[4])], parseFloat(m[5]) / 10, arr(nb(m[6]) || 0.12)));
+    }
+    if (!nom) throw new Error('Empreinte KiCad illisible');
+    return { nom: nom, cv: { el: pads.concat(regrouperRects(tr), gr), st: st } };
+  }
+  /* Brochage KiCad : .kicad_sym (pin … (name) (number)) ou ancien .lib (lignes X) ; propriétés du symbole */
+  function lireSymKicad(t) {
+    var r = { nom: '', attrs: {}, pins: [] }, s, sym, m, l, i;
+    if (!t) return null;
+    if (/^\s*\(kicad_symbol_lib/.test(t)) {
+      s = lireSexp(t); sym = sousS(s, 'symbol');
+      if (!sym) return null;
+      r.nom = String(sym[1]);
+      sym.forEach(function (x) { if (Array.isArray(x) && x[0] === 'property') r.attrs[String(x[1]).toLowerCase()] = String(x[2]); });
+      tousS(sym, 'pin').forEach(function (p) { var a = sousS(p, 'name'), b = sousS(p, 'number'); if (b) r.pins.push({ nom: a ? String(a[1]) : '', num: String(b[1]) }); });
+      r.gen = String((sousS(s, 'generator') || [])[1] || '');
+    } else if (/EESchema-LIBRARY/.test(t)) {
+      l = t.split(/\r?\n/);
+      for (i = 0; i < l.length; i++) {
+        if ((m = /^DEF\s+(\S+)/.exec(l[i])) && !r.nom) r.nom = m[1].replace(/^~/, '');
+        else if ((m = /^F\d+\s+"([^"]*)".*"([^"]+)"\s*$/.exec(l[i]))) r.attrs[m[2].toLowerCase()] = m[1];
+        else if ((m = /^X\s+(\S+)\s+(\S+)\s/.exec(l[i]))) r.pins.push({ nom: m[1], num: m[2] });
+        else if (/^ENDDEF/.test(l[i]) && r.nom) break;
+      }
+    } else return null;
+    return r.nom ? r : null;
+  }
+  function lireKicad(mod, symTxt) {
+    var cv, nom, desc = '', sym = lireSymKicad(symTxt), s, e;
+    if (/^\s*\((footprint|module)\s/.test(mod)) {
+      s = lireSexp(mod); nom = String(s[1]); cv = convKicad(s);
+      desc = String((sousS(s, 'descr') || [])[1] || '') + ' ' + String((sousS(s, 'tags') || [])[1] || '');
+    } else if (/\$MODULE/.test(mod)) { s = convModLegacy(mod); nom = s.nom; cv = s.cv; }
+    else throw new Error('Empreinte KiCad illisible');
+    if (!cv.el.some(estPad)) throw new Error('Empreinte KiCad illisible');
+    e = { pkg: nom };
+    if (sym) {
+      e.ds = sym.nom; e.dev = ''; e.attrs = sym.attrs;
+      e.connects = sym.pins.filter(function (p) { return p.nom && p.nom !== '~'; }).map(function (p) { return { gate: '', pin: p.nom, pads: [p.num] }; });
+      desc += ' ' + (sym.gen || '');
+    }
+    var pk = {}; pk[nom] = cv;
+    return { kicad: true, pk: pk, entrees: [e], desc: desc };
   }
 
   /* --- Lecture EAGLE --- */
@@ -2863,8 +3083,8 @@ function traduire(s) {
   }
 
   /* --- Fenêtre d'import --- */
-  function ouvrirImport(nomFichier, lbr, part, lic) {
-    var r = lireEagle(lbr), sel = $('impEntree');
+  function ouvrirImport(nomFichier, src, part, lic) {
+    var r = src.lbr ? lireEagle(src.lbr) : lireKicad(src.mod, src.sym), sel = $('impEntree');
     if (!r.entrees.length) throw new Error('Aucun gabarit dans ' + nomFichier);
     IMP.r = r; IMP.partInfo = {};
     String(part || '').split(/\r?\n/).forEach(function (l) { var m = /^\s*([^=]+?)\s*=\s*(.*?)\s*$/.exec(l); if (m) IMP.partInfo[m[1].toLowerCase()] = m[2]; });
@@ -2883,7 +3103,7 @@ function traduire(s) {
   }
   function fermerImport() { $('modaleImport').className = ''; }
   function choisirEntree(i) {
-    var e = IMP.r.entrees[i], cv = convPaquet(IMP.r.pk[e.pkg]), avec = e.ds !== undefined,
+    var e = IMP.r.entrees[i], cv = IMP.r.kicad ? IMP.r.pk[e.pkg] : convPaquet(IMP.r.pk[e.pkg]), avec = e.ds !== undefined,
         nbC = IMP.r.entrees.filter(function (x) { return x.ds !== undefined; }).length, pi = nbC <= 1 ? IMP.partInfo : {};
     IMP.e = e; IMP.gab = { nom: '', el: cv.el }; IMP.st = cv.st;
     IMP.f = avec ? fonctionsEagle(e.connects) : null;
@@ -2971,16 +3191,23 @@ function traduire(s) {
     if (c) afficherComposant(c); else afficherGabarit(p);
     message('Importé : ' + (c ? c.nom + ' · ' : '') + p.nom + ' (session : cocher pour ajouter au projet)');
   }
+  /* Fichiers choisis : un zip, un .lbr EAGLE, ou une empreinte KiCad (.kicad_mod / .mod) avec son brochage (.kicad_sym / .lib) */
   $('fichierImport').addEventListener('change', function () {
-    var f = this.files && this.files[0];
+    var l = Array.prototype.slice.call(this.files || []), z, lb, md, sy, f;
     this.value = '';
-    if (!f) return;
-    f.arrayBuffer().then(function (buf) {
-      if (/\.lbr$/i.test(f.name)) return { nom: f.name, lbr: texteOctets(new Uint8Array(buf)), part: '', lic: '' };
-      return importerZip(f.name, buf);
-    }).then(function (r) {
+    if (!l.length) return;
+    z = l.filter(function (x) { return /\.zip$/i.test(x.name); })[0];
+    lb = l.filter(function (x) { return /\.lbr$/i.test(x.name); })[0];
+    md = l.filter(function (x) { return /\.kicad_mod$/i.test(x.name); })[0] || l.filter(function (x) { return /\.mod$/i.test(x.name); })[0];
+    sy = l.filter(function (x) { return /\.kicad_sym$/i.test(x.name); })[0] || l.filter(function (x) { return /\.lib$/i.test(x.name); })[0];
+    f = z || lb || md || sy;
+    (z ? z.arrayBuffer().then(function (buf) { return importerZip(z.name, buf); })
+       : lb ? lb.text().then(function (t) { return { nom: lb.name, src: { lbr: t }, part: '', lic: '' }; })
+       : md ? Promise.all([md.text(), sy ? sy.text() : '']).then(function (v) { return { nom: md.name, src: { mod: v[0], sym: v[1] }, part: '', lic: '' }; })
+       : Promise.reject(new Error('Choisir une empreinte .kicad_mod ou .mod (et son .kicad_sym ou .lib).'))
+    ).then(function (r) {
       fermerSaisie(true); quitterRetouche();
-      ouvrirImport(r.nom, r.lbr, r.part, r.lic);
+      ouvrirImport(r.nom, r.src, r.part, r.lic);
     }).catch(function (e) {
       fermerImport();
       message((e && e.message) || ('Lecture impossible : ' + f.name), true);
@@ -3041,7 +3268,7 @@ function traduire(s) {
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.1.0
+ Version    : 1.6.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3106,8 +3333,34 @@ function traduire(s) {
                       liste les fonctions ; clic droit : choix de la fonction
                       pour ce composant (IC1), enregistré dans le DXF (FN=) ;
                       lignes SOURCE et LICENCE du .lib acceptées
+   1.2.0  2026-11-02  Chantier 9a : symboles R, C, D, L deux fois plus petits
+                      (pattes à ±2,54 mm, sur la grille) ; clic droit sur le
+                      corps d'un passif : valeurs courantes (Autre… : saisie)
+   1.2.1  2026-11-02  Pose directe des passifs : clic sur R, C, D, L ou PAD puis
+                      clic sur la feuille, sans saisie préalable de la valeur
+                      (clic droit sur le composant posé pour la choisir)
+   1.3.0  2026-11-02  Chantier P1 : bouton Patch (diviseur Wilkinson 2 voies en
+                      phase, 50 Ω) ; fréquence 400 à 3000 MHz demandée à la
+                      pose, modifiable dans la fiche, au double-clic et au clic
+                      droit (433, 868, 915, 1296, 2400 MHz) ; bloc PA1 à ports
+                      IN, OUT1, OUT2 et GND (cuivre de masse du dessous) ;
+                      valeur enregistrée WILK<MHz>
+   1.4.0  2026-11-02  Chantier P1b : type de patch au choix (Wilkinson, diviseur
+                      en T à 2, 4 ou 8 sorties), à la pose et dans la fiche ;
+                      bloc du diviseur en peigne, ports IN, OUT1…OUTn, GND ;
+                      valeur DIVT<n>_<MHz>
+   1.5.0  2026-11-02  Chantiers P1c et P2 : coupleur directionnel 10, 20, 30 dB
+                      (ports IN, OUT, CPL, ISO, GND ; valeur CPL<dB>_<MHz>),
+                      passe-bas Tchebychev ordre 3, 5, 7 (PBAS<N>_<MHz>),
+                      passe-bande ordre 3 ou 5, bande 3, 5, 10 %
+                      (PBDE<N>B<%>_<MHz>) ; ports IN, OUT, GND
+   1.6.0  2026-11-02  Chantier P3 : antennes patch rectangulaire (APAT_<MHz>) et
+                      monopôle λ/4 imprimé (AMON_<MHz>) ; ports IN, GND
+   1.6.1  2026-11-02  Choix limités à ce qui se fabrique sur FR4 1,6 mm (écart
+                      ≥ 0,152 mm) : coupleur 15, 20, 30 dB (10 dB retiré),
+                      passe-bande 3, 5, 7 % (10 % retiré)
 
- Conventions des symboles (unités mm, grille 2,54) :
+ Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
    C  deux plaques        patte 1 = + si polarisé
    D  triangle et barre   patte 1 = K (cathode), patte 2 = A (anode)
@@ -3200,6 +3453,8 @@ function traduire(s) {
   #menu .op:hover{background:var(--accentClair)}
   #menu .op.actuel{color:var(--accent)}
   #menu .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
+  #menu .grilleMenu{display:grid; grid-template-columns:repeat(4,1fr); gap:1px}
+  #menu .grilleMenu .op{text-align:center; white-space:nowrap}
   #modale{position:fixed; inset:0; background:rgba(20,24,30,.45); display:none; align-items:center; justify-content:center; z-index:40}
   #modale.visible{display:flex}
   .boite{background:#fff; border-radius:10px; box-shadow:0 12px 40px rgba(0,0,0,.3); width:min(420px,95vw); overflow:hidden}
@@ -3210,7 +3465,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.1.0</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.6.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -3234,6 +3489,7 @@ function traduire(s) {
     <button data-t="C" title="Condensateur"><svg viewBox="0 0 56 22"><path d="M2 11h23M31 11h23M25 3v16M31 3v16"></path></svg>C</button>
     <button data-t="D" title="Diode"><svg viewBox="0 0 56 22"><path d="M2 11h20M34 11h20M22 3v16"></path><path d="M34 3v16L22 11z" fill="#1f2328"></path></svg>D</button>
     <button data-t="L" title="Inductance"><svg viewBox="0 0 56 22"><path d="M2 14h10a4 4 0 0 1 8 0a4 4 0 0 1 8 0a4 4 0 0 1 8 0a4 4 0 0 1 8 0h10"></path></svg>L</button>
+    <button data-t="PATCH" title="Patch : diviseur Wilkinson 2 voies en phase, 50 Ω (400 à 3000 MHz)"><svg viewBox="0 0 56 22"><path d="M2 11h14M40 7h14M40 15h14"></path><circle cx="28" cy="11" r="8"></circle><path d="M36 9v4"></path></svg>Patch</button>
     <button data-t="PAD" title="Pad simple (une patte)"><svg viewBox="0 0 56 22"><path d="M4 11h32"></path><circle cx="44" cy="11" r="6"></circle></svg>PAD</button>
   </div>
   <h3 id="titreProjet">Projet</h3>
@@ -3262,6 +3518,7 @@ function traduire(s) {
     <h2 id="dTitre">Poser</h2>
     <div class="corps">
       <div class="champ" id="dLigneVal"><label for="dVal">Valeur</label><input type="text" id="dVal" spellcheck="false" autocomplete="off"></div>
+      <div class="champ" id="dLigneTypePatch"><label for="dTypePatch">Type</label><select id="dTypePatch"></select></div>
       <div class="champ" id="dLigneNom"><label for="dNom">Composant</label><input type="text" id="dNom" list="listeNoms" spellcheck="false" autocomplete="off"></div>
       <div class="champ" id="dLignePol"><label for="dPol">Polarisé</label>
         <select id="dPol"><option value="auto" selected="selected">Auto (&gt; 1 µF)</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
@@ -3320,6 +3577,7 @@ var TRAD_EN = [
   ['Choisir R, C, D, L ou un composant du projet (à cocher dans l\'onglet Bibliothèque)', 'Choose R, C, D, L or a project component (checked in the Library tab)'],
   ['Clic droit : choisir la fonction', 'Right-click: choose the function'], ['Fonction choisie', 'Chosen function'],
   ['Aucune (numéro)', 'None (number)'],
+  ['Clic : poser · R : rotation · Échap ou clic droit : annuler · valeur : clic droit sur le composant posé', 'Click: place · R: rotate · Esc or right-click: cancel · value: right-click on the placed component'],
   ['Nouveau projet…', 'New project…'], ['Ouvrir un projet…', 'Open a project…'], ['Enregistrer le projet', 'Save project'],
   ['Fichier ▸ Charger le projet (.lib), puis choisir R, C, D, L ou un composant du projet', 'File ▸ Load the project (.lib), then choose R, C, D, L or a project component'],
   ['Enregistrer le schéma et ouvrir la bibliothèque', 'Save the schematic and open the library'],
@@ -3399,6 +3657,10 @@ var TRAD_EN = [
   ['gabarit(s) absent(s)', 'footprint(s) missing'],
   ['gabarit(s) chargés.', 'footprint(s) loaded.'],
   ['Pad simple (une patte)', 'Single pad (one pin)'],
+  ['Patch : diviseur Wilkinson 2 voies en phase, 50 Ω (400 à 3000 MHz)', 'Patch: 2-way in-phase Wilkinson divider, 50 Ω (400 to 3000 MHz)'],
+  ['Patch Wilkinson', 'Wilkinson patch'], ['Wilkinson 2 voies (100 Ω)', '2-way Wilkinson (100 Ω)'], ['Diviseur T · 2 sorties', 'T divider · 2 outputs'],
+  ['Diviseur T · 4 sorties', 'T divider · 4 outputs'], ['Diviseur T · 8 sorties', 'T divider · 8 outputs'],
+  ['Coupleur', 'Coupler'], ['Antenne patch rectangulaire', 'Rectangular patch antenna'], ['Antenne monopôle λ/4', 'λ/4 monopole antenna'], ['Passe-bas', 'Low-pass'], ['Passe-bande', 'Band-pass'], ['ordre', 'order'], ['Fréquence (MHz)', 'Frequency (MHz)'], ['Fréquence : 400 à 3000 MHz.', 'Frequency: 400 to 3000 MHz.'],
   ['Point (repère patte 1)', 'Dot (pin 1 marker)'],
   ['Trait (clic droit : fin)', 'Line (right-click: end)'],
   ['Polarisé : patte 1 = +', 'Polarized: pin 1 = +'],
@@ -3523,8 +3785,60 @@ function traduire(s) {
     grille: '#eef1f5', croix: '#c9ced6', trait: '#1f2328', corps: '#4b5563', patte: '#16a34a',
     texte: '#1f2328', rf: '#d97706', fil: '#0047AB', filSel: '#38bdf8', nomPatte: '#14532d', numPatte: '#9ca3af', sel: '#1f6feb', survol: '#FACC15'
   };
-  var PREFIXE = { R: 'R', C: 'C', D: 'D', L: 'L', PAD: 'P', IC: 'IC' };
-  var NOM_TYPE = { R: 'Résistance', C: 'Condensateur', D: 'Diode', L: 'Inductance', PAD: 'Pad', IC: 'Circuit' };
+  var PREFIXE = { R: 'R', C: 'C', D: 'D', L: 'L', PAD: 'P', IC: 'IC', PATCH: 'PA' };
+  var NOM_TYPE = { R: 'Résistance', C: 'Condensateur', D: 'Diode', L: 'Inductance', PAD: 'Pad', IC: 'Circuit', PATCH: 'Patch' };
+  /* Patch : valeur « WILK<MHz> » ou « DIVT<n>_<MHz> » ; type et fréquence saisis (Z0 = 50 Ω imposé) */
+  var TYPES_PATCH = [['WILK', 'Wilkinson 2 voies (100 Ω)'], ['DIVT2_', 'Diviseur T · 2 sorties'], ['DIVT4_', 'Diviseur T · 4 sorties'], ['DIVT8_', 'Diviseur T · 8 sorties'],
+                     ['CPL15_', 'Coupleur 15 dB'], ['CPL20_', 'Coupleur 20 dB'], ['CPL30_', 'Coupleur 30 dB'],
+                     ['PBAS3_', 'Passe-bas · ordre 3'], ['PBAS5_', 'Passe-bas · ordre 5'], ['PBAS7_', 'Passe-bas · ordre 7'],
+                     ['PBDE3B3_', 'Passe-bande · ordre 3 · 3 %'], ['PBDE3B5_', 'Passe-bande · ordre 3 · 5 %'], ['PBDE3B7_', 'Passe-bande · ordre 3 · 7 %'],
+                     ['PBDE5B3_', 'Passe-bande · ordre 5 · 3 %'], ['PBDE5B5_', 'Passe-bande · ordre 5 · 5 %'], ['PBDE5B7_', 'Passe-bande · ordre 5 · 7 %'],
+                     ['APAT_', 'Antenne patch rectangulaire'], ['AMON_', 'Antenne monopôle λ/4']];
+  function lirePatch(v) {
+    var m = /^(WILK|DIVT([248])_|CPL(?:10|15|20|30)_|PBAS[357]_|PBDE[35]B(?:3|5|7|10)_|APAT_|AMON_)(\d+(?:\.\d+)?)$/.exec(v || '');
+    return m ? { pre: m[1], n: m[2] ? parseInt(m[2], 10) : 0, f: m[3] } : null;
+  }
+  function freqPatch(v) { var p = lirePatch(v); return p ? p.f : ''; }
+  function prefixePatch(v) { var p = lirePatch(v); return p ? p.pre : 'WILK'; }
+  function valPatch(txt, pre) { var n = lireNb(String(txt).replace(/\s*MHz$/i, '')); return n !== null && n >= 400 && n <= 3000 ? (pre || 'WILK') + arr(n) : ''; }
+  function remplirTypesPatch(sel) { TYPES_PATCH.forEach(function (t) { var o = document.createElement('option'); o.value = t[0]; o.textContent = t[1]; sel.appendChild(o); }); }
+  /* Bloc du diviseur en T : peigne, sorties au pas 2,54 de part et d'autre de IN */
+  function geomPatchSch(c) {
+    var p = lirePatch(c.val), n = p && p.n ? p.n : 0, ys = [], H, g, i, pre = p ? p.pre : 'WILK', boite = { t: 'rect', x1: -7.62, y1: -5.08, x2: 7.62, y2: 5.08 }, gnd = { t: 'trait', x1: 0, y1: -5.08, x2: 0, y2: -7.62 };
+    if (/^CPL/.test(pre)) return {
+      symb: [boite, gnd, { t: 'trait', x1: -10.16, y1: 2.54, x2: 10.16, y2: 2.54 }, { t: 'ligne', pts: [[-10.16, -2.54], [-5.08, -2.54], [-3.81, 0.64], [3.81, 0.64], [5.08, -2.54], [10.16, -2.54]] }],
+      pins: [{ nom: 'IN', x: -10.16, y: 2.54, f: 'IN' }, { nom: 'OUT', x: 10.16, y: 2.54, f: 'OUT' }, { nom: 'CPL', x: -10.16, y: -2.54, f: 'CPL' }, { nom: 'ISO', x: 10.16, y: -2.54, f: 'ISO' }, { nom: 'GND', x: 0, y: -7.62, f: 'GND' }],
+      bbox: [-10.16, -7.62, 10.16, 5.08] };
+    if (/^A(PAT|MON)/.test(pre)) return {
+      symb: [boite, gnd, { t: 'trait', x1: -10.16, y1: 0, x2: -7.62, y2: 0 }, { t: 'ligne', pts: [[-7.62, 0], [0, 0], [0, 3.81]] },
+             { t: 'ligne', pts: [[-2.54, 3.81], [0, 0.64], [2.54, 3.81]] }, { t: 'trait', x1: -2.54, y1: 3.81, x2: 2.54, y2: 3.81 }],
+      pins: [{ nom: 'IN', x: -10.16, y: 0, f: 'IN' }, { nom: 'GND', x: 0, y: -7.62, f: 'GND' }],
+      bbox: [-10.16, -7.62, 10.16, 5.08] };
+    if (/^PB/.test(pre)) return {
+      symb: [boite, gnd, { t: 'trait', x1: -10.16, y1: 0, x2: -7.62, y2: 0 }, { t: 'trait', x1: 7.62, y1: 0, x2: 10.16, y2: 0 },
+             { t: 'ligne', pts: /^PBAS/.test(pre) ? [[-5.08, 2.54], [1.27, 2.54], [3.81, -3.18]] : [[-5.08, -3.18], [-2.54, 2.54], [2.54, 2.54], [5.08, -3.18]] },
+             { t: 'trait', x1: -5.08, y1: -3.81, x2: 5.08, y2: -3.81 }],
+      pins: [{ nom: 'IN', x: -10.16, y: 0, f: 'IN' }, { nom: 'OUT', x: 10.16, y: 0, f: 'OUT' }, { nom: 'GND', x: 0, y: -7.62, f: 'GND' }],
+      bbox: [-10.16, -7.62, 10.16, 5.08] };
+    if (!n) return { symb: SYMB_PATCH, pins: [{ nom: 'IN', x: -10.16, y: 0, f: 'IN' }, { nom: 'OUT1', x: 10.16, y: 2.54, f: 'OUT1' }, { nom: 'OUT2', x: 10.16, y: -2.54, f: 'OUT2' }, { nom: 'GND', x: 0, y: -7.62, f: 'GND' }], bbox: [-10.16, -7.62, 10.16, 5.08] };
+    for (i = 0; i < n / 2; i++) ys.push((n / 2 - i) * 2.54);
+    for (i = 0; i < n / 2; i++) ys.push(-(i + 1) * 2.54);
+    H = n / 2 * 2.54 + 2.54;
+    g = [{ t: 'rect', x1: -7.62, y1: -H, x2: 7.62, y2: H }, { t: 'trait', x1: -10.16, y1: 0, x2: -2.54, y2: 0 }, { t: 'trait', x1: -2.54, y1: ys[0], x2: -2.54, y2: ys[n - 1] },
+         { t: 'trait', x1: 0, y1: -H, x2: 0, y2: -H - 2.54 }];
+    ys.forEach(function (y) { g.push({ t: 'trait', x1: -2.54, y1: y, x2: 10.16, y2: y }); });
+    return { symb: g, pins: [{ nom: 'IN', x: -10.16, y: 0, f: 'IN' }].concat(ys.map(function (y, k) { return { nom: 'OUT' + (k + 1), x: 10.16, y: y, f: 'OUT' + (k + 1) }; }))
+             .concat([{ nom: 'GND', x: 0, y: -H - 2.54, f: 'GND' }]), bbox: [-10.16, -H - 2.54, 10.16, H] };
+  }
+  var SYMB_PATCH = [
+    { t: 'rect', x1: -7.62, y1: -5.08, x2: 7.62, y2: 5.08 },
+    { t: 'trait', x1: -10.16, y1: 0, x2: -7.62, y2: 0 }, { t: 'trait', x1: 7.62, y1: 2.54, x2: 10.16, y2: 2.54 },
+    { t: 'trait', x1: 7.62, y1: -2.54, x2: 10.16, y2: -2.54 }, { t: 'trait', x1: 0, y1: -5.08, x2: 0, y2: -7.62 },
+    { t: 'trait', x1: -7.62, y1: 0, x2: -3.2, y2: 0 },
+    { t: 'arc', cx: 0, cy: 0, r: 3.2, a1: 15, a2: 345 },
+    { t: 'trait', x1: 3.09, y1: 0.83, x2: 7.62, y2: 2.54 }, { t: 'trait', x1: 3.09, y1: -0.83, x2: 7.62, y2: -2.54 },
+    { t: 'rect', x1: 4.6, y1: -0.9, x2: 5.4, y2: 0.9 }
+  ];
   var FONCTION_PASSIF = { D: { 1: 'K', 2: 'A' } };
   var LIB = { packages: [], composants: [] };
   var S = {
@@ -3632,8 +3946,24 @@ function traduire(s) {
   /* ======================================================================
      Symboles (coordonnées locales, mm)
      ====================================================================== */
-  var D = 5.08;
-  function symbolePassif(type, pol) {
+  var D = 2.54;
+  /* Symboles dessinés à l'échelle 1 (pattes à ±5,08) puis réduits de moitié */
+  function demi(g) {
+    return g.map(function (e) {
+      var o = {}, k;
+      for (k in e) if (e.hasOwnProperty(k)) o[k] = e[k];
+      ['x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'x', 'y'].forEach(function (p) { if (typeof o[p] === 'number') o[p] = o[p] / 2; });
+      if (o.pts) o.pts = o.pts.map(function (q) { return [q[0] / 2, q[1] / 2]; });
+      return o;
+    });
+  }
+  function symbolePassif(type, pol, c) {
+    if (type === 'PAD') return symboleEchelle1(type, pol);
+    if (type === 'PATCH') return c ? geomPatchSch(c).symb : SYMB_PATCH;
+    return demi(symboleEchelle1(type, pol));
+  }
+  function symboleEchelle1(type, pol) {
+    var D = 5.08;
     var g = [], i, n = 6, pts = [[-2.54, 0]];
     if (type === 'PAD') return [{ t: 'trait', x1: 0, y1: 0, x2: 2.54, y2: 0 }, { t: 'cercle', cx: 3.3, cy: 0, r: 0.76 }];
     g.push({ t: 'trait', x1: -D, y1: 0, x2: type === 'C' ? -0.6 : (type === 'D' ? -1.27 : -2.54), y2: 0 });
@@ -3673,6 +4003,7 @@ function traduire(s) {
     var p, r = [], i, e, fc, cmp;
     if (c.type === 'PWR') return [{ nom: '1', x: 0, y: 0, f: c.val }];
     if (c.type === 'PAD') return [{ nom: '1', x: 0, y: 0, f: '' }];
+    if (c.type === 'PATCH') return geomPatchSch(c).pins;
     if (c.type !== 'IC') {
       return [{ nom: '1', x: -D, y: 0, f: c.type === 'D' ? 'K' : (estPolarise(c) ? '+' : '') },
               { nom: '2', x: D, y: 0, f: c.type === 'D' ? 'A' : (estPolarise(c) ? '-' : '') }];
@@ -3692,6 +4023,7 @@ function traduire(s) {
     var p, b, i, e, r;
     if (c.type === 'PWR') return c.val === 'GND' ? [-1.6, -4.2, 1.6, 0] : [-1.6, 0, 1.6, 4.6];
     if (c.type === 'PAD') return [-0.2, -1, 4.2, 1];
+    if (c.type === 'PATCH') return geomPatchSch(c).bbox;
     if (c.type !== 'IC') return [-D, -2.2, D, 2.2];
     p = gabIC(c);
     if (!p || !p.el.length) return [-2.54, -2.54, 2.54, 2.54];
@@ -3804,7 +4136,7 @@ function traduire(s) {
       p = gabIC(c);
       corps = p ? p.el.filter(function (e) { return !estPad(e) && e.t !== 'texte'; }) : [];
       tracerLocal(c, corps, fantome ? coul : COUL.corps, 2);
-    } else tracerLocal(c, symbolePassif(c.type, estPolarise(c)), coul, 2);
+    } else tracerLocal(c, symbolePassif(c.type, estPolarise(c), c), coul, 2);
     pl = pattesMonde(c);
     b = [1e9, 1e9, -1e9, -1e9];
     for (i = 0; i < pl.length; i++) { b[0] = Math.min(b[0], pl[i].wx); b[1] = Math.min(b[1], pl[i].wy); b[2] = Math.max(b[2], pl[i].wx); b[3] = Math.max(b[3], pl[i].wy); }
@@ -3818,8 +4150,9 @@ function traduire(s) {
       }
       ctx.fillStyle = COUL.patte; ctx.strokeStyle = '#0f5132'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      if (c.type !== 'IC' || fantome) continue;
-      cote = coteEtiquette(l.wx, l.wy, b);
+      if ((c.type !== 'IC' && c.type !== 'PATCH') || fantome) continue;
+      cote = c.type === 'PATCH' ? (l.x < 0 ? 'gauche' : l.x > 0 ? 'droite' : 'bas') : coteEtiquette(l.wx, l.wy, b);
+      if (c.type === 'PATCH' && c.rot) cote = coteEtiquette(l.wx, l.wy, b);
       s = l.f || l.nom;
       ctx.font = '600 ' + px + 'px sans-serif';
       ctx.fillStyle = l.f ? COUL.nomPatte : COUL.numPatte;
@@ -3915,10 +4248,13 @@ function traduire(s) {
     DLG.mode = mode; DLG.type = type; DLG.comp = comp || null;
     ic = type === 'IC';
     $('dTitre').textContent = (mode === 'pose' ? 'Poser : ' : 'Modifier ' + comp.ref + ' : ') + NOM_TYPE[type];
+    $('dLigneVal').querySelector('label').textContent = traduire(type === 'PATCH' ? 'Fréquence (MHz)' : 'Valeur');
     $('dLigneVal').style.display = ic ? 'none' : 'grid';
     $('dLigneNom').style.display = ic ? 'grid' : 'none';
     $('dLignePol').style.display = type === 'C' ? 'grid' : 'none';
-    $('dVal').value = comp && !ic ? comp.val : '';
+    $('dLigneTypePatch').style.display = type === 'PATCH' ? 'grid' : 'none';
+    $('dTypePatch').value = comp && type === 'PATCH' ? prefixePatch(comp.val) : 'WILK';
+    $('dVal').value = comp && !ic ? (type === 'PATCH' ? freqPatch(comp.val) : comp.val) : (type === 'PATCH' ? '868' : '');
     $('dNom').value = comp && ic ? comp.val : '';
     $('dPol').value = comp && comp.pol ? comp.pol : 'auto';
     $('dOk').textContent = mode === 'pose' ? 'Poser' : 'Appliquer';
@@ -3932,6 +4268,7 @@ function traduire(s) {
         pol = $('dPol').value, c;
     if (!val && DLG.type !== 'PAD') { $('dErreur').textContent = ic ? 'Choisir le composant dans la bibliothèque.' : 'Saisir la valeur.'; return; }
     if (ic && !cmpParNom(val)) { $('dErreur').textContent = 'Composant ' + val + ' absent de la bibliothèque.'; return; }
+    if (DLG.type === 'PATCH') { val = valPatch(val, $('dTypePatch').value); if (!val) { $('dErreur').textContent = 'Fréquence : 400 à 3000 MHz.'; return; } }
     fermerDialogue();
     if (DLG.mode === 'pose') {
       S.pose = { type: DLG.type, val: val, pol: DLG.type === 'C' ? pol : '', rot: 0, ref: repereSuivant(DLG.type) };
@@ -3943,8 +4280,10 @@ function traduire(s) {
     c = DLG.comp;
     empiler();
     c.val = val; if (c.type === 'C') c.pol = pol;
+    if (c.type === 'PATCH') purgerPattes(c);
     toutRafraichir();
   }
+  remplirTypesPatch($('dTypePatch'));
   $('dOk').addEventListener('click', validerDialogue);
   $('dAnnuler').addEventListener('click', fermerDialogue);
   $('modale').addEventListener('keydown', function (ev) {
@@ -4045,15 +4384,22 @@ function traduire(s) {
       if (!v) { this.value = c.ref; message('Repère vide ou déjà utilisé.', true); return; }
       empiler(); c.ref = v; toutRafraichir();
     });
-    inp = champ(b, c.type === 'IC' ? 'Composant' : 'Valeur', E('input'));
-    inp.value = c.val;
+    inp = champ(b, c.type === 'IC' ? 'Composant' : (c.type === 'PATCH' ? 'Fréquence (MHz)' : 'Valeur'), E('input'));
+    inp.value = c.type === 'PATCH' ? freqPatch(c.val) : c.val;
     if (c.type === 'IC') inp.setAttribute('list', 'listeNoms');
     inp.addEventListener('change', function () {
       var v = this.value.replace(/^\s+|\s+$/g, '');
+      if (c.type === 'PATCH') { v = valPatch(v, prefixePatch(c.val)); if (!v) { this.value = freqPatch(c.val); message('Fréquence : 400 à 3000 MHz.', true); return; } }
       if ((!v && c.type !== 'PAD') || (c.type === 'IC' && !cmpParNom(v))) { this.value = c.val; message(c.type === 'IC' ? 'Composant absent de la bibliothèque.' : 'Valeur vide.', true); return; }
       empiler(); c.val = v;
       toutRafraichir();
     });
+    if (c.type === 'PATCH') {
+      sel = champ(b, 'Type', E('select'));
+      remplirTypesPatch(sel);
+      sel.value = prefixePatch(c.val);
+      sel.addEventListener('change', function () { empiler(); c.val = this.value + freqPatch(c.val); purgerPattes(c); toutRafraichir(); });
+    }
     if (c.type === 'C') {
       sel = champ(b, 'Polarisé', E('select'));
       [['auto', 'Auto (> 1 µF)'], ['oui', 'Oui'], ['non', 'Non']].forEach(function (v) { var op = E('option', '', v[1]); op.value = v[0]; sel.appendChild(op); });
@@ -4551,11 +4897,48 @@ function traduire(s) {
     else if (S.dernierPose && !S.sel && !S.selL) t = 'Clic dans le vide : reposer ' + S.dernierPose.type + (S.dernierPose.val ? ' ' + S.dernierPose.val : '');
     $('aide').textContent = t;
   }
+  /* Liaisons vers des pattes qui n'existent plus (patch passé de 8 à 4 sorties…) retirées */
+  function purgerPattes(c) {
+    var noms = pattesLocales(c).map(function (p) { return p.nom; });
+    function ok(e) { return e.c !== c.id || noms.indexOf(e.p) >= 0; }
+    S.fils = S.fils.filter(function (f) { return ok(f.a) && ok(f.b); });
+    S.bus = S.bus.filter(function (b) { return b.a.concat(b.b).every(ok); });
+  }
   function purger(id) {
     S.fils = S.fils.filter(function (f) { return f.a.c !== id && f.b.c !== id; });
     S.bus = S.bus.filter(function (b) { return !b.a.concat(b.b).some(function (e) { return e.c === id; }); });
   }
 
+  /* Clic droit sur le corps d'un passif : valeurs courantes */
+  var VALEURS = {
+    R: ['10', '22', '47', '100', '220', '330', '470', '1K', '2K2', '3K3', '4K7', '10K', '22K', '47K', '100K', '220K', '470K', '1M'],
+    C: ['10P', '22P', '47P', '100P', '1N', '10N', '22N', '100N', '1µ', '4µ7', '10µ', '22µ', '47µ', '100µ', '220µ', '470µ', '1000µ'],
+    L: ['1µ', '2µ2', '4µ7', '10µ', '22µ', '47µ', '100µ', '220µ', '1m'],
+    D: ['1N4148', '1N4007', '1N5819', 'BAT54', 'LED'],
+    PATCH: ['433', '868', '915', '1296', '2400']
+  };
+  function ouvrirMenuValeurs(ev, c) {
+    var m = $('menu'), g = E('div', 'grilleMenu'), o;
+    m.textContent = '';
+    m.appendChild(E('div', 'titreMenu', libelle(c)));
+    VALEURS[c.type].forEach(function (v) {
+      var nv = c.type === 'PATCH' ? prefixePatch(c.val) + v : v, op = E('div', 'op' + (nv === c.val ? ' actuel' : ''), c.type === 'PATCH' ? v + ' MHz' : v);
+      op.addEventListener('mousedown', function (e2) {
+        e2.preventDefault(); e2.stopPropagation(); fermerMenu();
+        if (c.val === nv) return;
+        empiler(); c.val = nv; toutRafraichir();
+      });
+      g.appendChild(op);
+    });
+    m.appendChild(g);
+    m.appendChild(E('div', 'sepMenu'));
+    o = E('div', 'op', 'Autre…');
+    o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); ouvrirDialogue('modif', c.type, c); });
+    m.appendChild(o);
+    m.style.display = 'block';
+    m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8) + 'px';
+    m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 8) + 'px';
+  }
   /* Clic droit sur une patte : fonction (patte multifonction), puis alimentations */
   function choisirFonction(pt, fn) {
     var c = pt.c, n = {}, k;
@@ -4694,7 +5077,7 @@ function traduire(s) {
     if (c.type === 'PWR') return c.val === 'GND'
       ? [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: -2.54 }, { t: 'trait', x1: -1.6, y1: -2.54, x2: 1.6, y2: -2.54 }, { t: 'trait', x1: -1, y1: -3.2, x2: 1, y2: -3.2 }, { t: 'trait', x1: -0.4, y1: -3.85, x2: 0.4, y2: -3.85 }]
       : [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: 2.54 }, { t: 'trait', x1: -1.6, y1: 2.54, x2: 1.6, y2: 2.54 }];
-    if (c.type !== 'IC') return symbolePassif(c.type, estPolarise(c));
+    if (c.type !== 'IC') return symbolePassif(c.type, estPolarise(c), c);
     p = gabIC(c);
     l = p ? p.el.filter(function (e) { return !estPad(e) && e.t !== 'texte'; }) : [];
     return l;
@@ -4915,6 +5298,7 @@ function traduire(s) {
     if (ev.button === 0 && S.selL) { l = poigneeFilSous(m); if (l) { saisirPoignee(l); return; } }
     pt = patteSous(w);
     if (ev.button === 2 && pt && pt.c.type !== 'PWR') { ouvrirMenuAlim(ev, pt); return; }
+    if (ev.button === 2 && !pt) { c = composantSous(w); if (c && VALEURS[c.type]) { ouvrirMenuValeurs(ev, c); return; } }
     if (ev.button === 0) {
       if (pt) {
         if (ev.ctrlKey || ev.metaKey || ev.shiftKey) { if (pt.c.type !== 'PWR') clicGroupe(pt, ev.shiftKey); }
@@ -5093,7 +5477,12 @@ function traduire(s) {
       var t = this.getAttribute('data-t');
       if (t === 'IC' && !LIB.composants.length) { message('Ouvrir d\'abord une bibliothèque contenant des composants.', true); return; }
       annulerPose();
-      ouvrirDialogue('pose', t);
+      if (t === 'IC' || t === 'PATCH') { ouvrirDialogue('pose', t); return; }
+      /* passifs : pose directe, la valeur se choisit ensuite au clic droit */
+      S.pose = { type: t, val: '', pol: t === 'C' ? 'auto' : '', rot: 0, ref: repereSuivant(t) };
+      $('aide').textContent = 'Clic : poser · R : rotation · Échap ou clic droit : annuler · valeur : clic droit sur le composant posé';
+      majPalette();
+      dessiner();
     });
   });
   window.addEventListener('resize', redimensionner);
@@ -5129,13 +5518,14 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.1.0
+ Version    : 1.8.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
- Fabrication: <nom>-cuivre1.gtl … cuivre4.gbl, vernis .gts/.gbs, sérigraphie
+ Fabrication: <nom>-cuivre1.gtl, cuivre2.g2l … cuivreN.gbl, vernis .gts/.gbs, sérigraphie
               .gto/.gbo, contour .gko (Gerber RS-274X, mm 4.6), perçage .drl
-              (Excellon, mm), regroupés dans <nom>-gerber.zip
+              (Excellon, mm), regroupés dans <nom>-gerber.zip ;
+              nomenclature <nom>.bom.csv
  Historique :
    0.1.0  2026-10-31  Chantier 5a : import du schéma (composants, équipotentielles,
                       lignes 50 Ω), gabarit par composant (passifs : dernier
@@ -5209,8 +5599,72 @@ function traduire(s) {
                       le plus fin parmi les gabarits posés (DIP 2,54 : 1,27 ;
                       SOIC 1,27 : 0,635 ; TSSOP 0,65 : 0,325 ; TQFP 0,5 : 0,25),
                       recalculée à chaque changement de composant ou de gabarit
+   1.2.0  2026-11-02  Chantiers 8d et 8e : textes de sérigraphie au vrai (police
+                      au trait du Gerber, hauteur en mm, rotation 0/90/180/270,
+                      « Appliquer à tous ») ; placement automatique du texte des
+                      composants hors des pastilles et des autres textes ; tout
+                      texte qui touche une pastille est cerclé de rouge, listé
+                      dans la fiche du circuit (clic : zoom) et l'export Gerber
+                      est refusé tant qu'il en reste ; DXF : TH, TR, TA
+   1.3.0  2026-11-02  Chantier 8f : contour fixe ; calculé une fois (centré) à
+                      la première mise à jour depuis le schéma, il ne suit plus
+                      les composants ; coin bas-gauche fixe (en Auto, la carte
+                      grandit vers la droite et le haut) ; bouton « Recentrer
+                      le contour » ; position enregistrée (CONTOUR=…@x0,y0)
+   1.3.1  2026-11-02  Police au trait : « µ » dessiné (il sortait en « ? » :
+                      la mise en majuscules le changeait en mu grec)
+   1.4.0  2026-11-02  Chantier 5 : nomenclature <nom>.bom.csv (Fichier ▸ Exporter
+                      la nomenclature) : quantité, repères, valeur, gabarit,
+                      Fabricant_Référence et source (composants importés),
+                      une ligne par type + valeur + gabarit, « ; », UTF-8 BOM.
+                      Chantier 7a : 2, 4 ou 6 couches (fiche du circuit),
+                      empilement fixe S/S, S/GND/VCC/S, S/GND/S/VCC/GND/S ;
+                      plans GND et VCC (VCC : choix ou alimentation la plus
+                      reliée) remplis à l'export : retrait 0,5 mm du bord,
+                      dégagement réglable (0,4 mm), rayons thermiques 4 × 0,3 mm
+                      sur les pastilles traversantes, vias reliées en plein,
+                      mires et « AZS » gravés ; pastilles et vias de
+                      l'équipotentielle d'un plan reliées (chevelu), croix de
+                      la couleur du plan ; touche V (ou chiffre du plan) : via
+                      vers le plan en fin de tracé ; changement du nombre de
+                      couches (dessous suivi, refus si piste interne sans
+                      place) ; largeur 50 Ω calculée sur le diélectrique L1–L2
+                      (0,2 mm) en 4 et 6 couches ; aperçu Gerber : polarité
+                      claire (LPC) dessinée ; DXF : COUCHES, PLANVCC, DEGPLAN,
+                      HDIEL (ancien fichier : 2 couches, ou 6 si pistes
+                      internes)
+   1.5.0  2026-11-02  Chantier P1 : patch diviseur Wilkinson 2 voies en phase,
+                      50 Ω, 400 à 3000 MHz : cuivre calculé (microruban
+                      Hammerstad-Jensen, FR4 εr 4,5, h = épaisseur de la carte),
+                      bras λ/4 à 70,7 Ω en anneau, résistance 100 Ω CMS 0603
+                      entre OUT1 et OUT2 (nomenclature), ports 50 Ω au bord de
+                      la zone (marge 3 largeurs) ; dessous : cuivre GND plein ;
+                      plans creusés dans la zone ; vias GND de couture autour
+                      (pas ≤ λg/20, en plein dans les plans, sous vernis) ;
+                      cotes dans la fiche ; toujours sur le dessus
+   1.6.0  2026-11-02  Chantier P1b : patch diviseur en T sans résistance, 2, 4 ou
+                      8 sorties en phase au pas λ0/2 (alimentation d'un réseau
+                      d'antennes) : arbre symétrique, transformateurs λ/4 à
+                      70,7 Ω à chaque T, lignes 50 Ω, coudes en onglet
+                      (Douville-James) ; même zone que le Wilkinson
+   1.7.0  2026-11-02  Chantiers P1c et P2 : coupleur directionnel à lignes
+                      couplées λ/4 (10, 20 ou 30 dB ; Z0e/Z0o, synthèse
+                      Akhtarzad ; ports IN, OUT, CPL, ISO libres ; refus si
+                      l'écart < 0,152 mm) ; passe-bas à sauts d'impédance
+                      Tchebychev 0,5 dB ordre 3, 5, 7 (20 Ω / 100 Ω) ;
+                      passe-bande à lignes couplées λ/2 Tchebychev 0,5 dB
+                      ordre 3 ou 5, bande 3, 5 ou 10 % (inverseurs J,
+                      extrémités ouvertes raccourcies) ; cotes dans la fiche
+   1.8.0  2026-11-02  Chantier P3 : antenne patch rectangulaire alimentée par
+                      encoche (Balanis : W, L, ΔL, G1 + G12 intégrées, encoche
+                      à 50 Ω) ; monopôle λ/4 imprimé (ligne 50 Ω sur masse puis
+                      brin en zone dégagée sans cuivre sur toutes les couches,
+                      vias de couture autour de la seule partie avec masse)
+   1.8.1  2026-11-02  Patch dont le calcul est impossible (écart sous le minimum
+                      de fabrication) : motif écrit sur le circuit à côté du
+                      cadre rouge ; coupleur 15 dB et passe-bande 7 % acceptés
 
- Couches (DXF) : CUIVRE_1 (dessus) CUIVRE_2 CUIVRE_3 CUIVRE_4 (dessous)
+ Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
                  PERCAGE, plus CHEVELU et AZSCAD (données)
  Affichage     : fond noir, dessus rouge et blanc, dessous bleu, vue de dessus
@@ -5324,7 +5778,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.1.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.8.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -5336,7 +5790,7 @@ function traduire(s) {
   <button id="btTexte" title="Texte de sérigraphie (T)">Texte</button>
   <button id="btPlacer" class="principal">Placer</button>
   <button id="btRouter">Router</button>
-  <span class="couches"><button id="btC1" title="Cuivre 1 (dessus) · touche 1">1</button><button id="btC2" title="Cuivre 2 · touche 2">2</button><button id="btC3" title="Cuivre 3 · touche 3">3</button><button id="btC4" title="Cuivre 4 (dessous) · touche 4">4</button></span>
+  <span class="couches" id="couches"></span>
   <label for="selGrille">Grille</label>
   <select id="selGrille" title="Auto : moitié du pas le plus fin des gabarits du circuit"><option value="auto" selected>Auto · 1,27 mm</option><option value="0.635">0,635 mm</option><option value="1.27">1,27 mm</option><option value="2.54">2,54 mm</option></select>
 </div>
@@ -5357,9 +5811,7 @@ function traduire(s) {
   <span id="coord">X — Y —</span>
   <span id="reste"></span>
   <span id="isol"></span>
-  <span id="aide">Clic : sélection · glisser : déplacer · R : rotation ·
- F : dessus/dessous · Maj + glisser le texte : le décaler, double-clic =
- recentrer · T : texte libre</span>
+  <span id="aide">Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le déplacer, double-clic = placement automatique · T : texte libre</span>
   <span id="msg"></span>
 </div>
 <div id="menu"></div>
@@ -5371,6 +5823,7 @@ function traduire(s) {
   <div class="op" data-action="maj" title="Circuit vide : import ; sinon mise à jour (seul ce qui a changé repart en chevelu)">Mettre à jour depuis le schéma</div>
   <div class="sepMenu"></div>
   <div class="op" data-action="gerber" title="Gerber RS-274X et Excellon, une couche par fichier">Export Gerber…</div>
+  <div class="op" data-action="bom" title="Une ligne par valeur et gabarit identiques, séparateur « ; »">Exporter la nomenclature (.csv)</div>
 </div>
 <div id="apercu" class="cache">
   <div class="apBarre"><b>Aperçu Gerber</b><span id="apInfo"></span><span class="espace"></span>
@@ -5394,10 +5847,10 @@ function traduire(s) {
 var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
 var TRAD_EN = [
   /* phrases d'aide et messages */
-  ['Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · 1-4 : couche (via)', 'Click a pad: start · click: 45°/90° bend · junction with the same net (any layer): end · right-click / Esc: stop · double-click: cancel the trace or unroute · 1-4: layer (via)'],
-  ['Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le décaler, double-clic = recentrer · T : texte libre', 'Click: select · drag: move · R: rotate · F: top/bottom · Shift + drag the text: offset it, double-click = recenter · T: free text'],
+  ['Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · chiffre : couche (via) · V : via vers le plan', 'Click a pad: start · click: 45°/90° bend · junction with the same net (any layer): end · right-click / Esc: stop · double-click: cancel the trace or unroute · digit: layer (via) · V: via to the plane'],
+  ['Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le déplacer, double-clic = placement automatique · T : texte libre', 'Click: select · drag: move · R: rotate · F: top/bottom · Shift + drag the text: move it, double-click = automatic placement · T: free text'],
   ['Clic : sélection · Maj+clic : ajout · poignées : redimensionner · glisser : déplacer ou cadre · R : rotation · Suppr', 'Click: select · Shift+click: add · handles: resize · drag: move or box · R: rotate · Del'],
-  ['clic droit / Échap : arrêter · double-clic : annuler le tracé · 1-4 : couche (via)', 'right-click / Esc: stop · double-click: cancel the trace · 1-4: layer (via)'],
+  ['clic droit / Échap : arrêter · double-clic : annuler le tracé · chiffre : couche (via) · V : via vers le plan', 'right-click / Esc: stop · double-click: cancel the trace · digit: layer (via) · V: via to the plane'],
   ['patte(s) · Ctrl+clic : ajouter/retirer · Maj+clic : plage · puis second groupe sur un autre composant', 'pin(s) · Ctrl+click: add/remove · Shift+click: range · then a second group on another component'],
   ['Circuit vide : import ; sinon mise à jour (seul ce qui a changé repart en chevelu)', 'Empty board: import; otherwise update (only what changed goes back to the ratsnest)'],
   ['Clic 1 : centre · clic 2 : début · clic 3 : fin (sens trigonométrique)', 'Click 1: center · click 2: start · click 3: end (counter-clockwise)'],
@@ -5421,7 +5874,30 @@ var TRAD_EN = [
   ['Fichier ▸ Charger le projet (.lib), puis importer le schéma', 'File ▸ Load the project (.lib), then import the schematic'],
   ['Importer / mettre à jour le schéma (.dxf)…', 'Import / update the schematic (.dxf)…'],
   ['Charger le projet (.lib)…', 'Load the project (.lib)…'], ['Enregistrer le circuit', 'Save board'],
-  ['Ouvrir un circuit…', 'Open a board…'], ['Export Gerber…', 'Gerber export…'], ['Fichier', 'File'],
+  ['Ouvrir un circuit…', 'Open a board…'], ['fréquence hors de 400 à 3000 MHz', 'frequency outside 400 to 3000 MHz'], ['Antenne patch rectangulaire', 'Rectangular patch antenna'], ['Antenne monopôle λ/4 imprimée', 'Printed λ/4 monopole antenna'],
+  ['(résonance)', '(resonant)'], ['εr effectif', 'effective εr'], ['Rin au bord', 'Edge Rin'], ['Encoche', 'Inset'], ['profondeur', 'depth'], ['fente', 'gap'], ['Polarisation', 'Polarization'],
+  ['linéaire, selon la longueur L', 'linear, along length L'], ['Brin', 'Element'], ['Zone dégagée', 'Keep-out zone'], ['aucun cuivre, toutes couches', 'no copper, all layers'],
+  ['Contrepoids', 'Counterpoise'], ['Dessous : cuivre GND sous la ligne seulement · couches internes vides dans la zone', 'Bottom: GND copper under the feed line only · inner layers empty in the zone'], ['plan de masse du circuit, au moins', 'board ground plane, at least'], ['Accord', 'Tuning'], ['raccourcir le brin à l\'analyseur', 'trim the element on the analyzer'], ['Coupleur directionnel', 'Directional coupler'], ['Lignes couplées', 'Coupled lines'], ['écart', 'gap'],
+  ['Longueur', 'Length'], ['IN → OUT direct · CPL incident · ISO réfléchi', 'IN → OUT through · CPL forward · ISO reflected'], ['Directivité', 'Directivity'], ['≈ 10 à 15 dB (microruban)', '≈ 10 to 15 dB (microstrip)'],
+  ['Passe-bas', 'Low-pass'], ['Passe-bande', 'Band-pass'], ['Tchebychev 0,5 dB', 'Chebyshev 0.5 dB'], ['ordre', 'order'], ['Tronçons C 20 Ω', 'C sections 20 Ω'], ['Tronçons L 100 Ω', 'L sections 100 Ω'],
+  ['Longueurs', 'Lengths'], ['Sections (w · écart · λ/4)', 'Sections (w · gap · λ/4)'], ['Extrémités ouvertes', 'Open ends'], ['raccourcies de', 'shortened by'], ['environ', 'approx.'],
+  ['minimum de fabrication', 'manufacturing minimum'], ['choisir une bande plus étroite', 'choose a narrower band'], ['Couplage', 'Coupling'], ['section', 'section'], ['Tronçon 100 Ω : largeur', '100 Ω section: width'], ['Diviseur en T', 'T divider'], ['sorties', 'outputs'], ['Transfo. 70,7 Ω', '70.7 Ω transf.'],
+  ['Sorties', 'Outputs'], ['en phase · pas', 'in phase · pitch'], ['Coudes', 'Bends'], ['en onglet (Douville-James)', 'mitered (Douville-James)'], ['Patch Wilkinson · 50 Ω', 'Wilkinson patch · 50 Ω'],
+  ['Fréquence hors de 400 à 3000 MHz : régler le patch dans le schéma.', 'Frequency outside 400 to 3000 MHz: set the patch in the schematic.'],
+  ['Fréquence', 'Frequency'], ['Substrat', 'Substrate'], ['Ligne 50 Ω', '50 Ω line'], ['Bras 70,7 Ω', '70.7 Ω arms'], ['Anneau', 'Ring'], ['(axe)', '(centerline)'],
+  ['Résistance', 'Resistor'], ['Couture GND', 'GND stitching'], ['vias · pas', 'vias · pitch'],
+  ['Dessous : cuivre GND plein · couches internes vides dans la zone', 'Bottom: solid GND copper · inner layers empty in the zone'],
+  ['Un patch reste sur le dessus (masse au dessous).', 'A patch stays on top (ground underneath).'], ['Couches', 'Layers'], ['Nombre', 'Count'], ['couches', 'layers'], ['Plan VCC', 'VCC plane'],
+  ['Dégagement (mm)', 'Clearance (mm)'], ['Diélectrique L1–L2 (mm)', 'Dielectric L1–L2 (mm)'], ['signaux', 'signals'], ['· plan ', '· plane '],
+  ['(sans équipotentielle)', '(no net)'], ['aucune équipotentielle', 'no net'], ['remplie à l\'export (pas de routage).', 'filled at export (no routing).'],
+  ['Pas de plan pour', 'No plane for'], ['autre équipotentielle que', 'other net than'], ['Via sur pastille CMS : tracer d\'abord un segment.', 'Via on an SMD pad: draw a segment first.'],
+  ['Pistes sur la couche interne', 'Traces on inner layer'], [': les supprimer d\'abord.', ': delete them first.'],
+  ['Thermiques : 4 rayons de 0,3 mm · retrait du bord 0,5 mm · vias reliées en plein', 'Thermals: 4 spokes 0.3 mm · edge pullback 0.5 mm · vias solidly connected'],
+  ['Aucune équipotentielle GND : le plan GND reste isolé.', 'No GND net: the GND plane stays unconnected.'],
+  ['touche', 'key'], ['en routage : via vers le plan', 'while routing: via to the plane'], ['microruban', 'microstrip'], ['Exporter la nomenclature (.csv)', 'Export the bill of materials (.csv)'],
+  ['Une ligne par valeur et gabarit identiques, séparateur « ; »', 'One line per identical value and footprint, separator “;”'],
+  ['Nomenclature vide : mettre à jour depuis le schéma.', 'Empty bill of materials: update from the schematic.'], ['Nomenclature', 'Bill of materials'],
+  ['Quantité', 'Quantity'], ['Repères', 'References'], ['Fabricant_Référence', 'Manufacturer_Reference'], ['ligne(s)', 'line(s)'], ['Export Gerber…', 'Gerber export…'], ['Fichier', 'File'],
   ['Remplacer le placement actuel par le contenu de', 'Replace the current placement with the content of'],
   ['Créer un composant ou ouvrir une bibliothèque', 'Create a component or open a library'],
   ['Gabarit vide (dessin à venir avec la retouche)', 'Empty footprint (to be drawn in edit mode)'],
@@ -5482,6 +5958,15 @@ var TRAD_EN = [
   ['Texte de sérigraphie (T)', 'Silkscreen text (T)'],
   ['Texte · sérigraphie', 'Text · silkscreen'],
   ['Recentrer le texte', 'Recenter the text'],
+  ['Replace le contour autour des composants, puis le fige', 'Puts the outline back around the components, then fixes it'],
+  ['Recentrer le contour', 'Recenter the outline'], ['Coin bas-gauche', 'Bottom-left corner'], ['(fixe)', '(fixed)'],
+  ['Texte sur une pastille : le déplacer (Maj + glisser) ou le placer automatiquement', 'Text on a pad: move it (Shift + drag) or place it automatically'],
+  ['Même hauteur et même rotation pour le texte de tous les composants', 'Same height and rotation for the text of all components'],
+  ['texte(s) sur une pastille : export Gerber refusé', 'text(s) on a pad: Gerber export refused'],
+  ['Export refusé : sérigraphie sur pastille', 'Export refused: silkscreen on pad'],
+  ['Aucun texte sur une pastille', 'No text on a pad'], ['Placé à la main (Maj + glisser)', 'Placed by hand (Shift + drag)'],
+  ['Placé automatiquement', 'Placed automatically'], ['Placer automatiquement', 'Place automatically'],
+  ['Appliquer à tous', 'Apply to all'], ['Texte libre', 'Free text'],
   ['Dessus / dessous (F)', 'Top / bottom (F)'],
   ['Auto (format supérieur)', 'Auto (next size up)'],
   ['Auto : moitié du pas le plus fin des gabarits du circuit', 'Auto: half of the finest pitch among the board footprints'],
@@ -5631,7 +6116,7 @@ function traduire(s) {
     annul: [], retab: [], modifie: false,
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 1.0, via: { perc: 0.8, diam: 1.6 },
-    substrat: 1.6, isolement: 0.2, route: null, selP: null, selV: null,
+    substrat: 1.6, isolement: 0.2, nc: 2, planVcc: '', degPlan: 0.4, hDiel: 0.2, route: null, selP: null, selV: null,
     textes: [], selT: -1, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }
   };
   var $ = function (id) { return document.getElementById(id); };
@@ -5692,7 +6177,7 @@ function traduire(s) {
         continue;
       }
       if (t === 'FIN') { (cour.type === 'p' ? lib.packages : lib.composants).push(cour.o); cour = null; continue; }
-      if ((t === 'SOURCE' || t === 'LICENCE') && l.indexOf('=>') < 0) continue;
+      if ((t === 'SOURCE' || t === 'LICENCE') && l.indexOf('=>') < 0) { if (t === 'SOURCE') cour.o.source = mots.slice(1).join(' '); continue; }
       if (cour.type === 'c') {
         m = l.match(/^(.+?)\s*=>\s*(.+)$/);
         if (!m) { err.push('Ligne ' + n); continue; }
@@ -5746,6 +6231,7 @@ function traduire(s) {
   }
   /* Gabarits possibles : ceux du composant, puis la bibliothèque, puis les normalisés de mêmes pattes */
   function gabaritsPossibles(c) {
+    if (c.type === 'PATCH') return [nomPatch(c.val)];
     var r = [], i, cle = clePattes(c), cmp = c.type === 'IC' ? cmpParNom(c.val) : null, p, nl;
     if (cmp) for (i = 0; i < cmp.pkgs.length; i++) if (pkgParNom(cmp.pkgs[i]) && r.indexOf(cmp.pkgs[i]) < 0) r.push(cmp.pkgs[i]);
     for (i = 0; i < LIB.packages.length; i++) {
@@ -5857,7 +6343,332 @@ function traduire(s) {
   /* ======================================================================
      Géométrie des composants placés (dessous = miroir en X, vu de dessus)
      ====================================================================== */
-  function gab(c) { return pkgParNom(c.gab); }
+  function gab(c) { return c.type === 'PATCH' ? gabPatch(c) : pkgParNom(c.gab); }
+
+  /* ======================================================================
+     Patchs : cuivre calculé (microruban Hammerstad-Jensen, FR4 εr 4,5,
+     h = épaisseur de la carte), zone sans couche interne, cuivre GND plein
+     dessous, vias de couture GND autour de la zone (pas ≤ λg/20)
+     Diviseur Wilkinson 2 voies en phase, 50 Ω : bras λ/4 à 70,7 Ω en anneau,
+     100 Ω CMS 0603 entre OUT1 et OUT2
+     ====================================================================== */
+  var ER_PATCH = 4.5, GAB_PATCH = {};
+  function largeurZ(z, h) {
+    var er = ER_PATCH, a = z / 60 * Math.sqrt((er + 1) / 2) + (er - 1) / (er + 1) * (0.23 + 0.11 / er), b, r;
+    r = 8 * Math.exp(a) / (Math.exp(2 * a) - 2);
+    if (r > 2) { b = 377 * Math.PI / (2 * z * Math.sqrt(er)); r = 2 / Math.PI * (b - 1 - Math.log(2 * b - 1) + (er - 1) / (2 * er) * (Math.log(b - 1) + 0.39 - 0.61 / er)); }
+    return r * h;
+  }
+  function epsEff(w, h) { var er = ER_PATCH, u = w / h; return (er + 1) / 2 + (er - 1) / 2 * (Math.pow(1 + 12 / u, -0.5) + (u < 1 ? 0.04 * (1 - u) * (1 - u) : 0)); }
+  /* Valeur d'un patch : WILK<MHz> (Wilkinson) ou DIVT<n>_<MHz> (diviseur en T, n = 2, 4, 8) */
+  function lirePatch(v) {
+    var m;
+    v = v || '';
+    if ((m = /^WILK(\d+(?:\.\d+)?)$/.exec(v))) return { type: 'WILK', n: 2, f: parseFloat(m[1]) };
+    if ((m = /^DIVT([248])_(\d+(?:\.\d+)?)$/.exec(v))) return { type: 'DIVT', n: parseInt(m[1], 10), f: parseFloat(m[2]) };
+    if ((m = /^CPL(10|15|20|30)_(\d+(?:\.\d+)?)$/.exec(v))) return { type: 'CPL', db: parseInt(m[1], 10), f: parseFloat(m[2]) };
+    if ((m = /^PBAS([357])_(\d+(?:\.\d+)?)$/.exec(v))) return { type: 'PBAS', n: parseInt(m[1], 10), f: parseFloat(m[2]) };
+    if ((m = /^PBDE([35])B(3|5|7|10)_(\d+(?:\.\d+)?)$/.exec(v))) return { type: 'PBDE', n: parseInt(m[1], 10), bw: parseInt(m[2], 10), f: parseFloat(m[3]) };
+    if ((m = /^(APAT|AMON)_(\d+(?:\.\d+)?)$/.exec(v))) return { type: m[1], f: parseFloat(m[2]) };
+    return null;
+  }
+  function nomPatch(v) {
+    var p = lirePatch(v);
+    if (!p) return 'PATCH';
+    return { WILK: 'WILKINSON', DIVT: 'DIVISEUR_T' + p.n, CPL: 'COUPLEUR' + p.db, PBAS: 'PASSE_BAS' + p.n, PBDE: 'PASSE_BANDE' + p.n, APAT: 'ANT_PATCH', AMON: 'ANT_MONOPOLE' }[p.type];
+  }
+  var ERR_PATCH = {};
+  function acosh(x) { return Math.log(x + Math.sqrt(x * x - 1)); }
+  /* Lignes couplées en microruban (Akhtarzad) : largeur et écart pour Z0e, Z0o */
+  function couplees(z0e, z0o, h) {
+    var se = largeurZ(z0e / 2, 1), so = largeurZ(z0o / 2, 1), ce = Math.cosh(Math.PI / 2 * se), co = Math.cosh(Math.PI / 2 * so), sh, wh;
+    if (!(co - ce > 0)) return null;
+    sh = 2 / Math.PI * acosh((ce + co - 2) / (co - ce));
+    wh = 1 / Math.PI * acosh(0.5 * ((ce - 1) + (ce + 1) * Math.cosh(Math.PI / 2 * sh))) - sh / 2;
+    return wh > 0 ? { w: wh * h, s: sh * h } : null;
+  }
+  /* Tchebychev 0,5 dB (g1 … gN, gN+1 = 1 pour N impair) */
+  var GCHEB = { 3: [1.5963, 1.0967, 1.5963], 5: [1.7058, 1.2296, 2.5408, 1.2296, 1.7058], 7: [1.7372, 1.2583, 2.6381, 1.3444, 2.6381, 1.2583, 1.7372] };
+  function mmP(v) { return String(arr(Math.round(v * 100) / 100)).replace('.', ',') + ' mm'; }
+  /* Zone, bande GND du dessous et vias de couture (coupées au droit des ports gauche et droite) */
+  function finirZone(g, xz0, xz1, yz, yg, yd, w50, pas) {
+    var o = B.via.diam / 2 + 0.3, vd = B.via.diam / 2 + 0.5, bord = [[xz0 - o, -yz - o], [xz1 + o, -yz - o], [xz1 + o, yz + o], [xz0 - o, yz + o]], k, j, a, b, lg, n, x, y;
+    function libre(y, l) { return !l.some(function (q) { return Math.abs(y - q) < w50 / 2 + vd; }); }
+    for (k = 0; k < 4; k++) {
+      a = bord[k]; b = bord[(k + 1) % 4]; lg = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1])); n = Math.ceil(lg / pas);
+      for (j = 0; j < n; j++) {
+        x = a[0] + (b[0] - a[0]) * j / n; y = a[1] + (b[1] - a[1]) * j / n;
+        if ((k === 3 && !libre(y, yg)) || (k === 1 && !libre(y, yd))) continue;
+        g.el.push({ t: 'pad', nom: 'GND', x: arr(x), y: arr(y), perc: B.via.perc, diam: B.via.diam, forme: 'ROND', rot: 0, via: true });
+      }
+    }
+    g.el.push({ t: 'zone', pts: [[arr(xz0), arr(-yz)], [arr(xz1), arr(-yz)], [arr(xz1), arr(yz)], [arr(xz0), arr(yz)]] });
+    o = B.via.diam + 0.6;
+    g.el.push({ t: 'bande', pts: [[arr(xz0 - o), arr(-yz - o)], [arr(xz1 + o), arr(-yz - o)], [arr(xz1 + o), arr(yz + o)], [arr(xz0 - o), arr(yz + o)]] });
+    return g.el.filter(function (e) { return e.via; }).length;
+  }
+  function rectCu(x0, y0, x1, y1) { return { t: 'cupoly', pts: [[arr(Math.min(x0, x1)), arr(Math.min(y0, y1))], [arr(Math.max(x0, x1)), arr(Math.min(y0, y1))], [arr(Math.max(x0, x1)), arr(Math.max(y0, y1))], [arr(Math.min(x0, x1)), arr(Math.max(y0, y1))]] }; }
+  /* Coude à 90° en onglet (Douville-James) : montée verticale depuis ys jusqu'au coin (kx, ky), puis ligne
+     horizontale vers xe (xe > kx) ; sy = +1 coude vers le haut, -1 vers le bas */
+  function coudeOnglet(kx, ky, sy, w, ys, xe, h) {
+    var M = 0.52 + 0.65 * Math.exp(-1.35 * w / h), c = 2 * M * w, yb = ky - Math.abs(ky - ys), l = [[kx - w / 2, yb], [kx - w / 2, ky + w / 2 - c], [kx - w / 2 + c, ky + w / 2], [xe, ky + w / 2], [xe, ky - w / 2], [kx + w / 2, ky - w / 2], [kx + w / 2, yb]];
+    return { t: 'cupoly', pts: l.map(function (q) { return [arr(q[0]), arr(ky + sy * (q[1] - ky))]; }) };
+  }
+  function gabPatch(c) {
+    var p = lirePatch(c.val), h = B.substrat, cle = c.val + '|' + h + '|' + B.via.perc + '/' + B.via.diam, g;
+    if (!p || p.f < 400 || p.f > 3000) return null;
+    if (GAB_PATCH.hasOwnProperty(cle)) return GAB_PATCH[cle];
+    g = { WILK: function () { return gabWilkinson(p.f, h); }, DIVT: function () { return gabDiviseurT(p.f, p.n, h); }, CPL: function () { return gabCoupleur(p.f, p.db, h); },
+          PBAS: function () { return gabPasseBas(p.f, p.n, h); }, PBDE: function () { return gabPasseBande(p.f, p.n, p.bw, h); },
+          APAT: function () { return gabAntPatch(p.f, h); }, AMON: function () { return gabMonopole(p.f, h); } }[p.type]();
+    if (g.erreur) { ERR_PATCH[c.val] = g.erreur; g = null; }
+    GAB_PATCH[cle] = g;
+    return g;
+  }
+  /* Antenne patch rectangulaire alimentée par encoche (Balanis) : W, εreff, ΔL, L ; conductances
+     de fente G1 et mutuelle G12 intégrées numériquement ; Rin(bord) = 1 / 2(G1 + G12) ;
+     profondeur d'encoche y0 telle que Rin(y0) = Rin(bord)·cos²(π·y0/L) = 50 Ω ; encoche de 1 mm de part et d'autre */
+  function besselJ0(x) { var n = 60, i, t = 0; for (i = 0; i <= n; i++) t += (i === 0 || i === n ? 0.5 : 1) * Math.cos(x * Math.sin(Math.PI * i / n)); return t / n; }
+  function gabAntPatch(fr, h) {
+    var er = ER_PATCH, l0 = 299792.458 / fr, k0 = 2 * Math.PI / l0, W = l0 / 2 * Math.sqrt(2 / (er + 1)), ee = (er + 1) / 2 + (er - 1) / 2 / Math.sqrt(1 + 12 * h / W),
+        dL = 0.412 * h * (ee + 0.3) * (W / h + 0.264) / ((ee - 0.258) * (W / h + 0.8)), L = l0 / (2 * Math.sqrt(ee)) - 2 * dL, G1 = 0, G12 = 0, n = 400, i, t, a, r0, y0,
+        w50 = largeurZ(50, h), ee50 = epsEff(w50, h), m = Math.max(3 * w50, 6 * h), gap = 1.0, e, xz0, xz1, yz, g, pas, nv;
+    for (i = 1; i < n; i++) {
+      t = Math.PI * i / n; a = Math.sin(k0 * W / 2 * Math.cos(t)) / Math.cos(t); a = a * a * Math.pow(Math.sin(t), 3) * Math.PI / n;
+      G1 += a; G12 += a * besselJ0(k0 * L * Math.sin(t));
+    }
+    G1 /= 120 * Math.PI * Math.PI; G12 /= 120 * Math.PI * Math.PI;
+    r0 = 1 / (2 * (G1 + G12));
+    y0 = r0 > 50 ? L / Math.PI * Math.acos(Math.sqrt(50 / r0)) : 0;
+    e = w50 / 2 + gap;
+    xz0 = -L / 2 - m; xz1 = L / 2 + m; yz = W / 2 + m;
+    g = { nom: 'ANT_PATCH', el: [], patch: 'APAT' };
+    g.el.push({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push({ t: 'cupoly', pts: [[-L / 2, W / 2], [L / 2, W / 2], [L / 2, -W / 2], [-L / 2, -W / 2], [-L / 2, -e], [-L / 2 + y0, -e], [-L / 2 + y0, e], [-L / 2, e]].map(function (q) { return [arr(q[0]), arr(q[1])]; }) });
+    g.el.push(rectCu(xz0, -w50 / 2, -L / 2 + y0 + 0.2, w50 / 2));
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    nv = finirZone(g, xz0, xz1, yz, [0], [], w50, pas);
+    g.titre = 'Antenne patch rectangulaire · 50 Ω';
+    g.lignes = [['Patch', mmP(L) + ' (résonance) × ' + mmP(W)], ['εr effectif', String(arr(Math.round(ee * 100) / 100)).replace('.', ',') + ' · ΔL ' + mmP(dL)],
+                ['Rin au bord', Math.round(r0) + ' Ω (G1 + G12)'], ['Encoche', 'profondeur ' + mmP(y0) + ' · fente ' + mmP(gap)], ['Polarisation', 'linéaire, selon la longueur L']];
+    g.cotes = { f: fr, h: h, w50: w50, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Monopôle imprimé λ/4 : ligne 50 Ω sur masse jusqu'au bord du plan, puis brin dans une zone dégagée
+     (aucun cuivre sur aucune couche) ; εeff ≈ (εr + 1)/2 ; vias de couture autour de la seule partie
+     avec masse ; le plan de masse du circuit sert de contrepoids */
+  function gabMonopole(fr, h) {
+    var l0 = 299792.458 / fr, L = l0 / 4 / Math.sqrt((ER_PATCH + 1) / 2), w50 = largeurZ(50, h), ee50 = epsEff(w50, h), m = 3 * w50, lf = Math.max(m, 10),
+        xz0 = -lf, bord = 5, yk = Math.max(m, 10), yb = w50 / 2 + m, xz1 = L + bord, yz = Math.max(yb, yk), g, pas, o, vd, x, y, k, nv;
+    g = { nom: 'ANT_MONOPOLE', el: [], patch: 'AMON' };
+    g.el.push({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push(rectCu(xz0, -w50 / 2, L, w50 / 2));
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    o = B.via.diam / 2 + 0.3; vd = B.via.diam / 2 + 0.5;
+    for (k = 0; k * pas <= lf + 2 * o; k++) {
+      x = xz0 - o + k * pas;
+      if (x > -o) break;
+      g.el.push({ t: 'pad', nom: 'GND', x: arr(x), y: arr(yb + o), perc: B.via.perc, diam: B.via.diam, forme: 'ROND', rot: 0, via: true });
+      g.el.push({ t: 'pad', nom: 'GND', x: arr(x), y: arr(-yb - o), perc: B.via.perc, diam: B.via.diam, forme: 'ROND', rot: 0, via: true });
+    }
+    for (y = -yb - o + pas; y < yb + o - 1e-6; y += pas) if (Math.abs(y) >= w50 / 2 + vd) g.el.push({ t: 'pad', nom: 'GND', x: arr(xz0 - o), y: arr(y), perc: B.via.perc, diam: B.via.diam, forme: 'ROND', rot: 0, via: true });
+    nv = g.el.filter(function (e) { return e.via; }).length;
+    g.el.push({ t: 'zone', pts: [[arr(xz0), arr(-yz)], [arr(xz1), arr(-yz)], [arr(xz1), arr(yz)], [arr(xz0), arr(yz)]] });
+    o = B.via.diam + 0.6;
+    g.el.push({ t: 'bande', pts: [[arr(xz0 - o), arr(-yb - o)], [0, arr(-yb - o)], [0, arr(yb + o)], [arr(xz0 - o), arr(yb + o)]] });
+    g.el.push({ t: 'rect', x1: 0, y1: arr(-yk), x2: arr(xz1), y2: arr(yk), w: 0.15 });
+    g.titre = 'Antenne monopôle λ/4 imprimée · 50 Ω';
+    g.lignes = [['Brin', mmP(L) + ' × ' + mmP(w50) + ' (εeff ≈ (εr + 1)/2)'], ['Zone dégagée', mmP(xz1) + ' × ' + mmP(2 * yk) + ' : aucun cuivre, toutes couches'],
+                ['Contrepoids', 'plan de masse du circuit, au moins λ/4 = ' + mmP(l0 / 4)], ['Accord', 'raccourcir le brin à l\'analyseur']];
+    g.cotes = { f: fr, h: h, w50: w50, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Coupleur directionnel à lignes couplées λ/4 (onde arrière) : CPL du côté de IN, ISO du côté de OUT ;
+     ports libres ; ligne directe au bord aligné sur l'écart, ligne couplée écartée à 45° */
+  function gabCoupleur(fr, db, h) {
+    var k = Math.pow(10, -db / 20), z0e = 50 * Math.sqrt((1 + k) / (1 - k)), z0o = 50 * Math.sqrt((1 - k) / (1 + k)), cp = couplees(z0e, z0o, h),
+        w50 = largeurZ(50, h), ee50 = epsEff(w50, h), l0 = 299792.458 / fr, m = 3 * w50, g, L, xa, yc, yD, xd, xz0, xz1, ym, yz, pas, nv, w, sp;
+    if (!cp || cp.s < MINI.isolement) return { erreur: 'Couplage ' + db + ' dB : écart ' + mmP(cp ? cp.s : 0) + ' < 0,152 mm (minimum de fabrication) sur h ' + mmP(h) };
+    w = cp.w; sp = cp.s;
+    L = l0 / Math.sqrt(epsEff(w, h)) / 4;
+    xa = L / 2; yc = -(sp / 2 + w / 2); yD = sp / 2 + w + Math.max(2 * w50, 3); xd = xa + (yD - Math.abs(yc));
+    xz0 = -xd - m; xz1 = xd + m; ym = sp / 2 + w50 / 2; yz = Math.max(yD + w50 / 2, sp / 2 + w50) + m;
+    g = { nom: 'COUPLEUR' + db, el: [], patch: 'CPL' };
+    [['IN', xz0 + w50 / 2, ym], ['OUT', xz1 - w50 / 2, ym], ['CPL', xz0 + w50 / 2, -yD], ['ISO', xz1 - w50 / 2, -yD]].forEach(function (q) {
+      g.el.push({ t: 'smd', nom: q[0], x: arr(q[1]), y: arr(q[2]), dx: arr(w50), dy: arr(w50), rot: 0 });
+    });
+    g.el.push(rectCu(xz0, sp / 2, -xa, sp / 2 + w50), rectCu(-xa, sp / 2, xa, sp / 2 + w), rectCu(xa, sp / 2, xz1, sp / 2 + w50));
+    g.el.push(rectCu(-xa, -sp / 2 - w, xa, -sp / 2));
+    [1, -1].forEach(function (sx) {
+      g.el.push({ t: 'cutrait', w: arr(w), pts: [[arr(sx * xa), arr(yc)], [arr(sx * xd), arr(-yD)]] });
+      g.el.push({ t: 'cutrait', w: arr(w50), pts: [[arr(sx * xd), arr(-yD)], [arr(sx > 0 ? xz1 - w50 / 2 : xz0 + w50 / 2), arr(-yD)]] });
+    });
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    nv = finirZone(g, xz0, xz1, yz, [ym, -yD], [ym, -yD], w50, pas);
+    g.titre = 'Coupleur directionnel ' + db + ' dB · 50 Ω';
+    g.lignes = [['Lignes couplées', mmP(w) + ' · écart ' + mmP(sp)], ['Z0e / Z0o', String(arr(Math.round(z0e * 10) / 10)).replace('.', ',') + ' / ' + String(arr(Math.round(z0o * 10) / 10)).replace('.', ',') + ' Ω'],
+                ['Longueur', 'λ/4 ' + mmP(L)], ['Ports', 'IN → OUT direct · CPL incident · ISO réfléchi'], ['Directivité', '≈ 10 à 15 dB (microruban)']];
+    g.cotes = { f: fr, h: h, w50: w50, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Passe-bas à sauts d'impédance (Tchebychev 0,5 dB) : C = tronçons 20 Ω, L = tronçons 100 Ω,
+     βl = g·Zbas/Z0 ou g·Z0/Zhaut à la fréquence de coupure ; premier élément : C */
+  function gabPasseBas(fc, n, h) {
+    var zl = 20, zh = 100, wl = largeurZ(zl, h), wh = largeurZ(zh, h), w50 = largeurZ(50, h), ee50 = epsEff(w50, h), l0 = 299792.458 / fc, m = 3 * w50,
+        secs = [], i, gk, w, bl, tot = 0, x, xz0, xz1, yz, g, pas, nv;
+    for (i = 0; i < n; i++) {
+      gk = GCHEB[n][i]; w = i % 2 ? wh : wl; bl = i % 2 ? gk * 50 / zh : gk * zl / 50;
+      secs.push({ w: w, l: bl / (2 * Math.PI) * l0 / Math.sqrt(epsEff(w, h)) }); tot += secs[i].l;
+    }
+    if (wh < MINI.piste) return { erreur: 'Tronçon 100 Ω : largeur ' + mmP(wh) + ' < minimum de fabrication' };
+    xz0 = -tot / 2 - m; xz1 = tot / 2 + m; yz = wl / 2 + m;
+    g = { nom: 'PASSE_BAS' + n, el: [], patch: 'PBAS' };
+    g.el.push({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 }, { t: 'smd', nom: 'OUT', x: arr(xz1 - w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push(rectCu(xz0, -w50 / 2, -tot / 2, w50 / 2), rectCu(tot / 2, -w50 / 2, xz1, w50 / 2));
+    x = -tot / 2;
+    secs.forEach(function (q) { g.el.push(rectCu(x, -q.w / 2, x + q.l, q.w / 2)); x += q.l; });
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    nv = finirZone(g, xz0, xz1, yz, [0], [0], w50, pas);
+    g.titre = 'Passe-bas Tchebychev 0,5 dB · ordre ' + n + ' · 50 Ω';
+    g.lignes = [['Tronçons C 20 Ω', mmP(wl)], ['Tronçons L 100 Ω', mmP(wh)],
+                ['Longueurs', secs.map(function (q, k) { return (k % 2 ? 'L' : 'C') + (k + 1) + ' ' + mmP(q.l); }).join(' · ')]];
+    g.cotes = { f: fc, h: h, w50: w50, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Passe-bande à lignes couplées λ/2 (Tchebychev 0,5 dB, Matthaei) : N + 1 sections couplées λ/4 en
+     escalier, inverseurs J, extrémités ouvertes raccourcies (Hammerstad) */
+  function gabPasseBande(f0, n, bw, h) {
+    var gk = GCHEB[n].concat([1]), D = bw / 100, w50 = largeurZ(50, h), ee50 = epsEff(w50, h), l0 = 299792.458 / f0, m = 3 * w50,
+        sec = [], i, jz, z0e, z0o, cp, ee, X = [], c = [], yb, g, pas, nv, j, x1, x2, yIn, yOut, haut, bas2, dx, dy, xz0, xz1, yz, ld, lf;
+    for (i = 1; i <= n + 1; i++) {
+      jz = i === 1 ? Math.sqrt(Math.PI * D / (2 * gk[0])) : (i === n + 1 ? Math.sqrt(Math.PI * D / (2 * gk[n - 1] * gk[n])) : Math.PI * D / (2 * Math.sqrt(gk[i - 2] * gk[i - 1])));
+      z0e = 50 * (1 + jz + jz * jz); z0o = 50 * (1 - jz + jz * jz);
+      cp = couplees(z0e, z0o, h);
+      if (!cp || cp.s < MINI.isolement) return { erreur: 'Passe-bande ' + bw + ' % : section ' + i + ', écart ' + mmP(cp ? cp.s : 0) + ' < 0,152 mm (minimum de fabrication) sur h ' + mmP(h) + ' ; choisir une bande plus étroite' };
+      ee = epsEff(cp.w, h);
+      sec.push({ w: cp.w, s: cp.s, l: l0 / Math.sqrt(ee) / 4, dl: h * 0.412 * (ee + 0.3) * (cp.w / h + 0.264) / ((ee - 0.258) * (cp.w / h + 0.8)), z0e: z0e, z0o: z0o });
+    }
+    X[1] = 0; for (i = 1; i <= n + 1; i++) X[i + 1] = X[i] + sec[i - 1].l;
+    c[0] = 0;
+    for (i = 1; i <= n + 1; i++) { yb = c[i - 1] - sec[i - 1].w / 2; c[i] = yb - sec[i - 1].s - sec[i - 1].w / 2; }
+    g = { nom: 'PASSE_BANDE' + n, el: [], patch: 'PBDE' };
+    /* lignes 0 … N+1 : moitié gauche dans la section j, moitié droite dans la section j+1 */
+    for (j = 0; j <= n + 1; j++) {
+      if (j >= 1) { x1 = X[j] + (j > 0 ? sec[j - 1].dl : 0); x2 = X[j + 1]; g.el.push(rectCu(x1, c[j] - sec[j - 1].w / 2, x2, c[j] + sec[j - 1].w / 2)); }
+      if (j <= n) { x1 = X[j + 1]; x2 = X[j + 2] - sec[j].dl; g.el.push(rectCu(x1, c[j] - sec[j].w / 2, x2, c[j] + sec[j].w / 2)); }
+    }
+    lf = Math.max(m, 5);
+    yb = c[0] - sec[0].w / 2; yIn = yb + w50 / 2;
+    ld = c[n + 1] + sec[n].w / 2; yOut = ld - w50 / 2;
+    g.el.push(rectCu(X[1] - lf, yb, X[1], yb + w50), rectCu(X[n + 2], ld - w50, X[n + 2] + lf, ld));
+    haut = Math.max(c[0] + sec[0].w / 2, yb + w50); bas2 = Math.min(c[n + 1] - sec[n].w / 2, ld - w50);
+    dx = (X[1] - lf + X[n + 2] + lf) / 2; dy = (haut + bas2) / 2;
+    g.el.forEach(function (e) { e.pts = e.pts.map(function (q) { return [arr(q[0] - dx), arr(q[1] - dy)]; }); });
+    xz0 = X[1] - lf - dx; xz1 = X[n + 2] + lf - dx; yz = (haut - bas2) / 2 + m; yIn -= dy; yOut -= dy;
+    g.el.unshift({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: arr(yIn), dx: arr(w50), dy: arr(w50), rot: 0 }, { t: 'smd', nom: 'OUT', x: arr(xz1 - w50 / 2), y: arr(yOut), dx: arr(w50), dy: arr(w50), rot: 0 });
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    nv = finirZone(g, xz0, xz1, yz, [yIn], [yOut], w50, pas);
+    g.titre = 'Passe-bande Tchebychev 0,5 dB · ordre ' + n + ' · ' + bw + ' % · 50 Ω';
+    g.lignes = [['Sections (w · écart · λ/4)', sec.map(function (q, k) { return (k + 1) + ' : ' + mmP(q.w) + ' · ' + mmP(q.s) + ' · ' + mmP(q.l); }).join(' | ')],
+                ['Extrémités ouvertes', 'raccourcies de ' + mmP(sec[0].dl) + ' environ']];
+    g.cotes = { f: f0, h: h, w50: w50, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Diviseur Wilkinson 2 voies en phase : bras λ/4 à 70,7 Ω en anneau, 100 Ω CMS 0603 entre OUT1 et OUT2 */
+  function gabWilkinson(fr, h) {
+    var g, w50, w70, ee70, ee50, l0, L, R, dl, i, cms = CMS2['0603'], ye = (cms[0] - cms[1]) / 2, yr = cms[0] / 2, m, xr, xz0, xz1, yz, xb, y0, ys, p0, ar, pas, nv;
+    w50 = largeurZ(50, h); w70 = largeurZ(50 * Math.SQRT2, h); ee70 = epsEff(w70, h); ee50 = epsEff(w50, h);
+    l0 = 299792.458 / fr; L = l0 / Math.sqrt(ee70) / 4;
+    R = L / Math.PI;
+    for (i = 0; i < 30; i++) { dl = Math.asin(Math.min(0.9, ye / R)); R = L / (Math.PI - dl); }
+    dl = Math.asin(ye / R);
+    m = 3 * w50;
+    xr = R * Math.cos(dl);
+    xb = R + w70 / 2 + w50 / 2 + 0.5;
+    y0 = ye + w50 / 2; ys = Math.max(y0, 1.5 * w50);
+    p0 = [[xr, y0], [xb, y0]];
+    if (ys > y0) p0.push([xb + (ys - y0), ys]);
+    xz0 = -(R + w70 / 2) - m; xz1 = p0[p0.length - 1][0] + m; yz = Math.max(R + w70 / 2, ys + w50 / 2) + m;
+    p0.push([xz1 - w50 / 2, ys]);
+    g = { nom: 'WILKINSON', el: [], patch: 'WILK' };
+    /* ports (premiers : position de la patte), pastilles de la résistance */
+    g.el.push({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push({ t: 'smd', nom: 'OUT1', x: arr(xz1 - w50 / 2), y: arr(ys), dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push({ t: 'smd', nom: 'OUT2', x: arr(xz1 - w50 / 2), y: arr(-ys), dx: arr(w50), dy: arr(w50), rot: 0 });
+    g.el.push({ t: 'smd', nom: 'OUT1', x: arr(xr), y: arr(yr), dx: cms[2], dy: cms[1], rot: 0 });
+    g.el.push({ t: 'smd', nom: 'OUT2', x: arr(xr), y: arr(-yr), dx: cms[2], dy: cms[1], rot: 0 });
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    /* bras λ/4 (secteurs d'anneau), entrée, sorties */
+    ar = function (sg) {
+      var l = [], n = Math.max(12, Math.ceil((Math.PI - dl) / (Math.PI / 60))), t, j;
+      for (j = 0; j <= n; j++) { t = dl + (Math.PI - dl) * j / n; l.push([arr((R + w70 / 2) * Math.cos(t)), arr(sg * (R + w70 / 2) * Math.sin(t))]); }
+      for (j = n; j >= 0; j--) { t = dl + (Math.PI - dl) * j / n; l.push([arr((R - w70 / 2) * Math.cos(t)), arr(sg * (R - w70 / 2) * Math.sin(t))]); }
+      return l;
+    };
+    g.el.push({ t: 'cupoly', pts: ar(1) }, { t: 'cupoly', pts: ar(-1) });
+    g.el.push(rectCu(xz0, -w50 / 2, -R, w50 / 2));
+    g.el.push({ t: 'cutrait', w: arr(w50), pts: p0.map(function (q) { return [arr(q[0]), arr(q[1])]; }) });
+    g.el.push({ t: 'cutrait', w: arr(w50), pts: p0.map(function (q) { return [arr(q[0]), arr(-q[1])]; }) });
+    nv = finirZone(g, xz0, xz1, yz, [0], [ys, -ys], w50, pas);
+    /* sérigraphie : contour de la résistance */
+    g.el.push({ t: 'rect', x1: arr(xr - cms[2] / 2 - 0.25), y1: arr(-yr - cms[1] / 2 - 0.25), x2: arr(xr + cms[2] / 2 + 0.25), y2: arr(yr + cms[1] / 2 + 0.25), w: 0.15 });
+    g.titre = 'Patch Wilkinson · 50 Ω';
+    g.lignes = [['Bras 70,7 Ω', mmP(w70) + ' · λ/4 ' + mmP(L)], ['Anneau', 'Ø ' + mmP(2 * R) + ' (axe)'], ['Résistance', '100 Ω CMS 0603']];
+    g.cotes = { f: fr, h: h, w50: w50, w70: w70, ee70: ee70, L: L, D: 2 * R, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Diviseur en T sans résistance, n = 2, 4, 8 sorties en phase au pas λ0/2 (alimentation d'un réseau
+     d'antennes) : arbre symétrique ; à chaque T, deux transformateurs λ/4 à 70,7 Ω verticaux, puis 50 Ω,
+     coude en onglet et ligne horizontale vers l'étage suivant ; chemins IN → OUTk identiques */
+  function gabDiviseurT(fr, n, h) {
+    var g = { nom: 'DIVISEUR_T' + n, el: [], patch: 'DIVT' }, w50 = largeurZ(50, h), w70 = largeurZ(50 * Math.SQRT2, h), ee70 = epsEff(w70, h), ee50 = epsEff(w50, h),
+        l0 = 299792.458 / fr, L = l0 / Math.sqrt(ee70) / 4, P = l0 / 2, S = Math.round(Math.log(n) / Math.LN2), m = 3 * w50, hx = Math.max(4 * w50, 8),
+        xz0 = 0, x0 = xz0 + m + 2 * w50, xz1 = x0 + S * hx + m, ys = [], yz, i, s, nds = [0], suiv, d, xs, xe, pas, nv, cu = [];
+    for (i = 0; i < n; i++) ys.push(((n - 1) / 2 - i) * P);
+    yz = (n - 1) / 2 * P + w50 / 2 + m;
+    /* ports : IN puis OUT1 (haut) … OUTn (bas) */
+    g.el.push({ t: 'smd', nom: 'IN', x: arr(xz0 + w50 / 2), y: 0, dx: arr(w50), dy: arr(w50), rot: 0 });
+    for (i = 0; i < n; i++) g.el.push({ t: 'smd', nom: 'OUT' + (i + 1), x: arr(xz1 - w50 / 2), y: arr(ys[i]), dx: arr(w50), dy: arr(w50), rot: 0 });
+    cu.push(rectCu(xz0, -w50 / 2, x0 + w70 / 2, w50 / 2));
+    for (s = 0; s < S; s++) {
+      d = P * Math.pow(2, S - s - 2); xs = x0 + s * hx; xe = s === S - 1 ? xz1 : x0 + (s + 1) * hx + w70 / 2; suiv = [];
+      nds.forEach(function (yj) {
+        [1, -1].forEach(function (sy) {
+          cu.push(rectCu(xs - w70 / 2, yj, xs + w70 / 2, yj + sy * L));
+          cu.push(coudeOnglet(xs, yj + sy * d, sy, w50, yj + sy * L, xe, h));
+          suiv.push(yj + sy * d);
+        });
+      });
+      nds = suiv;
+    }
+    cu.forEach(function (e) { g.el.push(e); });
+    pas = Math.max(B.via.diam + 0.5, l0 / Math.sqrt(ee50) / 20);
+    nv = finirZone(g, xz0, xz1, yz, [0], ys, w50, pas);
+    /* recentrage : origine au centre de la zone */
+    xs = (xz0 + xz1) / 2;
+    g.el.forEach(function (e) {
+      if (e.x !== undefined) e.x = arr(e.x - xs);
+      if (e.pts) e.pts = e.pts.map(function (q) { return [arr(q[0] - xs), q[1]]; });
+    });
+    g.titre = 'Diviseur en T · ' + n + ' sorties · 50 Ω';
+    g.lignes = [['Transfo. 70,7 Ω', mmP(w70) + ' · λ/4 ' + mmP(L)], ['Sorties', n + ' en phase · pas λ0/2 ' + mmP(P)], ['Coudes', 'en onglet (Douville-James)']];
+    g.cotes = { f: fr, h: h, w50: w50, w70: w70, ee70: ee70, L: L, n: n, P: P, zx: xz1 - xz0, zy: 2 * yz, pas: pas, vias: nv };
+    return g;
+  }
+  /* Cuivre d'un patch en coordonnées monde : polygones, traits, zone, bande GND du dessous */
+  function cuivrePatch(c) {
+    var p = gab(c), r = { polys: [], traits: [], zone: null, bande: null };
+    if (!p || !p.patch) return r;
+    function pm(l) { return l.map(function (q) { return ptMonde(c, q[0], q[1]); }); }
+    p.el.forEach(function (e) {
+      if (e.t === 'cupoly') r.polys.push(pm(e.pts));
+      else if (e.t === 'cutrait') r.traits.push({ w: e.w, pts: pm(e.pts).map(function (q) { return { x: q[0], y: q[1] }; }) });
+      else if (e.t === 'zone') r.zone = pm(e.pts);
+      else if (e.t === 'bande') r.bande = pm(e.pts);
+    });
+    return r;
+  }
+  function patchs() { return B.comps.filter(function (c) { return c.type === 'PATCH' && gab(c); }); }
   function ptMonde(c, x, y) { return transPts([[c.dessous ? -x : x, y]], c.x, c.y, c.rot)[0]; }
   function rotMonde(c, r) { return normAng((c.dessous ? 180 - r : r) + c.rot); }
   /* Élément du gabarit transformé en coordonnées monde */
@@ -5894,6 +6705,7 @@ function traduire(s) {
       else if (e.t === 'trait' || e.t === 'rect') { aj(e.x1, e.y1); aj(e.x2, e.y2); }
       else if (e.t === 'arc' || e.t === 'cercle') { r = e.r; aj(e.cx - r, e.cy - r); aj(e.cx + r, e.cy + r); }
       else if (e.t === 'point') { aj(e.x - e.r, e.y - e.r); aj(e.x + e.r, e.y + e.r); }
+      else if (e.t === 'bande') for (k = 0; k < e.pts.length; k++) aj(e.pts[k][0], e.pts[k][1]);
     }
     return b;
   }
@@ -6190,15 +7002,30 @@ function traduire(s) {
     for (i = 1; i < f.pts.length; i++) ctx.lineTo(f.pts[i][0], f.pts[i][1]);
     ctx.closePath();
   }
+  function dessinerPatch(c) {
+    var k = cuivrePatch(c), i, j;
+    function chemin(l) { ctx.beginPath(); ctx.moveTo(l[0][0], l[0][1]); for (j = 1; j < l.length; j++) ctx.lineTo(l[j][0], l[j][1]); ctx.closePath(); }
+    ctx.globalAlpha = 0.22; ctx.fillStyle = COUL.cuivreDessous; chemin(k.bande); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#9a9a9a'; ctx.lineWidth = 1 / B.z; ctx.setLineDash([6 / B.z, 4 / B.z]); chemin(k.zone); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = COUL.cuivreDessus; ctx.strokeStyle = COUL.cuivreDessus;
+    for (i = 0; i < k.polys.length; i++) { chemin(k.polys[i]); ctx.fill(); }
+    for (i = 0; i < k.traits.length; i++) {
+      ctx.lineWidth = k.traits[i].w; ctx.beginPath(); ctx.moveTo(k.traits[i].pts[0].x, k.traits[i].pts[0].y);
+      for (j = 1; j < k.traits[i].pts.length; j++) ctx.lineTo(k.traits[i].pts[j].x, k.traits[i].pts[j].y);
+      ctx.stroke();
+    }
+  }
   function dessinerComposant(c) {
     var p = gab(c), i, e, w, cu = c.dessous ? COUL.cuivreDessous : COUL.cuivreDessus, sg = c.dessous ? COUL.serigDessous : COUL.serigDessus, fin = 1 / B.z, j, b, s1, s2;
     if (!p) {
       b = bboxMonde(c); s1 = versEcran(b[0], b[3]); s2 = versEcran(b[2], b[1]);
       ecran(); ctx.strokeStyle = '#c62828'; ctx.setLineDash([4, 3]); ctx.strokeRect(s1.x, s1.y, s2.x - s1.x, s2.y - s1.y); ctx.setLineDash([]);
+      if (c.type === 'PATCH') { ctx.fillStyle = '#ff6b6b'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(traduire(libelle(c) + ' : ' + (ERR_PATCH[c.val] || 'fréquence hors de 400 à 3000 MHz')), s1.x, s2.y + 4); }
       return;
     }
     monde();
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (p.patch) dessinerPatch(c);
     for (i = 0; i < p.el.length; i++) {
       e = p.el[i];
       if (!estPad(e)) continue;
@@ -6229,20 +7056,141 @@ function traduire(s) {
       }
     }
   }
-  /* Texte « IC1.NE555 » : fin, libre (pas d'accroche), centré par défaut */
+  /* ======================================================================
+     Textes de sérigraphie au vrai : police au trait du Gerber, hauteur (mm) et
+     rotation réelles ; ce qui est dessiné est ce qui sera fabriqué
+     ====================================================================== */
+  var MARGE_SERIG = 0.15, CONFLITS_SERIG = { comps: [], libres: [] };
   function posTexte(c) { var k = centre(c); return { x: k.x + (c.tx || 0), y: k.y + (c.ty || 0) }; }
-  function rectTexte(c) {
-    var p = versEcran(posTexte(c).x, posTexte(c).y), px = Math.max(9, Math.min(16, B.z * 1.1)), w;
-    ecran(); ctx.font = '300 ' + px + 'px sans-serif'; w = ctx.measureText(libelle(c)).width;
-    return [p.x - w / 2, p.y - px / 2, p.x + w / 2, p.y + px / 2, px];
+  function hTexte(c) { return c.th || 1.0; }
+  function rotTexte(c) { return c.trot || 0; }
+  function traitsComp(c) { var p = posTexte(c); return traitsTexte(libelle(c), p.x, p.y, hTexte(c), rotTexte(c), c.dessous); }
+  function traitsLibre(t) { return traitsTexte(t.txt, t.x, t.y, t.h, t.rot, t.dessous); }
+  /* Rectangle monde [x0, y0, x1, y1] d'un texte au trait centré en (x, y), épaisseur du trait comprise */
+  function boiteTexte(txt, x, y, h, rot) {
+    var w = (Math.max(1, String(txt).length) * 5 - 1) * h / 6, a = rot * Math.PI / 180, ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a)),
+        e = epTexte(h) / 2, hd = /[\u00B5\u039C\u03BC]/.test(txt) ? h * 1.5 : h, hw = (w * ca + hd * sa) / 2 + e, hh = (w * sa + hd * ca) / 2 + e;
+    /* hd : le « µ » descend sous la ligne de base, la boîte est agrandie d'autant de chaque côté */
+    return [x - hw, y - hh, x + hw, y + hh];
+  }
+  function boiteComp(c) { var p = posTexte(c); return boiteTexte(libelle(c), p.x, p.y, hTexte(c), rotTexte(c)); }
+  function boiteLibre(t) { return boiteTexte(t.txt, t.x, t.y, t.h, t.rot); }
+  function rectEcran(bx) { var p = versEcran(bx[0], bx[3]), q = versEcran(bx[2], bx[1]); return [p.x, p.y, q.x, q.y]; }
+  function rectTexte(c) { return rectEcran(boiteComp(c)); }
+  function tracerTraits(l, ep, coul) {
+    var i, j;
+    monde();
+    ctx.strokeStyle = coul; ctx.fillStyle = coul; ctx.lineWidth = Math.max(ep, 1 / B.z); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (i = 0; i < l.length; i++) {
+      ctx.beginPath();
+      if (l[i].length === 1) { ctx.arc(l[i][0].x, l[i][0].y, Math.max(ep, 1 / B.z) / 2, 0, Math.PI * 2); ctx.fill(); continue; }
+      ctx.moveTo(l[i][0].x, l[i][0].y);
+      for (j = 1; j < l[i].length; j++) ctx.lineTo(l[i][j].x, l[i][j].y);
+      ctx.stroke();
+    }
+  }
+  function cadreConflit(bx) {
+    var r = rectEcran(bx);
+    ecran(); ctx.strokeStyle = '#ff3b3b'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    ctx.strokeRect(r[0] - 3, r[1] - 3, r[2] - r[0] + 6, r[3] - r[1] + 6); ctx.setLineDash([]);
   }
   function dessinerTexte(c) {
-    var r = rectTexte(c);
-    ecran();
-    ctx.font = '300 ' + r[4] + 'px sans-serif';
-    ctx.fillStyle = c.dessous ? COUL.serigDessous : COUL.serigDessus;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(libelle(c), (r[0] + r[2]) / 2, (r[1] + r[3]) / 2);
+    tracerTraits(traitsComp(c), epTexte(hTexte(c)), c.dessous ? COUL.serigDessous : COUL.serigDessus);
+    if (CONFLITS_SERIG.comps.indexOf(c) >= 0) cadreConflit(boiteComp(c));
+  }
+
+  /* --- Sérigraphie sur pastille : contrôle et placement automatique --- */
+  function padsFace(dessous) {
+    var n = dessous ? bas() : 1;
+    return tousPads().filter(function (p) { return p.couches.indexOf(n) >= 0; }).map(function (p) {
+      var f = formePad(p.e), bx;
+      if (f.disque) bx = [f.disque.x - f.disque.r, f.disque.y - f.disque.r, f.disque.x + f.disque.r, f.disque.y + f.disque.r];
+      else {
+        f.pts = f.pts.map(function (q) { return { x: q[0], y: q[1] }; });
+        bx = [1e9, 1e9, -1e9, -1e9];
+        f.pts.forEach(function (q) { bx[0] = Math.min(bx[0], q.x); bx[1] = Math.min(bx[1], q.y); bx[2] = Math.max(bx[2], q.x); bx[3] = Math.max(bx[3], q.y); });
+      }
+      return { f: f, bx: bx };
+    });
+  }
+  function segForme(a, b, f, r) {
+    var i, j;
+    if (f.disque) return distSeg(f.disque.x, f.disque.y, a, b) <= f.disque.r + r;
+    if (dansPoly(f.pts, a) || dansPoly(f.pts, b)) return true;
+    for (i = 0, j = f.pts.length - 1; i < f.pts.length; j = i++) if (distSegSeg(a, b, f.pts[j], f.pts[i]).d <= r) return true;
+    return false;
+  }
+  function croise(p, q) { return p[0] <= q[2] && q[0] <= p[2] && p[1] <= q[3] && q[1] <= p[3]; }
+  /* Le texte (traits l, hauteur h, boîte bx) touche-t-il une pastille de la liste ? */
+  function texteSurPastille(l, h, bx, pads) {
+    var r = epTexte(h) / 2 + MARGE_SERIG, z = [bx[0] - MARGE_SERIG, bx[1] - MARGE_SERIG, bx[2] + MARGE_SERIG, bx[3] + MARGE_SERIG], i, j, k;
+    for (i = 0; i < pads.length; i++) {
+      if (!croise(z, pads[i].bx)) continue;
+      for (j = 0; j < l.length; j++) {
+        if (l[j].length === 1) { if (segForme(l[j][0], l[j][0], pads[i].f, r)) return true; continue; }
+        for (k = 0; k + 1 < l[j].length; k++) if (segForme(l[j][k], l[j][k + 1], pads[i].f, r)) return true;
+      }
+    }
+    return false;
+  }
+  function calculerConflits() {
+    var pf = { 0: padsFace(false), 1: padsFace(true) };
+    CONFLITS_SERIG = {
+      comps: B.comps.filter(function (c) { return gab(c) && texteSurPastille(traitsComp(c), hTexte(c), boiteComp(c), pf[c.dessous ? 1 : 0]); }),
+      libres: B.textes.filter(function (t) { return texteSurPastille(traitsLibre(t), t.h, boiteLibre(t), pf[t.dessous ? 1 : 0]); })
+    };
+  }
+  function nbConflits() { return CONFLITS_SERIG.comps.length + CONFLITS_SERIG.libres.length; }
+  /* Place un texte automatique : au-dessus, en dessous, à droite puis à gauche du composant,
+     de plus en plus loin ; première place libre de pastille et des textes déjà posés */
+  function placerTexte(c, pads, obst) {
+    var k = centre(c), bm = bboxMonde(c), h = hTexte(c), b0 = boiteTexte(libelle(c), 0, 0, h, rotTexte(c)),
+        hw = (b0[2] - b0[0]) / 2, hh = (b0[3] - b0[1]) / 2, g = 0.3, cands = [], d, e, i, bx;
+    for (d = 0; d < 4; d++) {
+      e = g + d * (2 * Math.min(hw, hh) + g);
+      cands.push([k.x, bm[3] + e + hh], [k.x, bm[1] - e - hh], [bm[2] + e + hw, k.y], [bm[0] - e - hw, k.y]);
+    }
+    for (i = 0; i < cands.length; i++) {
+      c.tx = arr(cands[i][0] - k.x); c.ty = arr(cands[i][1] - k.y);
+      bx = boiteComp(c);
+      if (obst.some(function (o) { return croise(o, bx); })) continue;
+      if (!texteSurPastille(traitsComp(c), h, bx, pads)) return;
+    }
+    c.tx = arr(cands[0][0] - k.x); c.ty = arr(cands[0][1] - k.y);
+  }
+  /* Replace tous les textes automatiques ; les textes placés à la main servent d'obstacles */
+  function ajusterTextes() {
+    var pf = { 0: padsFace(false), 1: padsFace(true) }, obst = { 0: [], 1: [] };
+    B.textes.forEach(function (t) { obst[t.dessous ? 1 : 0].push(boiteLibre(t)); });
+    B.comps.forEach(function (c) { if (gab(c) && c.ta === false) obst[c.dessous ? 1 : 0].push(boiteComp(c)); });
+    B.comps.forEach(function (c) {
+      var f = c.dessous ? 1 : 0;
+      if (!gab(c) || c.ta === false) return;
+      placerTexte(c, pf[f], obst[f]);
+      obst[f].push(boiteComp(c));
+    });
+  }
+  /* Zoom sur un texte en défaut */
+  function zoomTexte(bx) {
+    B.z = Math.max(B.z, 25);
+    B.ox = B.W / 2 - (bx[0] + bx[2]) / 2 * B.z; B.oy = B.H / 2 + (bx[1] + bx[3]) / 2 * B.z;
+  }
+  function blocSerigraphie(f) {
+    var b = E('div', 'bloc'), n = nbConflits();
+    f.appendChild(b);
+    b.appendChild(E('h4', '', 'Sérigraphie'));
+    if (!n) { b.appendChild(E('div', 'stat', 'Aucun texte sur une pastille')); return; }
+    b.appendChild(E('div', 'avert', n + ' texte(s) sur une pastille : export Gerber refusé'));
+    CONFLITS_SERIG.comps.forEach(function (c) {
+      var l = E('div', 'lien', libelle(c));
+      l.addEventListener('click', function () { B.sel = c; B.selT = -1; zoomTexte(boiteComp(c)); toutRafraichir(); });
+      b.appendChild(l);
+    });
+    CONFLITS_SERIG.libres.forEach(function (t) {
+      var l = E('div', 'lien', 'Texte libre « ' + t.txt + ' »');
+      l.addEventListener('click', function () { B.sel = null; B.selT = B.textes.indexOf(t); zoomTexte(boiteLibre(t)); toutRafraichir(); });
+      b.appendChild(l);
+    });
   }
   function dessiner() {
     var i, l, a, b, s1, s2, bm;
@@ -6251,6 +7199,7 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) if (B.comps[i].dessous) dessinerComposant(B.comps[i]);
     for (i = 0; i < B.comps.length; i++) if (!B.comps[i].dessous) dessinerComposant(B.comps[i]);
     dessinerPistes();
+    dessinerLiaisonsPlan();
     l = chevelu(true);
     ecran();
     for (i = 0; i < l.length; i++) {
@@ -6285,7 +7234,7 @@ function traduire(s) {
   /* ======================================================================
      Annuler / rétablir
      ====================================================================== */
-  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour) }; }
+  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour), nc: B.nc, planVcc: B.planVcc }; }
   function empiler(i) { B.annul.push(i || instantane()); if (B.annul.length > 300) B.annul.shift(); B.retab = []; marquer(); }
   function restaurer(de, vers) {
     var i;
@@ -6295,6 +7244,7 @@ function traduire(s) {
     vers.push(instantane());
     B.comps = i.comps; B.memoGab = i.memo; B.sel = i.sel >= 0 ? B.comps[i.sel] || null : null;
     B.pistes = i.pistes; B.vias = i.vias; B.selP = null; B.selV = null; B.textes = i.textes; B.selT = -1; B.contour = i.contour;
+    B.nc = i.nc; B.planVcc = i.planVcc; if (B.couche > B.nc || estPlan(B.couche)) B.couche = 1;
     marquer(); toutRafraichir();
   }
   function marquer() { B.modifie = true; $('modif').textContent = '●'; publierBrd(); }
@@ -6312,12 +7262,14 @@ function traduire(s) {
     for (i = 0; i < r.comps.length; i++) {
       c = r.comps[i];
       if (c.type === 'PWR') continue;
-      c = { id: n + 1, sid: c.id, type: c.type, ref: c.ref, val: c.val, pol: c.pol, gab: '', x: c.x, y: c.y, rot: normAng(c.rot), dessous: false, tx: 0, ty: 0 };
+      c = { id: n + 1, sid: c.id, type: c.type, ref: c.ref, val: c.val, pol: c.pol, gab: '', x: c.x, y: c.y, rot: normAng(c.rot), dessous: false, tx: 0, ty: 0, th: 1.0, trot: 0, ta: true };
       c.gab = gabaritParDefaut(c);
       B.comps.push(c); n++;
     }
     B.comps.sort(function (a, b2) { return triNat(a.ref, b2.ref); });
     prePlacer();
+    ajusterTextes();
+    delete B.contour.x0; delete B.contour.y0; figerContour();
     B.schNom = nom; B.libAttendue = r.lib;
     empiler(avant);
     sources();
@@ -6378,11 +7330,14 @@ function traduire(s) {
       b.appendChild(E('div', 'stat', B.comps.length + ' composant(s)'));
       b.appendChild(E('div', 'stat', B.nets.length + ' équipotentielle(s)' + (rf ? ' dont ' + rf + ' ligne(s) 50 Ω' : '')));
       b.appendChild(E('div', 'stat', 'Dessous : ' + B.comps.filter(function (x) { return x.dessous; }).length));
+      blocCouches(f);
+      blocSerigraphie(f);
       blocContour(f);
       return;
     }
     b.appendChild(E('h4', '', c.dessous ? 'Composant · dessous' : 'Composant · dessus'));
     b.appendChild(E('div', 'grandNom', libelle(c)));
+    if (c.type === 'PATCH') { blocPatch(f, c); blocTexteComp(f, c); return; }
     b = E('div', 'bloc'); f.appendChild(b);
     sel = champ(b, 'Gabarit', E('select'));
     l = gabaritsPossibles(c);
@@ -6399,21 +7354,112 @@ function traduire(s) {
     sel.addEventListener('change', function () {
       empiler(); derouterComposant(c); c.gab = this.value;
       if (c.type !== 'IC' && c.gab) B.memoGab[c.type] = c.gab;
+      ajusterTextes();
       toutRafraichir();
     });
     if (!gab(c)) b.appendChild(E('div', 'avert', 'Gabarit absent de la bibliothèque ouverte.'));
     sel = champ(b, 'Face', E('select'));
     [['dessus', 'Dessus'], ['dessous', 'Dessous']].forEach(function (v) { var op = E('option', '', v[1]); op.value = v[0]; sel.appendChild(op); });
     sel.value = c.dessous ? 'dessous' : 'dessus';
-    sel.addEventListener('change', function () { empiler(); derouterComposant(c); c.dessous = this.value === 'dessous'; toutRafraichir(); });
+    sel.addEventListener('change', function () { empiler(); derouterComposant(c); c.dessous = this.value === 'dessous'; ajusterTextes(); toutRafraichir(); });
     b.appendChild(E('div', 'stat', 'Rotation : ' + c.rot + '° · X ' + c.x.toFixed(2) + ' · Y ' + c.y.toFixed(2) + ' mm'));
     b = E('div', 'bloc'); f.appendChild(b);
     bs = E('div', 'boutons'); b.appendChild(bs);
     bt = E('button', '', 'Rotation 90° (R)'); bt.addEventListener('click', tourner); bs.appendChild(bt);
     bt = E('button', '', 'Dessus / dessous (F)'); bt.addEventListener('click', retourner); bs.appendChild(bt);
-    bt = E('button', '', 'Recentrer le texte'); bt.addEventListener('click', function () { empiler(); c.tx = 0; c.ty = 0; toutRafraichir(); }); bs.appendChild(bt);
+    blocTexteComp(f, c);
   }
-  function toutRafraichir() { majGrille(); remplirListe(); fiche(); dessiner(); }
+  /* Patch : cotes calculées (la fréquence se règle dans le schéma) */
+  function blocPatch(f, c) {
+    var b = E('div', 'bloc'), p = gab(c), k, bs, bt;
+    function mm(v) { return String(arr(Math.round(v * 100) / 100)).replace('.', ',') + ' mm'; }
+    f.appendChild(b);
+    b.appendChild(E('h4', '', p ? p.titre : 'Patch'));
+    if (!p) { b.appendChild(E('div', 'avert', ERR_PATCH[c.val] || 'Fréquence hors de 400 à 3000 MHz : régler le patch dans le schéma.')); return; }
+    k = p.cotes;
+    [['Fréquence', String(k.f).replace('.', ',') + ' MHz'], ['Substrat', 'FR4 εr 4,5 · h ' + mm(k.h)], ['Ligne 50 Ω', mm(k.w50)]].concat(p.lignes)
+     .concat([['Zone', mm(k.zx) + ' × ' + mm(k.zy)], ['Couture GND', k.vias + ' vias · pas ' + mm(k.pas)]]).forEach(function (l) { b.appendChild(E('div', 'stat', l[0] + ' : ' + l[1])); });
+    b.appendChild(E('div', 'stat', p.patch === 'AMON' ? 'Dessous : cuivre GND sous la ligne seulement · couches internes vides dans la zone' : 'Dessous : cuivre GND plein · couches internes vides dans la zone'));
+    b.appendChild(E('div', 'stat', 'Rotation : ' + c.rot + '° · X ' + c.x.toFixed(2) + ' · Y ' + c.y.toFixed(2) + ' mm'));
+    b = E('div', 'bloc'); f.appendChild(b);
+    bs = E('div', 'boutons'); b.appendChild(bs);
+    bt = E('button', '', 'Rotation 90° (R)'); bt.addEventListener('click', tourner); bs.appendChild(bt);
+  }
+  /* Nombre de couches, empilement, plans */
+  function blocCouches(f) {
+    var b = E('div', 'bloc'), sel, inp, d, va;
+    f.appendChild(b);
+    b.appendChild(E('h4', '', 'Couches'));
+    sel = champ(b, 'Nombre', E('select'));
+    [2, 4, 6].forEach(function (v) { var o = E('option', '', v + ' couches'); o.value = v; sel.appendChild(o); });
+    sel.value = String(B.nc);
+    sel.addEventListener('change', function () { if (!changerNbCouches(parseInt(this.value, 10))) this.value = String(B.nc); });
+    toutesCouches().forEach(function (n) {
+      d = E('div', 'stat', n + ' · ' + (estPlan(n) ? 'plan ' + (netPlan(n) || typeCouche(n) + ' : aucune équipotentielle') : 'signaux' + (n === 1 ? ' (dessus)' : n === bas() ? ' (dessous)' : ' (interne)')));
+      d.style.borderLeft = '4px ' + (estPlan(n) ? 'dashed ' : 'solid ') + coulCouche(n); d.style.paddingLeft = '6px';
+      b.appendChild(d);
+    });
+    if (B.nc === 2) return;
+    sel = champ(b, 'Plan VCC', E('select'));
+    va = netVccAuto();
+    d = E('option', '', 'Auto' + (va ? ' (' + va + ')' : '')); d.value = ''; sel.appendChild(d);
+    B.nets.filter(function (n) { return n.nom !== 'GND'; }).map(function (n) { return n.nom; })
+      .sort(function (a, b2) { return (/^N\d+$/.test(a) ? 1 : 0) - (/^N\d+$/.test(b2) ? 1 : 0) || triNat(a, b2); })
+      .forEach(function (n) { var o = E('option', '', n); o.value = n; sel.appendChild(o); });
+    sel.value = B.planVcc && netParNom(B.planVcc) ? B.planVcc : '';
+    sel.addEventListener('change', function () { empiler(); B.planVcc = this.value; toutRafraichir(); });
+    inp = champ(b, 'Dégagement (mm)', E('input')); inp.value = B.degPlan;
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < B.isolement) refusMini('Dégagement', B.isolement); else if (v && v !== B.degPlan) { empiler(); B.degPlan = arr(v); toutRafraichir(); } this.value = B.degPlan; });
+    inp = champ(b, 'Diélectrique L1–L2 (mm)', E('input')); inp.value = B.hDiel;
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v >= 0.05 && v < B.substrat && v !== B.hDiel) { empiler(); B.hDiel = arr(v); toutRafraichir(); } this.value = B.hDiel; });
+    b.appendChild(E('div', 'stat', 'Thermiques : 4 rayons de 0,3 mm · retrait du bord 0,5 mm · vias reliées en plein'));
+    if (!netParNom('GND')) b.appendChild(E('div', 'avert', 'Aucune équipotentielle GND : le plan GND reste isolé.'));
+  }
+  /* Changement du nombre de couches : dessous suivi, pistes internes reportées dans l'ordre, refus sinon */
+  function changerNbCouches(n) {
+    var ancien = B.nc, sa = signalInternes(ancien), sn = signalInternes(n), us = {}, l, map = {};
+    if (n === ancien) return true;
+    B.pistes.forEach(function (t) { if (sa.indexOf(t.couche) >= 0) us[t.couche] = true; });
+    l = sa.filter(function (x) { return us[x]; });
+    if (l.length > sn.length) { message('Pistes sur la couche interne ' + l.join(', ') + ' : les supprimer d\'abord.', true); return false; }
+    map[1] = 1; map[ancien] = n; l.forEach(function (x, k) { map[x] = sn[k]; });
+    empiler();
+    B.pistes.forEach(function (t) { t.couche = map[t.couche]; });
+    B.nc = n;
+    if (B.couche > n || B.couche === ancien || estPlan(B.couche)) B.couche = 1;
+    toutRafraichir();
+    return true;
+  }
+  /* Texte du composant : hauteur, rotation, placement automatique, appliquer à tous */
+  function blocTexteComp(f, c) {
+    var b = E('div', 'bloc'), sel, bs, bt, hs = [0.8, 1.0, 1.2, 1.5, 2.0];
+    f.appendChild(b);
+    b.appendChild(E('h4', '', 'Texte · ' + libelle(c)));
+    if (hs.indexOf(hTexte(c)) < 0) hs.push(hTexte(c));
+    sel = champ(b, 'Hauteur', E('select'));
+    hs.sort(function (x, y) { return x - y; }).forEach(function (v) { var o = E('option', '', String(v).replace('.', ',') + ' mm'); o.value = v; sel.appendChild(o); });
+    sel.value = hTexte(c);
+    sel.addEventListener('change', function () { empiler(); c.th = parseFloat(this.value); ajusterTextes(); toutRafraichir(); });
+    sel = champ(b, 'Rotation', E('select'));
+    [0, 90, 180, 270].forEach(function (v) { var o = E('option', '', v + '°'); o.value = v; sel.appendChild(o); });
+    sel.value = rotTexte(c);
+    sel.addEventListener('change', function () { empiler(); c.trot = parseInt(this.value, 10); ajusterTextes(); toutRafraichir(); });
+    b.appendChild(E('div', 'stat', c.ta === false ? 'Placé à la main (Maj + glisser)' : 'Placé automatiquement'));
+    if (CONFLITS_SERIG.comps.indexOf(c) >= 0) b.appendChild(E('div', 'avert', 'Texte sur une pastille : le déplacer (Maj + glisser) ou le placer automatiquement'));
+    bs = E('div', 'boutons'); b.appendChild(bs);
+    bt = E('button', '', 'Placer automatiquement');
+    bt.addEventListener('click', function () { empiler(); c.ta = true; ajusterTextes(); toutRafraichir(); });
+    bs.appendChild(bt);
+    bt = E('button', '', 'Appliquer à tous');
+    bt.title = 'Même hauteur et même rotation pour le texte de tous les composants';
+    bt.addEventListener('click', function () {
+      empiler();
+      B.comps.forEach(function (x) { x.th = hTexte(c); x.trot = rotTexte(c); });
+      ajusterTextes(); toutRafraichir();
+    });
+    bs.appendChild(bt);
+  }
+  function toutRafraichir() { majGrille(); calculerConflits(); majBoutonsCouche(); remplirListe(); fiche(); dessiner(); }
   /* Grille automatique : moitié du pas le plus fin parmi les gabarits posés, pour que les coudes
      tombent entre deux pattes voisines ; 1,27 mm sans composant */
   var PAS_GAB = {};
@@ -6432,7 +7478,7 @@ function traduire(s) {
     var m = Infinity, vus = {}, i, c, p;
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
-      if (!c.gab || vus[c.gab]) continue;
+      if (!c.gab || vus[c.gab] || c.type === 'PATCH') continue;
       vus[c.gab] = true; p = gab(c);
       if (p) m = Math.min(m, pasGabarit(p));
     }
@@ -6453,13 +7499,16 @@ function traduire(s) {
     empiler(); derouterComposant(B.sel);
     B.sel.rot = normAng(B.sel.rot + 90);
     t = B.sel.tx || 0; B.sel.tx = arr(-(B.sel.ty || 0)); B.sel.ty = arr(t);
+    ajusterTextes();
     toutRafraichir();
   }
   function retourner() {
     if (B.selT >= 0) { empiler(); B.textes[B.selT].dessous = !B.textes[B.selT].dessous; toutRafraichir(); return; }
     if (!B.sel) return;
+    if (B.sel.type === 'PATCH') { message('Un patch reste sur le dessus (masse au dessous).', true); return; }
     empiler(); derouterComposant(B.sel);
     B.sel.dessous = !B.sel.dessous; B.sel.tx = arr(-(B.sel.tx || 0));
+    ajusterTextes();
     toutRafraichir();
   }
   function message(t, err) { var m = $('msg'); m.textContent = t || ''; m.className = err ? 'erreur' : ''; }
@@ -6560,14 +7609,14 @@ function traduire(s) {
     B.selP = { i: d.seg.i, k: deb ? k + 1 : k };
   }
   /* Double-clic = reset : pendant un tracé, le tracé en cours est annulé (retour au chevelu) ;
-     hors tracé, sur une piste ou une via : dé-routage ; sur un texte de composant : recentrage */
+     hors tracé, sur une piste ou une via : dé-routage ; sur un texte de composant : placement automatique */
   cv.addEventListener('dblclick', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), t;
     if (B.route) { annulerRoute(); return; }
     /* double-clic dont un des deux clics a terminé un tracé (jonction atteinte) : rien à annuler */
     if (B.finRoute && B.finRoute >= B.tDown2) return;
     t = B.mode === 'placer' ? texteSous(m) : null;
-    if (t) { if (t.tx || t.ty) { empiler(); t.tx = 0; t.ty = 0; toutRafraichir(); } return; }
+    if (t) { empiler(); t.ta = true; ajusterTextes(); toutRafraichir(); return; }
     derouter(w);
   });
   cv.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
@@ -6578,7 +7627,7 @@ function traduire(s) {
     if (d && d.seg) { glisserSegment(d, w); dessiner(); return; }
     if (d && d.tl) { d.tl.x = arr(d.x + w.x - d.mx); d.tl.y = arr(d.y + w.y - d.my); d.bouge = true; dessiner(); return; }
     if (d) {
-      if (d.texte) { d.c.tx = arr(d.tx + w.x - d.mx); d.c.ty = arr(d.ty + w.y - d.my); d.bouge = true; }
+      if (d.texte) { d.c.tx = arr(d.tx + w.x - d.mx); d.c.ty = arr(d.ty + w.y - d.my); d.c.ta = false; d.bouge = true; }
       else {
         if (accroche(w.x) !== d.x0 || accroche(w.y) !== d.y0) { if (!d.bouge) derouterComposant(d.c); d.bouge = true; }
         d.c.x = arr(d.cx + accroche(w.x) - d.x0); d.c.y = arr(d.cy + accroche(w.y) - d.y0); }
@@ -6598,7 +7647,10 @@ function traduire(s) {
   });
   window.addEventListener('mouseup', function () {
     if (B.pan) { B.pan = null; cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default'; return; }
-    if (B.drag) { if (B.drag.bouge) empiler(B.drag.avant); B.drag = null; toutRafraichir(); }
+    if (B.drag) {
+      if (B.drag.bouge) { empiler(B.drag.avant); if (B.drag.c && !B.drag.texte) ajusterTextes(); }
+      B.drag = null; toutRafraichir();
+    }
   });
   document.addEventListener('keydown', function (ev) {
     var t = ev.target.tagName, k = ev.key;
@@ -6607,12 +7659,13 @@ function traduire(s) {
     if ((ev.ctrlKey || ev.metaKey) && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) restaurer(B.retab, B.annul); else restaurer(B.annul, B.retab); return; }
     if ((ev.ctrlKey || ev.metaKey) && (k === 'y' || k === 'Y')) { ev.preventDefault(); restaurer(B.retab, B.annul); return; }
     if (B.mode === 'router') {
-      if (k.length === 1 && k >= '1' && k <= '4' && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
+      if (k.length === 1 && k >= '1' && k <= String(B.nc) && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
+      else if ((k === 'v' || k === 'V') && B.route && !ev.ctrlKey && !ev.metaKey) viaVersPlan(0);
       else if (k === 'Escape') { if (B.route) terminerRoute(); else if (B.selP || B.selV !== null) { B.selP = null; B.selV = null; toutRafraichir(); } }
       else if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); supprimerSelRoutage(); }
       return;
     }
-    if (k.length === 1 && k >= '1' && k <= '4' && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
+    if (k.length === 1 && k >= '1' && k <= String(B.nc) && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
     else if (k === 'Escape' && (B.sel || B.selT >= 0 || B.outilTexte)) { B.sel = null; B.selT = -1; B.outilTexte = false; message(''); toutRafraichir(); }
     else if ((k === 'Delete' || k === 'Backspace') && B.selT >= 0) { ev.preventDefault(); empiler(); B.textes.splice(B.selT, 1); B.selT = -1; toutRafraichir(); }
     else if ((k === 't' || k === 'T') && !ev.ctrlKey && !ev.metaKey) outilTexte();
@@ -6623,13 +7676,33 @@ function traduire(s) {
      Routage manuel (pistes, vias) et connexité
      Piste : { couche: 1..4, w, net, pts: [{x, y}] } — Via : { x, y, perc, diam, net }
      ====================================================================== */
-  var COUL_COUCHE = { 1: '#D63B3B', 2: '#D9A21B', 3: '#2E9E5B', 4: '#3B6FD8' };
   /* Minimums de fabrication : PCBCart standard (piste/isolement 0,076, perçage 0,152, couronne 0,076) × 2 */
   var MINI = { piste: 0.152, isolement: 0.152, percage: 0.304, couronne: 0.152 };
   function refusMini(t, v) { message(t + ' : minimum ' + String(v).replace('.', ',') + ' mm', true); }
-  var NOM_COUCHE = { 1: 'Cuivre 1 (dessus)', 2: 'Cuivre 2', 3: 'Cuivre 3', 4: 'Cuivre 4 (dessous)' };
+  /* Empilement (vu de dessus) : S = signaux routés ; GND, VCC = plans remplis à l'export */
+  var EMPIL = { 2: ['S', 'S'], 4: ['S', 'GND', 'VCC', 'S'], 6: ['S', 'GND', 'S', 'VCC', 'GND', 'S'] };
+  var COUL_INTERNE = { 2: '#D9A21B', 3: '#2E9E5B', 4: '#A855F7', 5: '#14B8A6' };
+  var RETRAIT_PLAN = 0.5, RAYON_THERMIQUE = 0.3;
+  function bas() { return B.nc; }
+  function toutesCouches() { var r = [], n; for (n = 1; n <= B.nc; n++) r.push(n); return r; }
+  function typeCouche(n) { return EMPIL[B.nc][n - 1]; }
+  function estPlan(n) { return typeCouche(n) !== 'S'; }
+  function couchesSignal() { return toutesCouches().filter(function (n) { return !estPlan(n); }); }
+  function signalInternes(nc) { var r = [], n; for (n = 2; n < nc; n++) if (EMPIL[nc][n - 1] === 'S') r.push(n); return r; }
+  function coulCouche(n) { return n === 1 ? '#D63B3B' : (n === bas() ? '#3B6FD8' : COUL_INTERNE[n]); }
+  function nomCouche(n) {
+    return 'Cuivre ' + n + (n === 1 ? ' (dessus)' : n === bas() ? ' (dessous)' : estPlan(n) ? ' · plan ' + (netPlan(n) || typeCouche(n) + ' (sans équipotentielle)') : ' (interne)');
+  }
+  /* Équipotentielle d'un plan : GND ; VCC = choix de la fiche, sinon l'alimentation nommée la plus reliée */
+  function netVccAuto() {
+    var l = B.nets.filter(function (n) { return !/^N\d+$/.test(n.nom) && !/GND/i.test(n.nom); }).sort(function (a, b) { return b.pins.length - a.pins.length; });
+    return l.length ? l[0].nom : '';
+  }
+  function netVcc() { return B.planVcc && netParNom(B.planVcc) ? B.planVcc : netVccAuto(); }
+  function netPlan(n) { var t = typeCouche(n); return t === 'GND' ? (netParNom('GND') ? 'GND' : '') : (t === 'VCC' ? netVcc() : ''); }
+  function netsPlan() { var r = {}; toutesCouches().forEach(function (n) { var x = estPlan(n) ? netPlan(n) : ''; if (x) (r[x] = r[x] || []).push(n); }); return r; }
   /* Largeur 50 Ω en microruban (IPC-2141), FR4 εr 4,5, cuivre 35 µm */
-  function largeur50() { var h = B.substrat, t = 0.035, er = 4.5; return arr((5.98 * h / Math.exp(50 * Math.sqrt(er + 1.41) / 87) - t) / 0.8); }
+  function largeur50() { var h = B.nc > 2 ? B.hDiel : B.substrat, t = 0.035, er = 4.5; return arr((5.98 * h / Math.exp(50 * Math.sqrt(er + 1.41) / 87) - t) / 0.8); }
   function largeurNet(net) { var n = netParNom(net); return n && n.type === 'rf' ? largeur50() : B.largeur; }
   function netParNom(nom) { var i; for (i = 0; i < B.nets.length; i++) if (B.nets[i].nom === nom) return B.nets[i]; return null; }
   function copiePiste(p) { return { couche: p.couche, w: p.w, net: p.net, pts: p.pts.map(copieObj) }; }
@@ -6643,7 +7716,7 @@ function traduire(s) {
       for (j = 0; j < p.el.length; j++) {
         e = p.el[j];
         if (!estPad(e)) continue;
-        r.push({ ref: c.ref, nom: e.nom, e: elMonde(c, e), couches: e.t === 'pad' ? [1, 2, 3, 4] : [c.dessous ? 4 : 1] });
+        r.push({ ref: c.ref, nom: e.nom, e: elMonde(c, e), couches: e.t === 'pad' ? toutesCouches() : [c.dessous ? bas() : 1] });
       }
     }
     return r;
@@ -6692,6 +7765,11 @@ function traduire(s) {
     for (j = 0; j < B.vias.length; j++) for (i = 0; i < B.pistes.length; i++) {
       t = B.pistes[i];
       for (l = 0; l + 1 < t.pts.length; l++) if (distSeg(B.vias[j].x, B.vias[j].y, t.pts[l], t.pts[l + 1]) <= Math.max(t.w / 2, B.vias[j].diam / 2)) { u('T' + i, 'V' + j); break; }
+    }
+    if (B.nc > 2) {
+      l = netsPlan();
+      for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad') { t = netDe(pads[i].ref + ':' + pads[i].nom); if (t && l[t.nom]) u('P:' + pads[i].ref + ':' + pads[i].nom, 'PLAN:' + t.nom); }
+      for (j = 0; j < B.vias.length; j++) if (l[B.vias[j].net]) u('V' + j, 'PLAN:' + B.vias[j].net);
     }
     return f;
   }
@@ -6777,7 +7855,7 @@ function traduire(s) {
     var pads = tousPads(), d, p2, c;
     /* départ sur une pastille : couche de la face du composant */
     p2 = padSous(pads, w.x, w.y, 0);
-    if (p2) { c = compParRef(p2.ref); B.couche = c && c.dessous ? 4 : 1; majBoutonsCouche(); }
+    if (p2) { c = compParRef(p2.ref); B.couche = c && c.dessous ? bas() : 1; majBoutonsCouche(); }
     d = netEnPoint(w.x, w.y, B.couche, pads);
     if (!d) {
       p2 = padSous(pads, w.x, w.y, 0);
@@ -6786,7 +7864,7 @@ function traduire(s) {
     }
     if (!d.net) { message('Patte non reliée dans le schéma.', true); return false; }
     B.route = { avant: instantane(), piste: { couche: B.couche, w: largeurNet(d.net), net: d.net, pts: [d.pt] }, curseur: d.pt, ajout: false, depart: d.cle, conflits: [], obs: null };
-    message('Routage ' + d.net + (netParNom(d.net) && netParNom(d.net).type === 'rf' ? ' (50 Ω, ' + largeur50() + ' mm)' : '') + ' · clic droit / Échap : arrêter · double-clic : annuler le tracé · 1-4 : couche (via)');
+    message('Routage ' + d.net + (netParNom(d.net) && netParNom(d.net).type === 'rf' ? ' (50 Ω, ' + largeur50() + ' mm)' : '') + ' · clic droit / Échap : arrêter · double-clic : annuler le tracé · chiffre : couche (via) · V : via vers le plan');
     return true;
   }
   function poserPiste() {
@@ -6799,7 +7877,7 @@ function traduire(s) {
     var p = padSous(pads, w.x, w.y, couche) || padSous(pads, w.x, w.y, 0), v, i, k, t, d, lim, q, a, b, best = null, rang;
     if (p) return { net: (netDe(p.ref + ':' + p.nom) || {}).nom || '', pt: { x: p.e.x, y: p.e.y }, pad: p, cle: 'P:' + p.ref + ':' + p.nom, couches: p.couches };
     v = viaSous(w.x, w.y);
-    if (v >= 0 && !exclu('V' + v)) return { net: B.vias[v].net, pt: { x: B.vias[v].x, y: B.vias[v].y }, cle: 'V' + v, couches: [1, 2, 3, 4] };
+    if (v >= 0 && !exclu('V' + v)) return { net: B.vias[v].net, pt: { x: B.vias[v].x, y: B.vias[v].y }, cle: 'V' + v, couches: toutesCouches() };
     for (i = 0; i < B.pistes.length; i++) {
       t = B.pistes[i];
       if (exclu('T' + i)) continue;
@@ -6888,19 +7966,43 @@ function traduire(s) {
     toutRafraichir();
   }
   function choisirCouche(n) {
+    if (n < 1 || n > B.nc) return;
+    if (estPlan(n)) { if (B.route) viaVersPlan(n); else message(nomCouche(n) + ' : remplie à l\'export (pas de routage).'); return; }
     if (B.route) changerCoucheRoute(n);
     B.couche = n;
     majBoutonsCouche();
     toutRafraichir();
   }
-  /* Boutons de couche : couleur de la couche, bouton actif plein */
+  /* Fin de tracé par une via vers le plan de l'équipotentielle (touche V ou chiffre du plan) */
+  function viaVersPlan(n) {
+    var r = B.route, net, pl, der, pd;
+    if (!r) return;
+    net = r.piste.net; pl = netsPlan()[net]; der = r.piste.pts[r.piste.pts.length - 1];
+    if (!pl) { message('Pas de plan pour ' + net + (n ? ' (' + nomCouche(n) + ')' : '') + '.', true); return; }
+    if (n && pl.indexOf(n) < 0) { message(nomCouche(n) + ' : autre équipotentielle que ' + net + '.', true); return; }
+    pd = padSous(tousPads(), der.x, der.y, 0);
+    if (pd && pd.e.t === 'smd') { message('Via sur pastille CMS : tracer d\'abord un segment.', true); return; }
+    if (!pd) poserViaJonction(der);
+    terminerRoute();
+  }
+  /* Boutons de couche : couleur de la couche, bouton actif plein, plan en pointillés */
   function majBoutonsCouche() {
-    var n, bt;
-    for (n = 1; n <= 4; n++) {
+    var z = $('couches'), n, bt;
+    if (z.children.length !== B.nc) {
+      z.textContent = '';
+      for (n = 1; n <= B.nc; n++) {
+        bt = E('button', '', String(n)); bt.id = 'btC' + n; bt._n = n;
+        bt.addEventListener('click', function () { choisirCouche(this._n); this.blur(); });
+        z.appendChild(bt);
+      }
+    }
+    for (n = 1; n <= B.nc; n++) {
       bt = $('btC' + n);
-      bt.style.borderColor = COUL_COUCHE[n];
-      bt.style.background = n === B.couche ? COUL_COUCHE[n] : '#fff';
-      bt.style.color = n === B.couche ? '#fff' : COUL_COUCHE[n];
+      bt.title = traduire(nomCouche(n) + ' · touche ' + n + (estPlan(n) ? ' en routage : via vers le plan' : ''));
+      bt.style.borderStyle = estPlan(n) ? 'dashed' : 'solid';
+      bt.style.borderColor = coulCouche(n);
+      bt.style.background = n === B.couche ? coulCouche(n) : '#fff';
+      bt.style.color = n === B.couche ? '#fff' : coulCouche(n);
       bt.style.fontWeight = n === B.couche ? '700' : '400';
     }
   }
@@ -6924,8 +8026,8 @@ function traduire(s) {
     $('btPlacer').className = m === 'placer' ? 'principal' : '';
     $('btRouter').className = m === 'router' ? 'principal' : '';
     $('aide').textContent = m === 'router'
-      ? 'Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · 1-4 : couche (via)'
-      : 'Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le décaler, double-clic = recentrer · T : texte libre';
+      ? 'Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · chiffre : couche (via) · V : via vers le plan'
+      : 'Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le déplacer, double-clic = placement automatique · T : texte libre';
     toutRafraichir();
   }
 
@@ -6956,13 +8058,13 @@ function traduire(s) {
     return true;
   }
   function dessinerPistes() {
-    var ordre = [4, 3, 2, 1].filter(function (n) { return n !== B.couche; }).concat([B.couche]), i, j, n, t, s, liste = B.pistes.slice(), v, r;
+    var ordre = toutesCouches().reverse().filter(function (n) { return n !== B.couche; }).concat([B.couche]), i, j, n, t, s, liste = B.pistes.slice(), v, r;
     if (B.route) liste.push(B.route.piste);
     monde();
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (n = 0; n < ordre.length; n++) {
       ctx.globalAlpha = ordre[n] === B.couche ? 1 : 0.55;
-      ctx.strokeStyle = COUL_COUCHE[ordre[n]];
+      ctx.strokeStyle = coulCouche(ordre[n]);
       for (i = 0; i < liste.length; i++) {
         t = liste[i];
         if (t.couche !== ordre[n]) continue;
@@ -6977,7 +8079,7 @@ function traduire(s) {
     r = B.route;
     if (r && r.curseur) {
       s = [r.piste.pts[r.piste.pts.length - 1]].concat(coude(r.piste.pts[r.piste.pts.length - 1], r.curseur));
-      ctx.strokeStyle = COUL_COUCHE[r.piste.couche]; ctx.globalAlpha = 0.5; ctx.lineWidth = r.piste.w;
+      ctx.strokeStyle = coulCouche(r.piste.couche); ctx.globalAlpha = 0.5; ctx.lineWidth = r.piste.w;
       ctx.beginPath(); ctx.moveTo(s[0].x, s[0].y); for (j = 1; j < s.length; j++) ctx.lineTo(s[j].x, s[j].y); ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -7005,6 +8107,21 @@ function traduire(s) {
       }
     }
   }
+  /* Pastilles traversantes et vias reliées à un plan : croix de la couleur du plan */
+  function dessinerLiaisonsPlan() {
+    var np, pads, i, t, n, d;
+    if (B.nc === 2) return;
+    np = netsPlan(); pads = tousPads();
+    monde(); ctx.lineWidth = Math.max(0.15, 1.5 / B.z); ctx.lineCap = 'butt';
+    function croix(x, y, r, c) { ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); ctx.stroke(); }
+    for (i = 0; i < pads.length; i++) {
+      if (pads[i].e.t !== 'pad') continue;
+      t = netDe(pads[i].ref + ':' + pads[i].nom);
+      if (t && np[t.nom]) { n = np[t.nom][0]; d = pads[i].e.diam || 1; croix(pads[i].e.x, pads[i].e.y, d * 0.75, coulCouche(n)); }
+    }
+    for (i = 0; i < B.vias.length; i++) if (np[B.vias[i].net]) croix(B.vias[i].x, B.vias[i].y, B.vias[i].diam * 0.75, coulCouche(np[B.vias[i].net][0]));
+    ctx.lineCap = 'round';
+  }
   function ficheRoutage(f) {
     var b = E('div', 'bloc'), inp, sel, t;
     f.appendChild(b);
@@ -7014,7 +8131,7 @@ function traduire(s) {
         t = B.pistes[B.selP.i];
         b.appendChild(E('h4', '', 'Segment de piste'));
         b.appendChild(E('div', 'grandNom', t.net));
-        b.appendChild(E('div', 'stat', NOM_COUCHE[t.couche]));
+        b.appendChild(E('div', 'stat', nomCouche(t.couche)));
         inp = champ(b, 'Largeur (mm)', E('input')); inp.value = t.w;
         if (netParNom(t.net) && netParNom(t.net).type === 'rf') { inp.disabled = true; b.appendChild(E('div', 'stat', 'Ligne 50 Ω : largeur imposée')); }
         inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.piste) { refusMini('Largeur', MINI.piste); this.value = t.w; return; } if (v && v !== t.w) { empiler(); t.w = arr(v); B.largeur = t.w; toutRafraichir(); } else this.value = t.w; });
@@ -7026,7 +8143,7 @@ function traduire(s) {
     }
     b.appendChild(E('h4', '', 'Routage'));
     sel = champ(b, 'Couche', E('select'));
-    [1, 2, 3, 4].forEach(function (n) { var o = E('option', '', NOM_COUCHE[n]); o.value = n; sel.appendChild(o); });
+    couchesSignal().forEach(function (n) { var o = E('option', '', nomCouche(n)); o.value = n; sel.appendChild(o); });
     sel.value = String(B.couche);
     sel.addEventListener('change', function () { choisirCouche(parseInt(this.value, 10)); });
     inp = champ(b, 'Largeur (mm)', E('input')); inp.value = B.largeur;
@@ -7039,7 +8156,7 @@ function traduire(s) {
     [['1.6', 'FR4 1,6 mm'], ['0.8', 'FR4 0,8 mm']].forEach(function (v) { var o = E('option', '', v[1]); o.value = v[0]; sel.appendChild(o); });
     sel.value = String(B.substrat);
     sel.addEventListener('change', function () { B.substrat = parseFloat(this.value); marquer(); toutRafraichir(); });
-    b.appendChild(E('div', 'stat', 'Lignes 50 Ω : ' + String(largeur50()).replace('.', ',') + ' mm (FR4 εr 4,5, cuivre 35 µm, microruban)'));
+    b.appendChild(E('div', 'stat', 'Lignes 50 Ω : ' + String(largeur50()).replace('.', ',') + ' mm (FR4 εr 4,5, cuivre 35 µm, microruban, h ' + String(B.nc > 2 ? B.hDiel : B.substrat).replace('.', ',') + ' mm)'));
     inp = champ(b, 'Isolement', E('input')); inp.value = B.isolement;
     inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.isolement) refusMini('Isolement', MINI.isolement); else if (v) { B.isolement = arr(v); marquer(); } this.value = B.isolement; });
     b.appendChild(E('div', 'stat', 'Liaisons restant à router : ' + chevelu().length));
@@ -7094,7 +8211,7 @@ function traduire(s) {
     for (i = 0; i < B.vias.length; i++) {
       v = B.vias[i];
       if (v.net === net) continue;
-      r.push({ k: 'd', c: { x: v.x, y: v.y }, r: v.diam / 2, couches: [1, 2, 3, 4] });
+      r.push({ k: 'd', c: { x: v.x, y: v.y }, r: v.diam / 2, couches: toutesCouches() });
     }
     return r;
   }
@@ -7188,7 +8305,7 @@ function traduire(s) {
     for (j = 0; j < p.el.length; j++) {
       e = p.el[j];
       if (!estPad(e)) continue;
-      w = elMonde(c, e); couches = e.t === 'pad' ? [1, 2, 3, 4] : [c.dessous ? 4 : 1];
+      w = elMonde(c, e); couches = e.t === 'pad' ? toutesCouches() : [c.dessous ? bas() : 1];
       for (i = 0; i < B.pistes.length; i++) {
         t = B.pistes[i];
         if (couches.indexOf(t.couche) < 0) continue;
@@ -7270,7 +8387,7 @@ function traduire(s) {
       if (sc.type === 'PWR') continue;
       c = parSid[sc.id]; vus[sc.id] = true;
       if (!c) {
-        c = { id: 0, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: '', x: 0, y: 0, rot: normAng(sc.rot), dessous: false, tx: 0, ty: 0 };
+        c = { id: 0, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: '', x: 0, y: 0, rot: normAng(sc.rot), dessous: false, tx: 0, ty: 0, th: 1.0, trot: 0, ta: true };
         B.nets = nouv; c.gab = gabaritParDefaut(c);
         l = bboxLocale(c); c.x = accroche(x - l[0]); c.y = accroche((b[3] > b[1] ? b[3] : 0) - l[3]); x += l[2] - l[0] + 5;
         B.comps.push(c); nb.a++;
@@ -7299,6 +8416,8 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) if (!B.comps[i].id) B.comps[i].id = ++k;
     B.comps.sort(function (a, b2) { return triNat(a.ref, b2.ref); });
     B.schNom = nom; B.libAttendue = r.lib; B.selP = null; B.selV = null;
+    ajusterTextes();
+    figerContour();
     ok = nb.a || nb.s || nb.c || avantCuivre !== B.pistes.length + B.vias.length || sigAvant !== signature();
     if (ok) empiler(avant);
     sources();
@@ -7344,10 +8463,11 @@ function traduire(s) {
      Textes libres de sérigraphie : { x, y, txt, h (mm), rot, dessous }
      ====================================================================== */
   function policeTexte(t) { return '400 ' + Math.max(1, t.h * B.z) + 'px sans-serif'; }
+  function largeurLibre(t) { return (Math.max(1, String(t.txt).length) * 5 - 1) * t.h / 6; }
   /* Position du point écran m dans le repère du texte (unités écran), et demi-dimensions */
   function repereTexte(t, m) {
     var p = versEcran(t.x, t.y), a = t.rot * Math.PI / 180, dx = m.x - p.x, dy = m.y - p.y, lx, ly, w;
-    ecran(); ctx.font = policeTexte(t); w = ctx.measureText(t.txt || ' ').width;
+    w = largeurLibre(t) * B.z;
     lx = dx * Math.cos(a) - dy * Math.sin(a); ly = dx * Math.sin(a) + dy * Math.cos(a);
     return { x: lx, y: ly, w: w / 2, h: t.h * B.z / 2 };
   }
@@ -7357,21 +8477,14 @@ function traduire(s) {
     return -1;
   }
   function dessinerTexteLibre(t, sel) {
-    var p = versEcran(t.x, t.y), r;
-    ecran();
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(-t.rot * Math.PI / 180);
-    if (t.dessous) ctx.scale(-1, 1);
-    ctx.font = policeTexte(t); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = t.dessous ? COUL.serigDessous : COUL.serigDessus;
-    ctx.fillText(t.txt, 0, 0);
+    var r;
+    tracerTraits(traitsLibre(t), epTexte(t.h), t.dessous ? COUL.serigDessous : COUL.serigDessus);
+    if (CONFLITS_SERIG.libres.indexOf(t) >= 0) cadreConflit(boiteLibre(t));
     if (sel) {
-      r = ctx.measureText(t.txt || ' ').width / 2;
-      ctx.strokeStyle = COUL.sel; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
-      ctx.strokeRect(-r - 4, -t.h * B.z / 2 - 4, 2 * r + 8, t.h * B.z + 8); ctx.setLineDash([]);
+      r = rectEcran(boiteLibre(t));
+      ecran(); ctx.strokeStyle = COUL.sel; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.strokeRect(r[0] - 4, r[1] - 4, r[2] - r[0] + 8, r[3] - r[1] + 8); ctx.setLineDash([]);
     }
-    ctx.restore();
   }
   function outilTexte() {
     if (B.mode !== 'placer') choisirMode('placer');
@@ -7439,11 +8552,16 @@ function traduire(s) {
     for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; aj(t.x - m, t.y - m, t.x + m, t.y + m); }
     return b[0] > b[2] ? null : b;
   }
-  /* Renvoie { x0, y0, x1, y1, nom, tient } ou null si le circuit est vide */
+  /* Renvoie { x0, y0, x1, y1, nom, tient } ou null si le circuit est vide.
+     Contour figé (B.contour.x0, y0 : coin bas-gauche) : il ne suit pas les composants ;
+     sinon (premier calcul, Recentrer) : centré sur le projet */
   function calculerContour() {
-    var b = bboxProjet(), w, h, cx, cy, l = 0, ht = 0, nom = '', tient = true, k, f, cands, i;
+    var b = bboxProjet(), w, h, cx, cy, l = 0, ht = 0, nom = '', tient = true, k, f, cands, i, fige = typeof B.contour.x0 === 'number', dehors = false;
     if (!b) return null;
-    w = b[2] - b[0] + 2 * MARGE_CONTOUR; h = b[3] - b[1] + 2 * MARGE_CONTOUR;
+    if (fige) {
+      w = b[2] + MARGE_CONTOUR - B.contour.x0; h = b[3] + MARGE_CONTOUR - B.contour.y0;
+      dehors = b[0] - MARGE_CONTOUR < B.contour.x0 - 1e-6 || b[1] - MARGE_CONTOUR < B.contour.y0 - 1e-6;
+    } else { w = b[2] - b[0] + 2 * MARGE_CONTOUR; h = b[3] - b[1] + 2 * MARGE_CONTOUR; }
     cx = (b[0] + b[2]) / 2; cy = (b[1] + b[3]) / 2;
     function essayer(fl, fh) {
       if (w <= fl && h <= fh) { l = fl; ht = fh; return true; }
@@ -7462,7 +8580,18 @@ function traduire(s) {
       for (i = 0; i < cands.length && !nom; i++) if (essayer(FORMATS[cands[i]].l, FORMATS[cands[i]].h)) nom = FORMATS[cands[i]].nom + ' (auto)';
       if (!nom) { l = Math.ceil(w); ht = Math.ceil(h); nom = 'Hors format (auto)'; }
     }
+    if (fige) {
+      return { x0: B.contour.x0, y0: B.contour.y0, x1: arr(B.contour.x0 + l), y1: arr(B.contour.y0 + ht), nom: nom, tient: tient && !dehors, l: l, h: ht };
+    }
     return { x0: arr(cx - l / 2), y0: arr(cy - ht / 2), x1: arr(cx + l / 2), y1: arr(cy + ht / 2), nom: nom, tient: tient, l: l, h: ht };
+  }
+  /* Fige le contour à sa position centrée actuelle (premier calcul ou Recentrer) */
+  function figerContour(force) {
+    var ct;
+    if (force) { delete B.contour.x0; delete B.contour.y0; }
+    if (typeof B.contour.x0 === 'number') return;
+    ct = calculerContour();
+    if (ct) { B.contour.x0 = ct.x0; B.contour.y0 = ct.y0; }
   }
   /* 4 mires d'alignement à 3 mm des coins, à l'intérieur */
   function mires(ct) {
@@ -7503,7 +8632,13 @@ function traduire(s) {
     }
     if (ct) {
       b.appendChild(E('div', 'stat', ct.nom + ' : ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm'));
+      b.appendChild(E('div', 'stat', 'Coin bas-gauche : X ' + ct.x0.toFixed(2) + ' · Y ' + ct.y0.toFixed(2) + ' mm (fixe)'));
       if (!ct.tient) b.appendChild(E('div', 'avert', 'Le projet (marge ' + MARGE_CONTOUR + ' mm comprise) dépasse ce format.'));
+      sel = E('div', 'boutons'); b.appendChild(sel);
+      inp = E('button', '', 'Recentrer le contour');
+      inp.title = 'Replace le contour autour des composants, puis le fige';
+      inp.addEventListener('click', function () { empiler(); figerContour(true); toutRafraichir(); });
+      sel.appendChild(inp);
     }
   }
 
@@ -7531,12 +8666,13 @@ function traduire(s) {
     'X': [[0, 0, 4, 6], [0, 6, 4, 0]], 'Y': [[0, 6, 2, 3, 4, 6], [2, 3, 2, 0]], 'Z': [[0, 6, 4, 6, 0, 0, 4, 0]],
     '.': [[2, 0, 2, 0.4]], ',': [[2, 1, 1, -1]], '-': [[1, 3, 3, 3]], '_': [[0, 0, 4, 0]], '+': [[2, 1, 2, 5], [0, 3, 4, 3]],
     '/': [[0, 0, 4, 6]], '(': [[3, 6, 1, 4, 1, 2, 3, 0]], ')': [[1, 6, 3, 4, 3, 2, 1, 0]], ':': [[2, 1, 2, 1.4], [2, 4, 2, 4.4]],
+    'µ': [[0, -1.5, 0, 4], [0, 1, 1, 0, 3, 0, 4, 1], [4, 0, 4, 4]],
     '=': [[0, 2, 4, 2], [0, 4, 4, 4]], 'Ω': [[0, 0, 1, 0, 1, 1, 0, 3, 0, 5, 1, 6, 3, 6, 4, 5, 4, 3, 3, 1, 3, 0, 4, 0]],
     '?': [[0, 5, 1, 6, 3, 6, 4, 5, 4, 4, 2, 3, 2, 2], [2, 0, 2, 0.4]], ' ': []
   };
   /* Traits d'un texte centré en (x, y), hauteur h, rotation rot, miroir : liste de polylignes monde */
   function traitsTexte(txt, x, y, h, rot, miroir) {
-    var s = String(txt).toUpperCase().replace(/µ/g, 'U'), u = h / 6, l = s.length * 5 - 1, r = [], i, j, k, g, pl, px, py,
+    var s = String(txt).toUpperCase().replace(/[\u00B5\u039C\u03BC]/g, 'µ'), u = h / 6, l = s.length * 5 - 1, r = [], i, j, k, g, pl, px, py,
         a = rot * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
     for (i = 0; i < s.length; i++) {
       g = POLICE[s.charAt(i)] || POLICE['?'];
@@ -7573,6 +8709,7 @@ function traduire(s) {
     for (i = 1; i < pts.length; i++) this.corps.push('X' + this.c(pts[i].x) + 'Y' + this.c(pts[i].y) + 'D01*');
     this.vide = false;
   };
+  Gerber.prototype.polarite = function (sombre) { this.corps.push(sombre ? '%LPD*%' : '%LPC*%'); };
   Gerber.prototype.region = function (pts) {
     var i;
     this.corps.push('G36*');
@@ -7618,25 +8755,67 @@ function traduire(s) {
     G.texte('AZS', x, y, h, 0, dessous);
   }
   function couchesExistantes() {
-    var r = { 1: B.comps.length > 0, 2: false, 3: false, 4: false }, i, pads = tousPads(), sDessous = false, vDessous = false;
+    var r = {}, i, pads = tousPads(), sDessous = false, vDessous = false;
+    toutesCouches().forEach(function (n) { r[n] = B.nc > 2; });
+    r[1] = B.comps.length > 0;
     for (i = 0; i < B.pistes.length; i++) r[B.pistes[i].couche] = true;
-    for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(4) >= 0) { r[4] = true; vDessous = true; }
+    for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(bas()) >= 0) { r[bas()] = true; vDessous = true; }
     for (i = 0; i < B.comps.length; i++) if (B.comps[i].dessous) sDessous = true;
     for (i = 0; i < B.textes.length; i++) if (B.textes[i].dessous) sDessous = true;
     return { cuivre: r, vernisDessous: vDessous, serigDessous: sDessous };
   }
   function gerberCuivre(n, ct) {
-    var G = new Gerber('Cuivre ' + n + (n === 1 ? ' (dessus)' : (n === 4 ? ' (dessous)' : ' (interne)'))), pads = tousPads(), i, t, m = mires(ct);
+    if (estPlan(n)) return gerberPlan(n, ct);
+    var G = new Gerber('Cuivre ' + n + (n === 1 ? ' (dessus)' : (n === bas() ? ' (dessous)' : ' (interne)'))), pads = tousPads(), i, t, m = mires(ct);
     for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0) gPastille(G, pads[i].e, 0);
     for (i = 0; i < B.vias.length; i++) G.flash(B.vias[i].x, B.vias[i].y, B.vias[i].diam);
     for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; if (t.couche === n) G.trait(t.pts, t.w); }
+    patchs().forEach(function (c) {
+      var k = cuivrePatch(c);
+      if (n === 1) { k.polys.forEach(function (l) { G.region(l); }); k.traits.forEach(function (t2) { G.trait(t2.pts, t2.w); }); }
+      else if (n === bas()) G.region(k.bande);
+    });
     for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
-    marquerAzs(G, ct, n === 4);
+    marquerAzs(G, ct, n === bas());
+    return G.sortie();
+  }
+  /* Plan (positif) : région du contour moins le retrait, puis en polarité claire les dégagements
+     des pastilles traversantes, des vias des autres équipotentielles, des mires et « AZS » gravé ;
+     en polarité sombre les couronnes et, pour l'équipotentielle du plan, 4 rayons thermiques.
+     Les vias de l'équipotentielle sont reliées en plein. */
+  function gerberPlan(n, ct) {
+    var net = netPlan(n), G = new Gerber('Cuivre ' + n + ' (plan ' + (net || typeCouche(n)) + ')'), pads = tousPads(), m = mires(ct),
+        dg = B.degPlan, r = RETRAIT_PLAN, i, p, f, cx, cy, ex, ey, L, v;
+    G.region([[ct.x0 + r, ct.y0 + r], [ct.x1 - r, ct.y0 + r], [ct.x1 - r, ct.y1 - r], [ct.x0 + r, ct.y1 - r]]);
+    G.polarite(false);
+    patchs().forEach(function (c) { G.region(cuivrePatch(c).zone); });
+    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
+    for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad' && !(pads[i].e.via && net && (netDe(pads[i].ref + ':' + pads[i].nom) || {}).nom === net)) gPastille(G, pads[i].e, dg);
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!net || v.net !== net) G.flash(v.x, v.y, v.diam + 2 * dg); }
+    marquerAzs(G, ct, false);
+    G.polarite(true);
+    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!net || v.net !== net) G.flash(v.x, v.y, v.diam); }
+    for (i = 0; i < pads.length; i++) {
+      p = pads[i];
+      if (p.e.t !== 'pad') continue;
+      gPastille(G, p.e, 0);
+      if (!net || p.e.via || (netDe(p.ref + ':' + p.nom) || {}).nom !== net) continue;
+      f = formePad(p.e);
+      if (f.disque) { cx = f.disque.x; cy = f.disque.y; ex = ey = f.disque.r; }
+      else {
+        cx = p.e.x; cy = p.e.y; ex = 0; ey = 0;
+        f.pts.forEach(function (q) { ex = Math.max(ex, Math.abs(q[0] - cx)); ey = Math.max(ey, Math.abs(q[1] - cy)); });
+      }
+      L = dg + 0.05;
+      G.trait([{ x: cx - ex - L, y: cy }, { x: cx + ex + L, y: cy }], RAYON_THERMIQUE);
+      G.trait([{ x: cx, y: cy - ey - L }, { x: cx, y: cy + ey + L }], RAYON_THERMIQUE);
+    }
     return G.sortie();
   }
   function gerberVernis(dessous, ct) {
-    var G = new Gerber('Vernis épargne ' + (dessous ? 'dessous' : 'dessus') + ' (ouvertures)'), pads = tousPads(), n = dessous ? 4 : 1, i, m = mires(ct);
-    for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0) gPastille(G, pads[i].e, MARGE_VERNIS);
+    var G = new Gerber('Vernis épargne ' + (dessous ? 'dessous' : 'dessus') + ' (ouvertures)'), pads = tousPads(), n = dessous ? bas() : 1, i, m = mires(ct);
+    for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0 && !pads[i].e.via) gPastille(G, pads[i].e, MARGE_VERNIS);
     for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.vernis);
     marquerAzs(G, ct, dessous);
     return G.sortie();
@@ -7662,7 +8841,7 @@ function traduire(s) {
         }
       }
       tp = posTexte(c);
-      G.texte(libelle(c), tp.x, tp.y, 1.0, 0, dessous);
+      G.texte(libelle(c), tp.x, tp.y, hTexte(c), rotTexte(c), dessous);
     }
     for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; if (!!t.dessous === dessous) G.texte(t.txt, t.x, t.y, t.h, t.rot, dessous); }
     for (i = 0; i < 4; i++) G.trait(ptsArc(m[i].x, m[i].y, MIRE.anneau / 2, 0, 360), 0.15);
@@ -7698,12 +8877,20 @@ function traduire(s) {
     var ct = calculerContour(), ex, base, f = [], i;
     if (!ct) { message('Circuit vide : rien à exporter.', true); return; }
     if (B.route) terminerRoute();
+    calculerConflits();
+    if (nbConflits()) {
+      message('Export refusé : sérigraphie sur pastille (' + CONFLITS_SERIG.comps.map(libelle).concat(CONFLITS_SERIG.libres.map(function (t) { return t.txt; })).join(', ') + ')', true);
+      if (CONFLITS_SERIG.comps.length) { B.sel = CONFLITS_SERIG.comps[0]; B.selT = -1; zoomTexte(boiteComp(B.sel)); }
+      else { B.sel = null; B.selT = B.textes.indexOf(CONFLITS_SERIG.libres[0]); zoomTexte(boiteLibre(CONFLITS_SERIG.libres[0])); }
+      toutRafraichir();
+      return;
+    }
     ex = couchesExistantes();
     base = ascii($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_');
-    f.push([base + '-cuivre1.gtl', gerberCuivre(1, ct)]);
-    if (ex.cuivre[2]) f.push([base + '-cuivre2.g2l', gerberCuivre(2, ct)]);
-    if (ex.cuivre[3]) f.push([base + '-cuivre3.g3l', gerberCuivre(3, ct)]);
-    if (ex.cuivre[4]) f.push([base + '-cuivre4.gbl', gerberCuivre(4, ct)]);
+    toutesCouches().forEach(function (n) {
+      if (n === 1) f.push([base + '-cuivre1.gtl', gerberCuivre(1, ct)]);
+      else if (ex.cuivre[n]) f.push([base + '-cuivre' + n + (n === bas() ? '.gbl' : '.g' + n + 'l'), gerberCuivre(n, ct)]);
+    });
     f.push([base + '-vernis-dessus.gts', gerberVernis(false, ct)]);
     if (ex.vernisDessous) f.push([base + '-vernis-dessous.gbs', gerberVernis(true, ct)]);
     f.push([base + '-serigraphie-dessus.gto', gerberSerig(false, ct)]);
@@ -7715,24 +8902,68 @@ function traduire(s) {
   }
 
   /* ======================================================================
+     Nomenclature (.bom.csv) : une ligne par type + valeur + gabarit identiques,
+     repères regroupés ; « ; » et UTF-8 avec BOM (µ, Ω lisibles dans un tableur)
+     ====================================================================== */
+  var RANG_BOM = { R: 1, C: 2, L: 3, D: 4, IC: 5 };
+  function lignesNomenclature() {
+    var g = {}, l = [], i, c, k, o, cp;
+    for (i = 0; i < B.comps.length; i++) {
+      c = B.comps[i];
+      if (c.type === 'PAD' || c.type === 'PWR') continue;
+      if (c.type === 'PATCH') {
+        if (!/^WILK/.test(c.val)) continue;
+        k = 'R|100|CMS0603';
+        if (!g[k]) { g[k] = { type: 'R', val: '100', gab: 'CMS0603', refs: [], fab: '', src: '' }; l.push(g[k]); }
+        g[k].refs.push(c.ref);
+        continue;
+      }
+      k = c.type + '|' + c.val + '|' + c.gab;
+      if (!g[k]) {
+        cp = c.type === 'IC' ? cmpParNom(c.val) : null;
+        g[k] = { type: c.type, val: c.val, gab: c.gab || '', refs: [], fab: cp ? c.val : '', src: cp && cp.source ? cp.source : '' };
+        l.push(g[k]);
+      }
+      g[k].refs.push(c.ref);
+    }
+    l.forEach(function (x) { x.refs.sort(triNat); });
+    l.sort(function (a, b) { return ((RANG_BOM[a.type] || 9) - (RANG_BOM[b.type] || 9)) || triNat(a.val, b.val) || triNat(a.gab, b.gab) || triNat(a.refs[0], b.refs[0]); });
+    return l;
+  }
+  function champCsv(v) { v = String(v); return /[;"\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function exporterNomenclature() {
+    var l = lignesNomenclature(), t, base, nom, url, a;
+    if (!l.length) { message('Nomenclature vide : mettre à jour depuis le schéma.', true); return; }
+    t = [['Quantité', 'Repères', 'Valeur', 'Gabarit', 'Fabricant_Référence', 'Source'].map(traduire).join(';')];
+    l.forEach(function (x) { t.push([x.refs.length, x.refs.join(', '), x.val, x.gab, x.fab, x.src].map(champCsv).join(';')); });
+    base = ($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_');
+    nom = base + '.bom.csv';
+    url = URL.createObjectURL(new Blob(['\uFEFF' + t.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+    a = document.createElement('a'); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    message('Nomenclature : ' + nom + ' · ' + l.length + ' ligne(s)');
+  }
+
+  /* ======================================================================
      Aperçu Gerber avant téléchargement : relecture des fichiers produits
      (RS-274X et Excellon), planche de miniatures vues de dessus, vue agrandie
      ====================================================================== */
   var AP = { fichiers: [], couches: [], ct: null, vue: -1, z: 1, ox: 0, oy: 0, pan: null, ref: null, dpr: 1 };
   var COUL_FICHIER = [
-    [/cuivre1/, '#D63B3B'], [/cuivre2/, '#D9A21B'], [/cuivre3/, '#2E9E5B'], [/cuivre4/, '#3B6FD8'],
     [/vernis-dessus/, '#E0B84A'], [/vernis-dessous/, '#5FB3B3'], [/serigraphie-dessus/, '#F0F0F0'],
     [/serigraphie-dessous/, '#8FB0E8'], [/contour/, '#E8D44D'], [/percage/, '#FFFFFF']
   ];
-  function couleurFichier(nom) { var i; for (i = 0; i < COUL_FICHIER.length; i++) if (COUL_FICHIER[i][0].test(nom)) return COUL_FICHIER[i][1]; return '#cccccc'; }
+  function couleurFichier(nom) { var i, m = /-cuivre(\d)\./.exec(nom); if (m) return coulCouche(parseInt(m[1], 10)); for (i = 0; i < COUL_FICHIER.length; i++) if (COUL_FICHIER[i][0].test(nom)) return COUL_FICHIER[i][1]; return '#cccccc'; }
   function titreFichier(nom) {
-    var t = { gtl: 'Cuivre 1 (dessus)', g2l: 'Cuivre 2', g3l: 'Cuivre 3', gbl: 'Cuivre 4 (dessous)', gts: 'Vernis dessus', gbs: 'Vernis dessous',
+    var m = /-cuivre(\d)\./.exec(nom), t = { gts: 'Vernis dessus', gbs: 'Vernis dessous',
               gto: 'Sérigraphie dessus', gbo: 'Sérigraphie dessous', gko: 'Contour', drl: 'Perçage' }, e = nom.split('.').pop().toLowerCase();
+    if (m) return nomCouche(parseInt(m[1], 10));
     return t[e] || nom;
   }
-  /* Lecture Gerber RS-274X : ouvertures C, R, O, P ; D01, D02, D03 ; G01, G02, G03 (G75) ; G36/G37 */
+  /* Lecture Gerber RS-274X : ouvertures C, R, O, P ; D01, D02, D03 ; G01, G02, G03 (G75) ; G36/G37 ; LPD/LPC */
   function lireGerber(texte) {
-    var r = { ops: [], nT: 0, nF: 0, nR: 0, alertes: [] }, ap = {}, cour = null, x = 0, y = 0, dec = 6, unite = 1, mode = 1, reg = null, trait = null,
+    var r = { ops: [], nT: 0, nF: 0, nR: 0, alertes: [] }, ap = {}, cour = null, x = 0, y = 0, dec = 6, unite = 1, mode = 1, reg = null, trait = null, clr = false,
         jetons = texte.replace(/\r?\n/g, '').match(/%[^%]*%|[^*%]+\*/g) || [], i, j, t, m, nx, ny, ci, cj, d;
     function nombre(s) { return s.indexOf('.') >= 0 ? parseFloat(s) * unite : parseInt(s, 10) / Math.pow(10, dec) * unite; }
     function finTrait() { if (trait && trait.pts.length > 1) r.ops.push(trait); trait = null; }
@@ -7754,13 +8985,14 @@ function traduire(s) {
           d = m[3].split('X').map(parseFloat);
           ap[m[1]] = { f: m[2], a: d[0] * unite, b: (d[1] || d[0]) * (m[2] === 'P' ? 1 : unite), rot: d[2] || 0 };
         } else if (/^AM/.test(t)) { if (r.alertes.indexOf('macro') < 0) r.alertes.push('macro'); }
-        else if (/^LPC/.test(t)) { if (r.alertes.indexOf('LPC') < 0) r.alertes.push('LPC'); }
+        else if (/^LPC/.test(t)) { finTrait(); clr = true; }
+        else if (/^LPD/.test(t)) { finTrait(); clr = false; }
         continue;
       }
       t = t.slice(0, -1);
       if (/^G0?4/.test(t) || /^M0?2/.test(t)) continue;
       if (t === 'G36') { finTrait(); reg = []; continue; }
-      if (t === 'G37') { if (reg && reg.length > 2) { r.ops.push({ k: 'r', pts: reg }); r.nR++; } reg = null; continue; }
+      if (t === 'G37') { if (reg && reg.length > 2) { r.ops.push({ k: 'r', pts: reg, clr: clr }); r.nR++; } reg = null; continue; }
       if ((m = /G0?([123])/.exec(t))) mode = parseInt(m[1], 10);
       if ((m = /^(?:G54)?D(\d+)$/.exec(t)) && parseInt(m[1], 10) >= 10) { finTrait(); cour = ap[m[1]] || null; continue; }
       m = /(?:X([+-]?[\d.]+))?(?:Y([+-]?[\d.]+))?(?:I([+-]?[\d.]+))?(?:J([+-]?[\d.]+))?D0?([123])$/.exec(t);
@@ -7771,11 +9003,11 @@ function traduire(s) {
       else if (m[5] === '1') {
         if (reg) { if (!reg.length) reg.push({ x: x, y: y }); reg = reg.concat(mode === 1 ? [{ x: nx, y: ny }] : arc(x, y, nx, ny, x + ci, y + cj, mode === 2 ? -1 : 1)); }
         else {
-          if (!trait) trait = { k: 't', ap: cour, pts: [{ x: x, y: y }] };
+          if (!trait) trait = { k: 't', ap: cour, pts: [{ x: x, y: y }], clr: clr };
           trait.pts = trait.pts.concat(mode === 1 ? [{ x: nx, y: ny }] : arc(x, y, nx, ny, x + ci, y + cj, mode === 2 ? -1 : 1));
           r.nT++;
         }
-      } else if (m[5] === '3') { finTrait(); r.ops.push({ k: 'f', ap: cour, x: nx, y: ny }); r.nF++; }
+      } else if (m[5] === '3') { finTrait(); r.ops.push({ k: 'f', ap: cour, x: nx, y: ny, clr: clr }); r.nF++; }
       x = nx; y = ny;
     }
     finTrait();
@@ -7810,10 +9042,12 @@ function traduire(s) {
     c.fillStyle = c.strokeStyle = L.coul; c.lineCap = 'round'; c.lineJoin = 'round';
     if (L.ger) for (i = 0; i < L.ger.ops.length; i++) {
       o = L.ger.ops[i];
+      c.globalCompositeOperation = o.clr ? 'destination-out' : 'source-over';
       if (o.k === 'f') tracerOuverture(c, o.ap, o.x, o.y);
       else if (o.k === 'r') { c.beginPath(); c.moveTo(o.pts[0].x, o.pts[0].y); for (j = 1; j < o.pts.length; j++) c.lineTo(o.pts[j].x, o.pts[j].y); c.closePath(); c.fill(); }
       else if (o.ap) { c.lineWidth = o.ap.a; c.beginPath(); c.moveTo(o.pts[0].x, o.pts[0].y); for (j = 1; j < o.pts.length; j++) c.lineTo(o.pts[j].x, o.pts[j].y); c.stroke(); }
     }
+    c.globalCompositeOperation = 'source-over';
     if (L.drl) for (i = 0; i < L.drl.trous.length; i++) { o = L.drl.trous[i]; c.beginPath(); c.arc(o.x, o.y, o.d / 2, 0, Math.PI * 2); c.fill(); }
     /* les perçages traversent le cuivre */
     if (trous && /cuivre/.test(L.nom)) {
@@ -7833,7 +9067,12 @@ function traduire(s) {
     c.fillStyle = '#000'; c.fillRect(0, 0, cv2.width, cv2.height);
     c.setTransform(dpr * s, 0, 0, -dpr * s, dpr * (w / 2 - (f.x0 + f.x1) / 2 * s), dpr * (h / 2 + (f.y0 + f.y1) / 2 * s));
     c.strokeStyle = '#333'; c.lineWidth = 0.2; c.strokeRect(ct.x0, ct.y0, ct.x1 - ct.x0, ct.y1 - ct.y0);
-    tracerCouche(c, L, trousExport());
+    /* couche dessinée à part : la polarité claire et les perçages ne trouent pas le fond */
+    var cv3 = document.createElement('canvas'), c3 = cv3.getContext('2d');
+    cv3.width = cv2.width; cv3.height = cv2.height;
+    c3.setTransform(dpr * s, 0, 0, -dpr * s, dpr * (w / 2 - (f.x0 + f.x1) / 2 * s), dpr * (h / 2 + (f.y0 + f.y1) / 2 * s));
+    tracerCouche(c3, L, trousExport());
+    c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(cv3, 0, 0);
     return cv2;
   }
   function stat(L) {
@@ -8011,7 +9250,7 @@ function traduire(s) {
      Un BLOCK par composant (géométrie locale, miroir déjà appliqué s'il est dessous),
      INSERT avec position et rotation ; XDATA AZSCAD : composants, équipotentielles, en-tête
      ====================================================================== */
-  var CALQUES = [['CUIVRE_1', 1], ['CUIVRE_2', 6], ['CUIVRE_3', 4], ['CUIVRE_4', 5], ['VERNIS_DESSUS', 8], ['VERNIS_DESSOUS', 9],
+  var CALQUES = [['CUIVRE_1', 1], ['CUIVRE_2', 6], ['CUIVRE_3', 4], ['CUIVRE_4', 5], ['CUIVRE_5', 3], ['CUIVRE_6', 30], ['VERNIS_DESSUS', 8], ['VERNIS_DESSOUS', 9],
                  ['TEXTE_DESSUS', 7], ['TEXTE_DESSOUS', 150], ['PERCAGE', 2], ['CHEVELU', 51], ['AZSCAD', 8]];
   var MARGE_VERNIS = 0.1;
   function nb(v) { return String(arr(v)); }
@@ -8068,7 +9307,7 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i]; p = gab(c);
       d.g(0, 'BLOCK').g(8, '0').g(2, 'P_' + c.id).g(70, 0).g(10, 0).g(20, 0).g(30, 0).g(3, 'P_' + c.id);
-      cuivreFace = c.dessous ? 'CUIVRE_4' : 'CUIVRE_1'; verniFace = c.dessous ? 'VERNIS_DESSOUS' : 'VERNIS_DESSUS'; texteFace = c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS';
+      cuivreFace = c.dessous ? 'CUIVRE_' + bas() : 'CUIVRE_1'; verniFace = c.dessous ? 'VERNIS_DESSOUS' : 'VERNIS_DESSUS'; texteFace = c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS';
       for (j = 0; p && j < p.el.length; j++) {
         e = copieObj(p.el[j]);
         /* miroir local pour le dessous ; la rotation est portée par l'INSERT */
@@ -8081,11 +9320,14 @@ function traduire(s) {
         }
         switch (e.t) {
           case 'pad':
-            ['CUIVRE_1', 'CUIVRE_2', 'CUIVRE_3', 'CUIVRE_4'].forEach(function (cq) { ecrirePad(d, cq, e, 0); });
+            toutesCouches().forEach(function (n) { ecrirePad(d, 'CUIVRE_' + n, e, 0); });
             ecrirePad(d, 'VERNIS_DESSUS', e, MARGE_VERNIS); ecrirePad(d, 'VERNIS_DESSOUS', e, MARGE_VERNIS);
             d.cercle('PERCAGE', e.x, e.y, e.perc / 2);
             break;
           case 'smd': ecrirePad(d, cuivreFace, e, 0); ecrirePad(d, verniFace, e, MARGE_VERNIS); break;
+          case 'cupoly': d.poly('CUIVRE_1', e.pts, true); break;
+          case 'cutrait': d.poly('CUIVRE_1', e.pts, false); break;
+          case 'bande': d.poly('CUIVRE_' + bas(), e.pts, true); break;
           case 'trait': d.ligne(texteFace, e.x1, e.y1, e.x2, e.y2); break;
           case 'rect': d.poly(texteFace, [[e.x1, e.y1], [e.x2, e.y1], [e.x2, e.y2], [e.x1, e.y2]], true); break;
           case 'arc': d.arc(texteFace, e.cx, e.cy, e.r, e.a1, e.a2); break;
@@ -8101,12 +9343,12 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'COUCHES=' + B.nc, 'PLANVCC=' + B.planVcc, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
       d.xdata(['COMP', 'ID=' + c.id, 'SID=' + c.sid, 'TYPE=' + c.type, 'REF=' + c.ref, 'VAL=' + c.val, 'POL=' + (c.pol || ''),
-               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0)]);
+               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)]);
       tp = posTexte(c);
       d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, 1.0, libelle(c), c.dessous);
     }
@@ -8128,7 +9370,7 @@ function traduire(s) {
     /* Vias traversantes : pastille sur les 4 cuivres, trou sur PERCAGE */
     for (i = 0; i < B.vias.length; i++) {
       f = B.vias[i];
-      for (j = 1; j <= 4; j++) d.disque('CUIVRE_' + j, f.x, f.y, f.diam / 2);
+      for (j = 1; j <= B.nc; j++) d.disque('CUIVRE_' + j, f.x, f.y, f.diam / 2);
       d.cercle('PERCAGE', f.x, f.y, f.perc / 2);
       d.g(0, 'POINT').g(8, 'AZSCAD').g(10, nb(f.x)).g(20, nb(f.y)).g(30, 0);
       d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net]);
@@ -8147,7 +9389,7 @@ function traduire(s) {
     return d.l.join('\r\n') + '\r\n';
   }
   function lireBrd(texte) {
-    var ents = lireDxfEntites(texte), r = { comps: [], nets: [], memo: {}, lib: '', sch: '', ok: false, pistes: [], vias: [], textes: [], contour: { type: 'auto', l: 100, h: 80 }, largeur: 1, via: { perc: 0.8, diam: 1.6 }, substrat: 1.6, isolement: 0.2 },
+    var ents = lireDxfEntites(texte), r = { comps: [], nets: [], memo: {}, lib: '', sch: '', ok: false, pistes: [], vias: [], textes: [], contour: { type: 'auto', l: 100, h: 80 }, largeur: 1, via: { perc: 0.8, diam: 1.6 }, substrat: 1.6, isolement: 0.2, nc: 0, planVcc: '', degPlan: 0.4, hDiel: 0.2 },
         i, e, xd, k, m, j, dern = null;
     for (i = 0; i < ents.length; i++) {
       e = ents[i];
@@ -8165,13 +9407,18 @@ function traduire(s) {
         if (k.VIA && k.VIA.indexOf('/') > 0) r.via = { perc: lireNb(k.VIA.split('/')[0]) || 0.8, diam: lireNb(k.VIA.split('/')[1]) || 1.6 };
         if (lireNb(k.SUBSTRAT)) r.substrat = lireNb(k.SUBSTRAT);
         if (lireNb(k.ISOLEMENT)) r.isolement = lireNb(k.ISOLEMENT);
-        m = /^(auto|carte|europe|perso):([\d.]+)x([\d.]+)$/.exec(k.CONTOUR || '');
-        if (m) r.contour = { type: m[1], l: parseFloat(m[2]), h: parseFloat(m[3]) };
+        if ([2, 4, 6].indexOf(parseInt(k.COUCHES, 10)) >= 0) r.nc = parseInt(k.COUCHES, 10);
+        r.planVcc = k.PLANVCC || '';
+        if (lireNb(k.DEGPLAN)) r.degPlan = lireNb(k.DEGPLAN);
+        if (lireNb(k.HDIEL)) r.hDiel = lireNb(k.HDIEL);
+        m = /^(auto|carte|europe|perso):([\d.]+)x([\d.]+)(?:@(-?[\d.]+),(-?[\d.]+))?$/.exec(k.CONTOUR || '');
+        if (m) { r.contour = { type: m[1], l: parseFloat(m[2]), h: parseFloat(m[3]) }; if (m[4] !== undefined) { r.contour.x0 = parseFloat(m[4]); r.contour.y0 = parseFloat(m[5]); } }
         m = (k.MEMO || '').split(';');
         for (j = 0; j < m.length; j++) if (m[j].indexOf(':') > 0) r.memo[m[j].slice(0, m[j].indexOf(':'))] = m[j].slice(m[j].indexOf(':') + 1);
       } else if (xd[0] === 'COMP') {
         r.comps.push({ id: parseInt(k.ID, 10), sid: parseInt(k.SID, 10), type: k.TYPE, ref: k.REF || '', val: k.VAL || '', pol: k.POL || '', gab: k.GAB || '',
                        dessous: k.FACE === 'dessous', tx: lireNb(k.TX) || 0, ty: lireNb(k.TY) || 0,
+                       th: lireNb(k.TH) || 1.0, trot: lireNb(k.TR) || 0, ta: k.TA !== undefined ? k.TA !== '0' : !(lireNb(k.TX) || lireNb(k.TY)),
                        x: lireNb(groupe(e, 10)) || 0, y: lireNb(groupe(e, 20)) || 0, rot: lireNb(groupe(e, 50)) || 0 });
       } else if (xd[0] === 'NET') r.nets.push({ nom: k.NOM || '', type: k.TYPE || 'n', pins: k.P });
     }
@@ -8194,6 +9441,12 @@ function traduire(s) {
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
     B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement;
     B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour;
+    B.planVcc = r.planVcc; B.degPlan = r.degPlan; B.hDiel = r.hDiel;
+    if (r.nc) B.nc = r.nc;
+    else if (!B.pistes.some(function (t) { return t.couche === 2 || t.couche === 3; })) { B.nc = 2; B.pistes.forEach(function (t) { if (t.couche === 4) t.couche = 2; }); }
+    else { B.nc = 6; B.pistes.forEach(function (t) { t.couche = { 1: 1, 2: 3, 3: 3, 4: 6 }[t.couche] || 1; }); }
+    B.couche = 1;
+    figerContour();
     B.sel = null; B.annul = []; B.retab = []; B.modifie = false; $('modif').textContent = '';
     $('nomBrd').value = nom;
     sources();
@@ -8232,7 +9485,8 @@ function traduire(s) {
     ouvrProj: function () { if (hote()) hote().ouvrirProjet(); },
     enrProj: function () { if (hote()) hote().enregistrerProjet(); },
     maj: function () { if (hote()) hote().majCircuit(); },
-    gerber: exporterGerber
+    gerber: exporterGerber,
+    bom: exporterNomenclature
   };
   function fermerMenuFichier() { $('menuFichier').className = ''; }
   $('btFichier').addEventListener('mousedown', function (ev) {
@@ -8252,7 +9506,6 @@ function traduire(s) {
   $('selGrille').addEventListener('change', function () { if (this.value === 'auto') majGrille(); else B.grille = parseFloat(this.value); dessiner(); });
   $('btPlacer').addEventListener('click', function () { choisirMode('placer'); });
   $('btRouter').addEventListener('click', function () { choisirMode('router'); });
-  [1, 2, 3, 4].forEach(function (n) { $('btC' + n).addEventListener('click', function () { choisirCouche(n); this.blur(); }); });
   majBoutonsCouche();
   window.addEventListener('resize', redimensionner);
 
@@ -8298,7 +9551,8 @@ function traduire(s) {
   function T(s) { return LANGUE === 'fr' ? s : (EN[s] || s); }
   var $ = function (id) { return document.getElementById(id); };
   var MODULES = ['lib', 'sch', 'brd'];
-  var P = { projet: null, actif: null, versionSch: 0, versionBrd: 0 };
+  /* texteBrd : schéma (DXF) tel qu'il a été donné au circuit ; le circuit est en attente si le schéma diffère */
+  var P = { projet: null, actif: null, texteBrd: '' };
 
   if (LANGUE !== 'fr') {
     document.documentElement.lang = 'en';
@@ -8330,7 +9584,7 @@ function traduire(s) {
   }
 
   /* --- Circuit : jamais modifié tout seul ; mise à jour proposée quand le schéma a changé --- */
-  function enAttente() { var s = api('sch'); return !!(P.projet && s && !s.vide() && P.versionSch !== P.versionBrd); }
+  function enAttente() { var s = api('sch'); return !!(P.projet && s && !s.vide() && s.texte() !== P.texteBrd); }
   function majBandeau() {
     var att = enAttente(), b = api('brd'), o = document.querySelector('#onglets .onglet[data-m="brd"]');
     $('bandeau').className = att && P.actif === 'brd' ? 'visible' : '';
@@ -8343,8 +9597,8 @@ function traduire(s) {
   function majCircuit() {
     var s = api('sch'), b = api('brd');
     if (!s || !b || s.vide()) return;
-    b.recevoirSchema(s.texte(), s.nom());
-    P.versionBrd = P.versionSch;
+    P.texteBrd = s.texte();
+    b.recevoirSchema(P.texteBrd, s.nom());
     majBandeau();
   }
 
@@ -8364,7 +9618,7 @@ function traduire(s) {
       api('lib').chargerProjet('', f);
       api('sch').chargerLib('', f); api('sch').nommer(base + '.sch.dxf');
       api('brd').chargerLib('', f); api('brd').nommer(base + '.brd.dxf');
-      P.versionSch = P.versionBrd = 0;
+      P.texteBrd = '';
       cacherAccueil();
       montrer('lib');
     });
@@ -8391,7 +9645,7 @@ function traduire(s) {
         api('brd').chargerLib(lib.texte, f);
         if (brd) api('brd').ouvrirBrd(brd.texte, brd.nom); else api('brd').nommer(base + '.brd.dxf');
         /* circuit chargé tel qu'il a été enregistré ; sans circuit, le schéma est proposé à l'import */
-        P.versionSch = brd ? 0 : 1; P.versionBrd = 0;
+        P.texteBrd = brd ? api('sch').texte() : '';
         cacherAccueil();
         montrer('sch');
       });
@@ -8420,7 +9674,7 @@ function traduire(s) {
       api('sch').chargerLib(t, P.projet.fichier);
       api('brd').chargerLib(t, P.projet.fichier);
     },
-    schemaChange: function () { P.versionSch++; majBandeau(); },
+    schemaChange: majBandeau,
     majCircuit: majCircuit,
     enregistrerProjet: enregistrerProjet,
     nouveauProjet: function () { if (abandonOk()) afficherAccueil(); },
