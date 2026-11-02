@@ -6,12 +6,12 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.11.0
+ Version    : 1.13.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.1.0, Schéma 1.6.1, Circuit 1.8.1 (cartouche et
+ Modules    : Bibliothèque 1.1.1, Schéma 1.7.0, Circuit 1.10.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -61,6 +61,13 @@
    1.11.0 2026-11-02  Chantier 8b (Bibliothèque 1.1.0) : import d'empreintes
                       KiCad (.kicad_mod, ancien .mod) et de leur brochage
                       (.kicad_sym, ancien .lib), seules ou dans un zip
+   1.11.1 2026-11-02  Bibliothèque 1.1.1 : Fichier ▸ Importer un dossier…
+   1.12.0 2026-11-02  Chantier 7b (Schéma 1.7.0, Circuit 1.9.0) : AGND et DGND,
+                      pont de masse, coupe des plans de masse tracée à la main
+                      (côté AGND et GND simple / côté DGND, inversable)
+   1.13.0 2026-11-02  Chantier 7c (Circuit 1.10.0) : masse des faces externes,
+                      îlots isolés retirés à l'export (faces et plans), vias de
+                      couture le long du contour
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -178,7 +185,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.1.0
+ Version    : 1.1.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -240,6 +247,9 @@
                       CMS et traversantes, perçage oblong repris en rond ;
                       sérigraphie du dessus (traits, rectangles, cercles, arcs
                       à 3 points ou par angle, polygones) ; axe Y retourné
+   1.1.1  2026-11-02  Fichier ▸ Importer un dossier… : dossier d'un zip décompressé
+                      (complet, ou seulement KiCad / EAGLE), même choix que dans
+                      un zip ; ancien .lib KiCad reconnu à son contenu
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -391,7 +401,7 @@
   #menu .op.actuel{font-weight:700; color:var(--accent)}
   #menu .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
   li.item .prive{flex:none; font-size:10px; font-weight:600; color:var(--avert); border:1px solid #f0c98a; background:#fff7e6; border-radius:3px; padding:0 4px; margin-left:auto}
-  #fichier,#fichierProjet,#fichierImport{display:none}
+  #fichier,#fichierProjet,#fichierImport,#dossierImport{display:none}
   #menuFichier{position:fixed; display:none; z-index:30; background:#fff; border:1px solid var(--bord); border-radius:7px; box-shadow:0 6px 20px rgba(0,0,0,.18); padding:4px; min-width:270px}
   #menuFichier.visible{display:block}
   #menuFichier .op{padding:6px 10px; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; gap:16px; white-space:nowrap}
@@ -425,11 +435,12 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.1.0</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.1.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
   <input type="file" id="fichierImport" accept=".zip,.lbr,.kicad_mod,.mod,.kicad_sym,.lib" multiple>
+  <input type="file" id="dossierImport" webkitdirectory multiple>
   <label for="nomFichier">Bibliothèque</label>
   <input type="text" id="nomFichier" value="" placeholder="aucune : Fichier ▸ Ouvrir ou Nouvelle bibliothèque" spellcheck="false">
   <span id="modif"></span>
@@ -447,6 +458,7 @@
   <div class="op" data-action="enrLib">Enregistrer la bibliothèque</div>
   <div class="sepMenu"></div>
   <div class="op" data-action="importer">Importer un composant (.zip, EAGLE, KiCad)…</div>
+  <div class="op" data-action="importerDossier" title="Dossier d'un zip décompressé (tout le composant, ou seulement KiCad / EAGLE)">Importer un dossier…</div>
 </div>
 
 <div id="gauche">
@@ -596,7 +608,8 @@ var TRAD_EN = [
   ['Abandonner les modifications du projet', 'Discard changes to project'],
   ['Abandonner les modifications de', 'Discard changes to'],
   ['gabarit utilisé dans le projet par', 'footprint used in the project by'],
-  ['Importer un composant (.zip, EAGLE, KiCad)…', 'Import a component (.zip, EAGLE, KiCad)…'],
+  ['Importer un composant (.zip, EAGLE, KiCad)…', 'Import a component (.zip, EAGLE, KiCad)…'], ['Importer un dossier…', 'Import a folder…'],
+  ['Dossier d\'un zip décompressé (tout le composant, ou seulement KiCad / EAGLE)', 'Folder of an unzipped archive (the whole component, or just KiCad / EAGLE)'],
   ['Aucune empreinte EAGLE ou KiCad dans', 'No EAGLE or KiCad footprint in'], ['Empreinte KiCad illisible', 'Unreadable KiCad footprint'],
   ['Choisir une empreinte .kicad_mod ou .mod (et son .kicad_sym ou .lib).', 'Choose a .kicad_mod or .mod footprint (and its .kicad_sym or .lib).'],
   ['Ouvrir une bibliothèque…', 'Open a library…'], ['Enregistrer la bibliothèque', 'Save library'],
@@ -2579,7 +2592,8 @@ function traduire(s) {
     nouvProj: function () { if (hote()) hote().nouveauProjet(); },
     ouvrProj: function () { if (hote()) hote().ouvrirProjet(); },
     enrProj: function () { if (hote()) hote().enregistrerProjet(); },
-    importer: function () { $('fichierImport').click(); }
+    importer: function () { $('fichierImport').click(); },
+    importerDossier: function () { $('dossierImport').click(); }
   };
   function fermerMenuFichier() { $('menuFichier').className = ''; }
   $('btFichier').addEventListener('mousedown', function (ev) {
@@ -2684,23 +2698,32 @@ function traduire(s) {
   }
   function texteOctets(u) { return new TextDecoder('utf-8').decode(u); }
   function importerZip(nom, buf) {
-    var ent = lireZip(buf), cands, part, lic;
+    return importerEntrees(nom, lireZip(buf), function (e) { return extraireZip(buf, e).then(texteOctets); });
+  }
+  /* Choix des fichiers dans un zip ou un dossier : EAGLE (.lbr XML) d'abord, sinon empreinte KiCad
+     (.kicad_mod, sinon .mod) et brochage (.kicad_sym, sinon .lib EESchema) ; part_info.txt, licence */
+  function importerEntrees(nom, ent, lire) {
+    var cands, part, lic, libs;
     function eagle(e) { return /(^|\/)EAGLE\/[^\/]+\.lbr$/i.test(e.nom) ? 1 : 0; }
     cands = ent.filter(function (e) { return /\.lbr$/i.test(e.nom); }).sort(function (a, b) { return eagle(b) - eagle(a); });
     part = ent.filter(function (e) { return /(^|\/)part_info\.txt$/i.test(e.nom); })[0];
     lic = ent.filter(function (e) { return /(^|\/)licen[cs]e[^\/]*\.txt$/i.test(e.nom); })[0];
+    libs = ent.filter(function (e) { return /\.lib$/i.test(e.nom); });
     function essayer(k) {
       if (k >= cands.length) return Promise.resolve(null);
-      return extraireZip(buf, cands[k]).then(function (u) { var t = texteOctets(u); return /<eagle[\s>]/.test(t) ? t : essayer(k + 1); });
+      return lire(cands[k]).then(function (t) { return /<eagle[\s>]/.test(t) ? t : essayer(k + 1); });
     }
-    /* sans EAGLE : empreinte KiCad (.kicad_mod, sinon .mod) et brochage (.kicad_sym, sinon .lib EESchema) */
+    function symLegacy(k) {
+      if (k >= libs.length) return Promise.resolve('');
+      return lire(libs[k]).then(function (t) { return /EESchema-LIBRARY/.test(t) ? t : symLegacy(k + 1); });
+    }
     function kicad() {
       var mod = ent.filter(function (e) { return /\.kicad_mod$/i.test(e.nom); })[0] || ent.filter(function (e) { return /\.mod$/i.test(e.nom); })[0],
-          sym = ent.filter(function (e) { return /\.kicad_sym$/i.test(e.nom); })[0] || ent.filter(function (e) { return /(^|\/)kicad\/[^\/]+\.lib$/i.test(e.nom); })[0];
+          sym = ent.filter(function (e) { return /\.kicad_sym$/i.test(e.nom); })[0];
       if (!mod) return Promise.reject(new Error('Aucune empreinte EAGLE ou KiCad dans ' + nom));
-      return Promise.all([extraireZip(buf, mod).then(texteOctets), sym ? extraireZip(buf, sym).then(texteOctets) : '']).then(function (v) { return { mod: v[0], sym: v[1] }; });
+      return Promise.all([lire(mod), sym ? lire(sym) : symLegacy(0)]).then(function (v) { return { mod: v[0], sym: v[1] }; });
     }
-    return Promise.all([essayer(0), part ? extraireZip(buf, part).then(texteOctets) : '', lic ? extraireZip(buf, lic).then(texteOctets) : ''])
+    return Promise.all([essayer(0), part ? lire(part) : '', lic ? lire(lic) : ''])
       .then(function (v) {
         if (v[0]) return { nom: nom, src: { lbr: v[0] }, part: v[1], lic: v[2] };
         return kicad().then(function (k) { return { nom: nom, src: k, part: v[1], lic: v[2] }; });
@@ -3213,6 +3236,21 @@ function traduire(s) {
       message((e && e.message) || ('Lecture impossible : ' + f.name), true);
     });
   });
+  /* Dossier : tous ses fichiers (sous-dossiers compris), choisis comme dans un zip */
+  $('dossierImport').addEventListener('change', function () {
+    var l = Array.prototype.slice.call(this.files || []), nom;
+    this.value = '';
+    if (!l.length) return;
+    nom = (l[0].webkitRelativePath || l[0].name).split('/')[0];
+    importerEntrees(nom, l.map(function (x) { return { nom: x.webkitRelativePath || x.name, f: x }; }), function (e) { return e.f.text(); })
+      .then(function (r) {
+        fermerSaisie(true); quitterRetouche();
+        ouvrirImport(r.nom, r.src, r.part, r.lic);
+      }).catch(function (e) {
+        fermerImport();
+        message((e && e.message) || ('Lecture impossible : ' + nom), true);
+      });
+  });
   $('impEntree').addEventListener('change', function () { choisirEntree(+this.value); });
   ['impGab', 'impCmp', 'impSrc'].forEach(function (id) { $(id).addEventListener('input', majImport); });
   $('impLic').addEventListener('change', majImport);
@@ -3268,7 +3306,7 @@ function traduire(s) {
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.6.1
+ Version    : 1.7.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3359,6 +3397,10 @@ function traduire(s) {
    1.6.1  2026-11-02  Choix limités à ce qui se fabrique sur FR4 1,6 mm (écart
                       ≥ 0,152 mm) : coupleur 15, 20, 30 dB (10 dB retiré),
                       passe-bande 3, 5, 7 % (10 % retiré)
+   1.7.0  2026-11-02  Chantier 7b : AGND et DGND au clic droit sur une patte (en
+                      plus de VCC+ et GND), symbole de masse avec son nom ;
+                      bouton Pont : pont de masse à 2 pattes AGND et DGND
+                      (point unique de jonction des deux masses)
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -3465,7 +3507,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.6.1</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.7.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -3490,6 +3532,7 @@ function traduire(s) {
     <button data-t="D" title="Diode"><svg viewBox="0 0 56 22"><path d="M2 11h20M34 11h20M22 3v16"></path><path d="M34 3v16L22 11z" fill="#1f2328"></path></svg>D</button>
     <button data-t="L" title="Inductance"><svg viewBox="0 0 56 22"><path d="M2 14h10a4 4 0 0 1 8 0a4 4 0 0 1 8 0a4 4 0 0 1 8 0a4 4 0 0 1 8 0h10"></path></svg>L</button>
     <button data-t="PATCH" title="Patch : diviseur Wilkinson 2 voies en phase, 50 Ω (400 à 3000 MHz)"><svg viewBox="0 0 56 22"><path d="M2 11h14M40 7h14M40 15h14"></path><circle cx="28" cy="11" r="8"></circle><path d="M36 9v4"></path></svg>Patch</button>
+    <button data-t="PONT" title="Pont de masse : point unique de jonction AGND / DGND"><svg viewBox="0 0 56 22"><path d="M4 11h18M34 11h18"></path><rect x="22" y="8" width="12" height="6"></rect></svg>Pont</button>
     <button data-t="PAD" title="Pad simple (une patte)"><svg viewBox="0 0 56 22"><path d="M4 11h32"></path><circle cx="44" cy="11" r="6"></circle></svg>PAD</button>
   </div>
   <h3 id="titreProjet">Projet</h3>
@@ -3656,7 +3699,7 @@ var TRAD_EN = [
   ['(aucun gabarit compatible)', '(no compatible footprint)'],
   ['gabarit(s) absent(s)', 'footprint(s) missing'],
   ['gabarit(s) chargés.', 'footprint(s) loaded.'],
-  ['Pad simple (une patte)', 'Single pad (one pin)'],
+  ['Pad simple (une patte)', 'Single pad (one pin)'], ['Pont de masse : point unique de jonction AGND / DGND', 'Ground bridge: single AGND / DGND junction point'], ['Ponts de masse', 'Ground bridges'], ['Pont de masse', 'Ground bridge'], ['Pont', 'Bridge'],
   ['Patch : diviseur Wilkinson 2 voies en phase, 50 Ω (400 à 3000 MHz)', 'Patch: 2-way in-phase Wilkinson divider, 50 Ω (400 to 3000 MHz)'],
   ['Patch Wilkinson', 'Wilkinson patch'], ['Wilkinson 2 voies (100 Ω)', '2-way Wilkinson (100 Ω)'], ['Diviseur T · 2 sorties', 'T divider · 2 outputs'],
   ['Diviseur T · 4 sorties', 'T divider · 4 outputs'], ['Diviseur T · 8 sorties', 'T divider · 8 outputs'],
@@ -3785,8 +3828,8 @@ function traduire(s) {
     grille: '#eef1f5', croix: '#c9ced6', trait: '#1f2328', corps: '#4b5563', patte: '#16a34a',
     texte: '#1f2328', rf: '#d97706', fil: '#0047AB', filSel: '#38bdf8', nomPatte: '#14532d', numPatte: '#9ca3af', sel: '#1f6feb', survol: '#FACC15'
   };
-  var PREFIXE = { R: 'R', C: 'C', D: 'D', L: 'L', PAD: 'P', IC: 'IC', PATCH: 'PA' };
-  var NOM_TYPE = { R: 'Résistance', C: 'Condensateur', D: 'Diode', L: 'Inductance', PAD: 'Pad', IC: 'Circuit', PATCH: 'Patch' };
+  var PREFIXE = { R: 'R', C: 'C', D: 'D', L: 'L', PAD: 'P', IC: 'IC', PATCH: 'PA', PONT: 'PM' };
+  var NOM_TYPE = { R: 'Résistance', C: 'Condensateur', D: 'Diode', L: 'Inductance', PAD: 'Pad', IC: 'Circuit', PATCH: 'Patch', PONT: 'Pont de masse' };
   /* Patch : valeur « WILK<MHz> » ou « DIVT<n>_<MHz> » ; type et fréquence saisis (Z0 = 50 Ω imposé) */
   var TYPES_PATCH = [['WILK', 'Wilkinson 2 voies (100 Ω)'], ['DIVT2_', 'Diviseur T · 2 sorties'], ['DIVT4_', 'Diviseur T · 4 sorties'], ['DIVT8_', 'Diviseur T · 8 sorties'],
                      ['CPL15_', 'Coupleur 15 dB'], ['CPL20_', 'Coupleur 20 dB'], ['CPL30_', 'Coupleur 30 dB'],
@@ -3960,6 +4003,8 @@ function traduire(s) {
   function symbolePassif(type, pol, c) {
     if (type === 'PAD') return symboleEchelle1(type, pol);
     if (type === 'PATCH') return c ? geomPatchSch(c).symb : SYMB_PATCH;
+    if (type === 'PONT') return [{ t: 'trait', x1: -5.08, y1: 0, x2: -1.27, y2: 0 }, { t: 'trait', x1: 1.27, y1: 0, x2: 5.08, y2: 0 },
+                                 { t: 'rect', x1: -1.27, y1: -0.64, x2: 1.27, y2: 0.64 }, { t: 'trait', x1: -1.27, y1: 0, x2: 1.27, y2: 0 }];
     return demi(symboleEchelle1(type, pol));
   }
   function symboleEchelle1(type, pol) {
@@ -4004,6 +4049,7 @@ function traduire(s) {
     if (c.type === 'PWR') return [{ nom: '1', x: 0, y: 0, f: c.val }];
     if (c.type === 'PAD') return [{ nom: '1', x: 0, y: 0, f: '' }];
     if (c.type === 'PATCH') return geomPatchSch(c).pins;
+    if (c.type === 'PONT') return [{ nom: 'AGND', x: -5.08, y: 0, f: 'AGND' }, { nom: 'DGND', x: 5.08, y: 0, f: 'DGND' }];
     if (c.type !== 'IC') {
       return [{ nom: '1', x: -D, y: 0, f: c.type === 'D' ? 'K' : (estPolarise(c) ? '+' : '') },
               { nom: '2', x: D, y: 0, f: c.type === 'D' ? 'A' : (estPolarise(c) ? '-' : '') }];
@@ -4021,9 +4067,10 @@ function traduire(s) {
   /* Rectangle englobant local */
   function bboxLocale(c) {
     var p, b, i, e, r;
-    if (c.type === 'PWR') return c.val === 'GND' ? [-1.6, -4.2, 1.6, 0] : [-1.6, 0, 1.6, 4.6];
+    if (c.type === 'PWR') return estMasse(c.val) ? [-1.6, c.val === 'GND' ? -4.2 : -6, 1.6, 0] : [-1.6, 0, 1.6, 4.6];
     if (c.type === 'PAD') return [-0.2, -1, 4.2, 1];
     if (c.type === 'PATCH') return geomPatchSch(c).bbox;
+    if (c.type === 'PONT') return [-5.08, -1.27, 5.08, 1.27];
     if (c.type !== 'IC') return [-D, -2.2, D, 2.2];
     p = gabIC(c);
     if (!p || !p.el.length) return [-2.54, -2.54, 2.54, 2.54];
@@ -4150,8 +4197,8 @@ function traduire(s) {
       }
       ctx.fillStyle = COUL.patte; ctx.strokeStyle = '#0f5132'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      if ((c.type !== 'IC' && c.type !== 'PATCH') || fantome) continue;
-      cote = c.type === 'PATCH' ? (l.x < 0 ? 'gauche' : l.x > 0 ? 'droite' : 'bas') : coteEtiquette(l.wx, l.wy, b);
+      if ((c.type !== 'IC' && c.type !== 'PATCH' && c.type !== 'PONT') || fantome) continue;
+      cote = c.type === 'PATCH' || c.type === 'PONT' ? (l.x < 0 ? 'gauche' : l.x > 0 ? 'droite' : 'bas') : coteEtiquette(l.wx, l.wy, b);
       if (c.type === 'PATCH' && c.rot) cote = coteEtiquette(l.wx, l.wy, b);
       s = l.f || l.nom;
       ctx.font = '600 ' + px + 'px sans-serif';
@@ -4367,7 +4414,7 @@ function traduire(s) {
     if (!c) {
       b.appendChild(E('h4', '', 'Schéma'));
       for (i = 0; i < S.comps.length; i++) if (S.comps[i].type !== 'PWR') cpt[S.comps[i].type] = (cpt[S.comps[i].type] || 0) + 1;
-      for (k in PREFIXE) if (cpt[k]) b.appendChild(E('div', 'stat', NOM_TYPE[k] + 's : ' + cpt[k]));
+      for (k in PREFIXE) if (cpt[k]) b.appendChild(E('div', 'stat', (k === 'PONT' ? 'Ponts de masse' : NOM_TYPE[k] + 's') + ' : ' + cpt[k]));
       if (!S.comps.length) b.appendChild(E('div', 'stat', 'Aucun composant posé.'));
       b.appendChild(E('div', 'stat', 'Liaisons : ' + S.fils.length + ' · bus : ' + S.bus.length));
       b.appendChild(E('div', 'stat', 'Bibliothèque : ' + (S.nomLib || 'aucune')));
@@ -4469,7 +4516,7 @@ function traduire(s) {
   function sortiePatte(e, cache) {
     var c = compParId(e.c), p = posEp(e, cache), l, b = [1e9, 1e9, -1e9, -1e9], i, d, ext = 2.54, px, lab = e.p;
     if (!c || !p) return null;
-    if (c.type === 'PWR') d = c.val === 'GND' ? [0, 1] : [0, -1];
+    if (c.type === 'PWR') d = estMasse(c.val) ? [0, 1] : [0, -1];
     else if (c.type !== 'IC') { d = transPts([[e.p === '1' ? -1 : 1, 0]], 0, 0, c.rot)[0]; d = [Math.round(d[0]), Math.round(d[1])]; }
     else {
       l = cache[e.c];
@@ -4961,7 +5008,7 @@ function traduire(s) {
       });
       m.appendChild(E('div', 'sepMenu'));
     }
-    ['VCC+', 'GND'].forEach(function (n) {
+    ['VCC+', 'GND', 'AGND', 'DGND'].forEach(function (n) {
       var o = E('div', 'op', n);
       o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); poserAlim(pt, n); });
       m.appendChild(o);
@@ -4972,8 +5019,9 @@ function traduire(s) {
   }
   function fermerMenu() { $('menu').style.display = 'none'; }
   document.addEventListener('mousedown', function (ev) { if (!$('menu').contains(ev.target)) fermerMenu(); }, true);
+  function estMasse(v) { return v === 'GND' || v === 'AGND' || v === 'DGND'; }
   function poserAlim(pt, nom) {
-    var pl = pattesMonde(pt.c), i, w = null, a, so, d, sens = nom === 'GND' ? -1 : 1, dx, dy, cache = {};
+    var pl = pattesMonde(pt.c), i, w = null, a, so, d, sens = estMasse(nom) ? -1 : 1, dx, dy, cache = {};
     for (i = 0; i < pl.length; i++) if (pl[i].nom === pt.p) w = pl[i];
     if (!w) return;
     /* Symbole placé du côté de sortie de la patte, sans recouvrir le composant (VCC+ vers le haut, GND vers le bas) */
@@ -4990,12 +5038,13 @@ function traduire(s) {
     toutRafraichir();
   }
   function dessinerAlim(c) {
-    var gnd = c.val === 'GND', coul = S.sel === c ? COUL.sel : COUL.trait, p;
+    var gnd = estMasse(c.val), coul = S.sel === c ? COUL.sel : COUL.trait, p;
     tracerLocal(c, gnd
       ? [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: -2.54 }, { t: 'trait', x1: -1.6, y1: -2.54, x2: 1.6, y2: -2.54 },
          { t: 'trait', x1: -1, y1: -3.2, x2: 1, y2: -3.2 }, { t: 'trait', x1: -0.4, y1: -3.85, x2: 0.4, y2: -3.85 }]
       : [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: 2.54 }, { t: 'trait', x1: -1.6, y1: 2.54, x2: 1.6, y2: 2.54 }], coul, 2);
     if (!gnd) texteEcran(c.x, c.y + 3.1, c.val, Math.max(10, Math.min(13, S.z * 0.9)), coul, 'center', 'alphabetic', true);
+    else if (c.val !== 'GND') texteEcran(c.x, c.y - 4.3, c.val, Math.max(9, Math.min(12, S.z * 0.8)), coul, 'center', 'top', true);
     p = versEcran(c.x, c.y);
     ecran(); ctx.fillStyle = COUL.patte; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
   }
@@ -5074,7 +5123,7 @@ function traduire(s) {
   /* Géométrie locale d'un composant (pour son BLOCK) */
   function geomLocale(c) {
     var p, l;
-    if (c.type === 'PWR') return c.val === 'GND'
+    if (c.type === 'PWR') return estMasse(c.val)
       ? [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: -2.54 }, { t: 'trait', x1: -1.6, y1: -2.54, x2: 1.6, y2: -2.54 }, { t: 'trait', x1: -1, y1: -3.2, x2: 1, y2: -3.2 }, { t: 'trait', x1: -0.4, y1: -3.85, x2: 0.4, y2: -3.85 }]
       : [{ t: 'trait', x1: 0, y1: 0, x2: 0, y2: 2.54 }, { t: 'trait', x1: -1.6, y1: 2.54, x2: 1.6, y2: 2.54 }];
     if (c.type !== 'IC') return symbolePassif(c.type, estPolarise(c), c);
@@ -5331,7 +5380,7 @@ function traduire(s) {
       return;
     }
     c = composantSous(w);
-    if (c && c.type !== 'PWR' && !patteSous(w)) ouvrirDialogue('modif', c.type, c);
+    if (c && c.type !== 'PWR' && c.type !== 'PONT' && !patteSous(w)) ouvrirDialogue('modif', c.type, c);
   });
   cv.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
   cv.addEventListener('mouseleave', function () { bulle(null, ''); if (S.survol) { S.survol = null; dessiner(); } });
@@ -5518,7 +5567,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.8.1
+ Version    : 1.10.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -5623,7 +5672,7 @@ function traduire(s) {
                       reliée) remplis à l'export : retrait 0,5 mm du bord,
                       dégagement réglable (0,4 mm), rayons thermiques 4 × 0,3 mm
                       sur les pastilles traversantes, vias reliées en plein,
-                      mires et « AZS » gravés ; pastilles et vias de
+                      mires et « AZS » dégagés ; pastilles et vias de
                       l'équipotentielle d'un plan reliées (chevelu), croix de
                       la couleur du plan ; touche V (ou chiffre du plan) : via
                       vers le plan en fin de tracé ; changement du nombre de
@@ -5663,6 +5712,23 @@ function traduire(s) {
    1.8.1  2026-11-02  Patch dont le calcul est impossible (écart sous le minimum
                       de fabrication) : motif écrit sur le circuit à côté du
                       cadre rouge ; coupleur 15 dB et passe-bande 7 % acceptés
+   1.9.0  2026-11-02  Chantier 7b : coupe AGND / DGND des plans de masse (ligne
+                      brisée tracée d'un bord à l'autre, clics accrochés à la
+                      grille ; AGND et GND simple d'un côté, DGND de l'autre ;
+                      Inverser, Retracer, Supprimer) ; saignée de 2 dégagements ;
+                      pastilles et vias reliées au plan selon leur côté
+                      (rayons thermiques, dégagement sinon), chevelu et touche V
+                      idem ; pont de masse (2 pastilles CMS AGND / DGND et
+                      languette 0,3 mm) ; DXF : COUPE
+   1.10.0 2026-11-02  Chantier 7c : masse des faces externes (aucune, dessus,
+                      dessous, les deux) : GND / AGND, DGND de l'autre côté de
+                      la coupe ; dégagement des autres équipotentielles, des
+                      zones des patchs, de la saignée, des mires et de « AZS »,
+                      rayons thermiques sur les pastilles, vias et pistes de
+                      masse reliées en plein ; îlots de cuivre isolés retirés à
+                      l'export, faces et plans (« trop de masse tue la masse ») ;
+                      vias de couture le long du contour (retrait 2 mm, pas
+                      5 mm), posées ou retirées d'un bouton ; DXF : REMP, COUTURE
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -5778,7 +5844,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.8.1</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.10.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -5874,7 +5940,17 @@ var TRAD_EN = [
   ['Fichier ▸ Charger le projet (.lib), puis importer le schéma', 'File ▸ Load the project (.lib), then import the schematic'],
   ['Importer / mettre à jour le schéma (.dxf)…', 'Import / update the schematic (.dxf)…'],
   ['Charger le projet (.lib)…', 'Load the project (.lib)…'], ['Enregistrer le circuit', 'Save board'],
-  ['Ouvrir un circuit…', 'Open a board…'], ['fréquence hors de 400 à 3000 MHz', 'frequency outside 400 to 3000 MHz'], ['Antenne patch rectangulaire', 'Rectangular patch antenna'], ['Antenne monopôle λ/4 imprimée', 'Printed λ/4 monopole antenna'],
+  ['Ouvrir un circuit…', 'Open a board…'], ['Masse des faces', 'Ground fill on faces'], ['Aucune', 'None'], ['Dessus et dessous', 'Top and bottom'],
+  ['Poser les vias de couture', 'Place stitching vias'], ['Retirer les vias de couture', 'Remove stitching vias'], ['Le long du contour, retrait 2 mm, pas 5 mm', 'Along the outline, 2 mm inset, 5 mm pitch'],
+  ['Faces et plans : dégagement', 'Faces and planes: clearance'], ['rayons thermiques, îlots isolés supprimés à l\'export · vias de couture :', 'thermal spokes, isolated islands removed at export · stitching vias:'],
+  ['îlot(s) de masse isolé(s) supprimé(s)', 'isolated ground island(s) removed'], ['via(s) de couture posée(s)', 'stitching via(s) placed'], ['via(s) de couture retirée(s)', 'stitching via(s) removed'],
+  ['Aucune via de couture posée (pas de masse ou pas de place).', 'No stitching via placed (no ground or no room).'], ['masse', 'ground'], ['Tracer la coupe AGND / DGND', 'Draw the AGND / DGND split'], ['Retracer la coupe', 'Redraw the split'],
+  ['Inverser AGND / DGND', 'Swap AGND / DGND'], ['Supprimer la coupe', 'Delete the split'], ['Coupe', 'Split'], ['points · saignée', 'points · gap'], ['GND simple côté AGND', 'plain GND on the AGND side'],
+  ['DGND sans coupe : ses pastilles ne sont pas reliées aux plans de masse.', 'DGND without a split: its pads are not connected to the ground planes.'],
+  ['Coupe AGND / DGND : clics d\'un bord de la carte à l\'autre · double-clic, clic droit ou Échap : terminer', 'AGND / DGND split: clicks from one board edge to the other · double-click, right-click or Esc: finish'],
+  ['Coupe tracée : AGND à gauche du sens de tracé (Inverser dans la fiche)', 'Split drawn: AGND on the left of the drawing direction (Swap in the sheet)'], ['Coupe annulée', 'Split cancelled'],
+  ['à cet endroit', 'at this location'], ['Le pont de masse reste sur le dessus.', 'The ground bridge stays on top.'],
+  ['AGND ↔ DGND : deux pastilles CMS reliées par une languette de 0,3 mm, à poser à cheval sur la coupe, au plus près du convertisseur', 'AGND ↔ DGND: two SMD pads joined by a 0.3 mm strip, to place across the split, as close as possible to the converter'], ['fréquence hors de 400 à 3000 MHz', 'frequency outside 400 to 3000 MHz'], ['Antenne patch rectangulaire', 'Rectangular patch antenna'], ['Antenne monopôle λ/4 imprimée', 'Printed λ/4 monopole antenna'],
   ['(résonance)', '(resonant)'], ['εr effectif', 'effective εr'], ['Rin au bord', 'Edge Rin'], ['Encoche', 'Inset'], ['profondeur', 'depth'], ['fente', 'gap'], ['Polarisation', 'Polarization'],
   ['linéaire, selon la longueur L', 'linear, along length L'], ['Brin', 'Element'], ['Zone dégagée', 'Keep-out zone'], ['aucun cuivre, toutes couches', 'no copper, all layers'],
   ['Contrepoids', 'Counterpoise'], ['Dessous : cuivre GND sous la ligne seulement · couches internes vides dans la zone', 'Bottom: GND copper under the feed line only · inner layers empty in the zone'], ['plan de masse du circuit, au moins', 'board ground plane, at least'], ['Accord', 'Tuning'], ['raccourcir le brin à l\'analyseur', 'trim the element on the analyzer'], ['Coupleur directionnel', 'Directional coupler'], ['Lignes couplées', 'Coupled lines'], ['écart', 'gap'],
@@ -6116,7 +6192,7 @@ function traduire(s) {
     annul: [], retab: [], modifie: false,
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 1.0, via: { perc: 0.8, diam: 1.6 },
-    substrat: 1.6, isolement: 0.2, nc: 2, planVcc: '', degPlan: 0.4, hDiel: 0.2, route: null, selP: null, selV: null,
+    substrat: 1.6, isolement: 0.2, nc: 2, planVcc: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
     textes: [], selT: -1, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }
   };
   var $ = function (id) { return document.getElementById(id); };
@@ -6232,6 +6308,7 @@ function traduire(s) {
   /* Gabarits possibles : ceux du composant, puis la bibliothèque, puis les normalisés de mêmes pattes */
   function gabaritsPossibles(c) {
     if (c.type === 'PATCH') return [nomPatch(c.val)];
+    if (c.type === 'PONT') return ['PONT_MASSE'];
     var r = [], i, cle = clePattes(c), cmp = c.type === 'IC' ? cmpParNom(c.val) : null, p, nl;
     if (cmp) for (i = 0; i < cmp.pkgs.length; i++) if (pkgParNom(cmp.pkgs[i]) && r.indexOf(cmp.pkgs[i]) < 0) r.push(cmp.pkgs[i]);
     for (i = 0; i < LIB.packages.length; i++) {
@@ -6343,7 +6420,11 @@ function traduire(s) {
   /* ======================================================================
      Géométrie des composants placés (dessous = miroir en X, vu de dessus)
      ====================================================================== */
-  function gab(c) { return c.type === 'PATCH' ? gabPatch(c) : pkgParNom(c.gab); }
+  function gab(c) { return c.type === 'PATCH' ? gabPatch(c) : (c.type === 'PONT' ? GAB_PONT : pkgParNom(c.gab)); }
+  /* Pont de masse : deux pastilles CMS AGND / DGND reliées par une languette de 0,3 mm */
+  var GAB_PONT = { nom: 'PONT_MASSE', patch: 'PONT', el: [
+    { t: 'smd', nom: 'AGND', x: -0.8, y: 0, dx: 1.0, dy: 1.2, rot: 0 }, { t: 'smd', nom: 'DGND', x: 0.8, y: 0, dx: 1.0, dy: 1.2, rot: 0 },
+    { t: 'cupoly', pts: [[-0.8, -0.15], [0.8, -0.15], [0.8, 0.15], [-0.8, 0.15]] }] };
 
   /* ======================================================================
      Patchs : cuivre calculé (microruban Hammerstad-Jensen, FR4 εr 4,5,
@@ -6668,7 +6749,7 @@ function traduire(s) {
     });
     return r;
   }
-  function patchs() { return B.comps.filter(function (c) { return c.type === 'PATCH' && gab(c); }); }
+  function patchs() { return B.comps.filter(function (c) { return (c.type === 'PATCH' || c.type === 'PONT') && gab(c); }); }
   function ptMonde(c, x, y) { return transPts([[c.dessous ? -x : x, y]], c.x, c.y, c.rot)[0]; }
   function rotMonde(c, r) { return normAng((c.dessous ? 180 - r : r) + c.rot); }
   /* Élément du gabarit transformé en coordonnées monde */
@@ -7005,8 +7086,8 @@ function traduire(s) {
   function dessinerPatch(c) {
     var k = cuivrePatch(c), i, j;
     function chemin(l) { ctx.beginPath(); ctx.moveTo(l[0][0], l[0][1]); for (j = 1; j < l.length; j++) ctx.lineTo(l[j][0], l[j][1]); ctx.closePath(); }
-    ctx.globalAlpha = 0.22; ctx.fillStyle = COUL.cuivreDessous; chemin(k.bande); ctx.fill(); ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#9a9a9a'; ctx.lineWidth = 1 / B.z; ctx.setLineDash([6 / B.z, 4 / B.z]); chemin(k.zone); ctx.stroke(); ctx.setLineDash([]);
+    if (k.bande) { ctx.globalAlpha = 0.22; ctx.fillStyle = COUL.cuivreDessous; chemin(k.bande); ctx.fill(); ctx.globalAlpha = 1; }
+    if (k.zone) { ctx.strokeStyle = '#9a9a9a'; ctx.lineWidth = 1 / B.z; ctx.setLineDash([6 / B.z, 4 / B.z]); chemin(k.zone); ctx.stroke(); ctx.setLineDash([]); }
     ctx.fillStyle = COUL.cuivreDessus; ctx.strokeStyle = COUL.cuivreDessus;
     for (i = 0; i < k.polys.length; i++) { chemin(k.polys[i]); ctx.fill(); }
     for (i = 0; i < k.traits.length; i++) {
@@ -7200,6 +7281,7 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) if (!B.comps[i].dessous) dessinerComposant(B.comps[i]);
     dessinerPistes();
     dessinerLiaisonsPlan();
+    dessinerCoupe();
     l = chevelu(true);
     ecran();
     for (i = 0; i < l.length; i++) {
@@ -7234,7 +7316,7 @@ function traduire(s) {
   /* ======================================================================
      Annuler / rétablir
      ====================================================================== */
-  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour), nc: B.nc, planVcc: B.planVcc }; }
+  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour), nc: B.nc, planVcc: B.planVcc, remp: B.remp, coupe: B.coupe ? { pts: B.coupe.pts.map(copieObj), agndG: B.coupe.agndG } : null }; }
   function empiler(i) { B.annul.push(i || instantane()); if (B.annul.length > 300) B.annul.shift(); B.retab = []; marquer(); }
   function restaurer(de, vers) {
     var i;
@@ -7244,7 +7326,7 @@ function traduire(s) {
     vers.push(instantane());
     B.comps = i.comps; B.memoGab = i.memo; B.sel = i.sel >= 0 ? B.comps[i.sel] || null : null;
     B.pistes = i.pistes; B.vias = i.vias; B.selP = null; B.selV = null; B.textes = i.textes; B.selT = -1; B.contour = i.contour;
-    B.nc = i.nc; B.planVcc = i.planVcc; if (B.couche > B.nc || estPlan(B.couche)) B.couche = 1;
+    B.nc = i.nc; B.planVcc = i.planVcc; B.coupe = i.coupe; B.remp = i.remp || ''; if (B.couche > B.nc || estPlan(B.couche)) B.couche = 1;
     marquer(); toutRafraichir();
   }
   function marquer() { B.modifie = true; $('modif').textContent = '●'; publierBrd(); }
@@ -7338,6 +7420,13 @@ function traduire(s) {
     b.appendChild(E('h4', '', c.dessous ? 'Composant · dessous' : 'Composant · dessus'));
     b.appendChild(E('div', 'grandNom', libelle(c)));
     if (c.type === 'PATCH') { blocPatch(f, c); blocTexteComp(f, c); return; }
+    if (c.type === 'PONT') {
+      b = E('div', 'bloc'); f.appendChild(b);
+      b.appendChild(E('div', 'stat', 'AGND ↔ DGND : deux pastilles CMS reliées par une languette de 0,3 mm, à poser à cheval sur la coupe, au plus près du convertisseur'));
+      bs = E('div', 'boutons'); b.appendChild(bs);
+      bt = E('button', '', 'Rotation 90° (R)'); bt.addEventListener('click', tourner); bs.appendChild(bt);
+      blocTexteComp(f, c); return;
+    }
     b = E('div', 'bloc'); f.appendChild(b);
     sel = champ(b, 'Gabarit', E('select'));
     l = gabaritsPossibles(c);
@@ -7399,11 +7488,26 @@ function traduire(s) {
       d.style.borderLeft = '4px ' + (estPlan(n) ? 'dashed ' : 'solid ') + coulCouche(n); d.style.paddingLeft = '6px';
       b.appendChild(d);
     });
+    d = E('div', 'boutons'); b.appendChild(d);
+    va = E('button', '', B.coupe ? 'Retracer la coupe' : 'Tracer la coupe AGND / DGND'); va.addEventListener('click', outilCoupe); d.appendChild(va);
+    if (B.coupe) {
+      va = E('button', '', 'Inverser AGND / DGND'); va.addEventListener('click', function () { empiler(); B.coupe.agndG = !B.coupe.agndG; toutRafraichir(); }); d.appendChild(va);
+      va = E('button', '', 'Supprimer la coupe'); va.addEventListener('click', function () { empiler(); B.coupe = null; toutRafraichir(); }); d.appendChild(va);
+      b.appendChild(E('div', 'stat', 'Coupe : ' + B.coupe.pts.length + ' points · saignée ' + String(arr(2 * B.degPlan)).replace('.', ',') + ' mm · GND simple côté AGND'));
+    } else if (netParNom('DGND')) b.appendChild(E('div', 'avert', 'DGND sans coupe : ses pastilles ne sont pas reliées aux plans de masse.'));
+    sel = champ(b, 'Masse des faces', E('select'));
+    [['', 'Aucune'], ['H', 'Dessus'], ['B', 'Dessous'], ['HB', 'Dessus et dessous']].forEach(function (v) { var o = E('option', '', v[1]); o.value = v[0]; sel.appendChild(o); });
+    sel.value = B.remp;
+    sel.addEventListener('change', function () { empiler(); B.remp = this.value; toutRafraichir(); });
+    d = E('div', 'boutons'); b.appendChild(d);
+    va = E('button', '', 'Poser les vias de couture'); va.title = 'Le long du contour, retrait 2 mm, pas 5 mm'; va.addEventListener('click', poserCouture); d.appendChild(va);
+    if (B.vias.some(function (v) { return v.couture; })) { va = E('button', '', 'Retirer les vias de couture'); va.addEventListener('click', retirerCouture); d.appendChild(va); }
+    b.appendChild(E('div', 'stat', 'Faces et plans : dégagement ' + String(B.degPlan).replace('.', ',') + ' mm, rayons thermiques, îlots isolés supprimés à l\'export · vias de couture : ' + B.vias.filter(function (v) { return v.couture; }).length));
     if (B.nc === 2) return;
     sel = champ(b, 'Plan VCC', E('select'));
     va = netVccAuto();
     d = E('option', '', 'Auto' + (va ? ' (' + va + ')' : '')); d.value = ''; sel.appendChild(d);
-    B.nets.filter(function (n) { return n.nom !== 'GND'; }).map(function (n) { return n.nom; })
+    B.nets.filter(function (n) { return !/^[AD]?GND$/.test(n.nom); }).map(function (n) { return n.nom; })
       .sort(function (a, b2) { return (/^N\d+$/.test(a) ? 1 : 0) - (/^N\d+$/.test(b2) ? 1 : 0) || triNat(a, b2); })
       .forEach(function (n) { var o = E('option', '', n); o.value = n; sel.appendChild(o); });
     sel.value = B.planVcc && netParNom(B.planVcc) ? B.planVcc : '';
@@ -7413,7 +7517,7 @@ function traduire(s) {
     inp = champ(b, 'Diélectrique L1–L2 (mm)', E('input')); inp.value = B.hDiel;
     inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v >= 0.05 && v < B.substrat && v !== B.hDiel) { empiler(); B.hDiel = arr(v); toutRafraichir(); } this.value = B.hDiel; });
     b.appendChild(E('div', 'stat', 'Thermiques : 4 rayons de 0,3 mm · retrait du bord 0,5 mm · vias reliées en plein'));
-    if (!netParNom('GND')) b.appendChild(E('div', 'avert', 'Aucune équipotentielle GND : le plan GND reste isolé.'));
+    if (!netParNom('GND') && !netParNom('AGND') && !netParNom('DGND')) b.appendChild(E('div', 'avert', 'Aucune équipotentielle GND : le plan GND reste isolé.'));
   }
   /* Changement du nombre de couches : dessous suivi, pistes internes reportées dans l'ordre, refus sinon */
   function changerNbCouches(n) {
@@ -7506,6 +7610,7 @@ function traduire(s) {
     if (B.selT >= 0) { empiler(); B.textes[B.selT].dessous = !B.textes[B.selT].dessous; toutRafraichir(); return; }
     if (!B.sel) return;
     if (B.sel.type === 'PATCH') { message('Un patch reste sur le dessus (masse au dessous).', true); return; }
+    if (B.sel.type === 'PONT') { message('Le pont de masse reste sur le dessus.', true); return; }
     empiler(); derouterComposant(B.sel);
     B.sel.dessous = !B.sel.dessous; B.sel.tx = arr(-(B.sel.tx || 0));
     ajusterTextes();
@@ -7552,6 +7657,7 @@ function traduire(s) {
     var m = pos(ev), w = versMonde(m.x, m.y), c, t, s;
     ev.preventDefault();
     B.tDown2 = B.tDown1 || 0; B.tDown1 = Date.now();
+    if (B.outilCoupe) { if (ev.button === 2) finirCoupe(); else if (ev.button === 0) pointCoupe(w); return; }
     if (ev.button === 2 && !B.route) { s = segmentSous(w); if (s) { ouvrirMenuLargeur(ev, s.i); dessiner(); return; } }
     if (B.mode === 'router') { if (sourisRouter(ev, w)) return; }
     else if (ev.button === 0) {
@@ -7612,6 +7718,7 @@ function traduire(s) {
      hors tracé, sur une piste ou une via : dé-routage ; sur un texte de composant : placement automatique */
   cv.addEventListener('dblclick', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), t;
+    if (B.outilCoupe) { finirCoupe(); return; }
     if (B.route) { annulerRoute(); return; }
     /* double-clic dont un des deux clics a terminé un tracé (jonction atteinte) : rien à annuler */
     if (B.finRoute && B.finRoute >= B.tDown2) return;
@@ -7636,6 +7743,7 @@ function traduire(s) {
     if (ev.target !== cv) return;
     $('coord').textContent = 'X ' + accroche(w.x).toFixed(2) + ' mm   Y ' + accroche(w.y).toFixed(2) + ' mm';
     if (B.route) { B.route.curseur = { x: accroche(w.x), y: accroche(w.y) }; dessiner(); }
+    if (B.outilCoupe) { B.outilCoupe.cur = { x: accroche(w.x), y: accroche(w.y) }; cv.style.cursor = 'crosshair'; dessiner(); return; }
     p = patteSous(w);
     if (p) {
       n = netDe(p);
@@ -7665,7 +7773,8 @@ function traduire(s) {
       else if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); supprimerSelRoutage(); }
       return;
     }
-    if (k.length === 1 && k >= '1' && k <= String(B.nc) && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
+    if (k === 'Escape' && B.outilCoupe) finirCoupe();
+    else if (k.length === 1 && k >= '1' && k <= String(B.nc) && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
     else if (k === 'Escape' && (B.sel || B.selT >= 0 || B.outilTexte)) { B.sel = null; B.selT = -1; B.outilTexte = false; message(''); toutRafraichir(); }
     else if ((k === 'Delete' || k === 'Backspace') && B.selT >= 0) { ev.preventDefault(); empiler(); B.textes.splice(B.selT, 1); B.selT = -1; toutRafraichir(); }
     else if ((k === 't' || k === 'T') && !ev.ctrlKey && !ev.metaKey) outilTexte();
@@ -7699,8 +7808,121 @@ function traduire(s) {
     return l.length ? l[0].nom : '';
   }
   function netVcc() { return B.planVcc && netParNom(B.planVcc) ? B.planVcc : netVccAuto(); }
-  function netPlan(n) { var t = typeCouche(n); return t === 'GND' ? (netParNom('GND') ? 'GND' : '') : (t === 'VCC' ? netVcc() : ''); }
-  function netsPlan() { var r = {}; toutesCouches().forEach(function (n) { var x = estPlan(n) ? netPlan(n) : ''; if (x) (r[x] = r[x] || []).push(n); }); return r; }
+  /* Nom affiché d'un plan ; GND simple = AGND ; avec une coupe : AGND d'un côté, DGND de l'autre */
+  function netPlan(n) {
+    var t = typeCouche(n);
+    if (t === 'VCC') return netVcc();
+    if (t !== 'GND') return '';
+    if (B.coupe) return 'AGND / DGND';
+    return netParNom('GND') ? 'GND' : (netParNom('AGND') ? 'AGND' : '');
+  }
+  /* Une équipotentielle est-elle reliée au plan n au point (x, y) ? */
+  function planRelie(n, net, x, y) {
+    var t = typeCouche(n);
+    if (t === 'VCC') return !!net && net === netVcc();
+    if (t !== 'GND') return false;
+    return relieMasse(net, x, y);
+  }
+  /* Masse au point (x, y) : GND et AGND, ou DGND de l'autre côté de la coupe */
+  function relieMasse(net, x, y) {
+    if (!B.coupe) return net === 'GND' || net === 'AGND';
+    return coteCoupe(x, y) === 'A' ? (net === 'AGND' || net === 'GND') : net === 'DGND';
+  }
+  function cleMasse(x, y) { return 'PLAN:GND' + (B.coupe ? coteCoupe(x, y) : ''); }
+  /* Remplissage de masse des faces externes : '' aucun, H dessus, B dessous, HB les deux */
+  function remplit(n) { return (n === 1 && B.remp.indexOf('H') >= 0) || (n === bas() && B.remp.indexOf('B') >= 0); }
+  function couchePlan(net, x, y) { var n; for (n = 2; n < B.nc; n++) if (estPlan(n) && planRelie(n, net, x, y)) return n; return 0; }
+  function clePlan(net, x, y) { var n = couchePlan(net, x, y); return n ? 'PLAN:' + typeCouche(n) + (typeCouche(n) === 'GND' && B.coupe ? coteCoupe(x, y) : '') : null; }
+  /* Côté de la coupe : 'A' (AGND, GND) ou 'D' (DGND) ; segment le plus proche, extrémités prolongées */
+  function coteCoupe(x, y) {
+    var p = B.coupe.pts, n = p.length, i, a, b, dx, dy, l, t, qx, qy, d, best = Infinity, sg = 1;
+    for (i = 0; i + 1 < n; i++) {
+      a = p[i]; b = p[i + 1]; dx = b.x - a.x; dy = b.y - a.y; l = dx * dx + dy * dy;
+      t = l ? ((x - a.x) * dx + (y - a.y) * dy) / l : 0;
+      if (t < 0 && i > 0) t = 0;
+      if (t > 1 && i < n - 2) t = 1;
+      qx = a.x + t * dx; qy = a.y + t * dy; d = Math.sqrt((x - qx) * (x - qx) + (y - qy) * (y - qy));
+      if (d < best - 1e-9) { best = d; sg = dx * (y - a.y) - dy * (x - a.x); }
+    }
+    return (sg > 0) === B.coupe.agndG ? 'A' : 'D';
+  }
+  /* Ligne de coupe prolongée de 20 mm à chaque bout (traverse sûrement le retrait du bord) */
+  function coupeEtendue() {
+    var p = B.coupe.pts.map(copieObj), n = p.length;
+    function prol(a, b) { var dx = a.x - b.x, dy = a.y - b.y, l = Math.sqrt(dx * dx + dy * dy) || 1; return { x: a.x + dx / l * 20, y: a.y + dy / l * 20 }; }
+    p[0] = prol(p[0], p[1]); p[n - 1] = prol(p[n - 1], p[n - 2]);
+    return p;
+  }
+  /* Vias de couture GND le long du contour (retrait 2 mm, pas 5 mm ≈ λ0/20 à 3 GHz), équipotentielle de masse
+     du côté de la coupe ; refusées près des mires, de « AZS », des patchs, de la coupe et du cuivre étranger */
+  function nomMasse(x, y) {
+    if (B.coupe && coteCoupe(x, y) === 'D') return netParNom('DGND') ? 'DGND' : '';
+    return netParNom('GND') ? 'GND' : (netParNom('AGND') ? 'AGND' : '');
+  }
+  function poserCouture() {
+    var ct = calculerContour(), o = 2, pas = 5, rv = B.via.diam / 2, l = [], obs = {}, m, az, pz, k, a, b2, lg, nn, j, x, y, net, ok, avant = instantane();
+    if (!ct) { message('Circuit vide.', true); return; }
+    m = mires(ct); az = boiteAzs(ct);
+    pz = patchs().map(function (c) { return bboxMonde(c); });
+    a = [[ct.x0 + o, ct.y0 + o], [ct.x1 - o, ct.y0 + o], [ct.x1 - o, ct.y1 - o], [ct.x0 + o, ct.y1 - o]];
+    for (k = 0; k < 4; k++) {
+      b2 = a[(k + 1) % 4]; lg = Math.sqrt((b2[0] - a[k][0]) * (b2[0] - a[k][0]) + (b2[1] - a[k][1]) * (b2[1] - a[k][1])); nn = Math.max(1, Math.round(lg / pas));
+      for (j = 0; j < nn; j++) {
+        x = arr(a[k][0] + (b2[0] - a[k][0]) * j / nn); y = arr(a[k][1] + (b2[1] - a[k][1]) * j / nn);
+        net = nomMasse(x, y); if (!net) continue;
+        if (m.some(function (q) { return Math.sqrt((q.x - x) * (q.x - x) + (q.y - y) * (q.y - y)) < MIRE.anneau / 2 + rv + 0.5; })) continue;
+        if (x > az[0][0] - rv - 0.3 && x < az[1][0] + rv + 0.3 && y > az[0][1] - rv - 0.3 && y < az[2][1] + rv + 0.3) continue;
+        if (pz.some(function (q) { return x > q[0] - rv && x < q[2] + rv && y > q[1] - rv && y < q[3] + rv; })) continue;
+        if (B.coupe && coupeEtendue().some(function (q, i, t) { return i > 0 && distSeg(x, y, t[i - 1], q) < rv + B.degPlan + 0.2; })) continue;
+        if (B.vias.concat(l).some(function (v) { return Math.sqrt((v.x - x) * (v.x - x) + (v.y - y) * (v.y - y)) < rv + v.diam / 2 + B.isolement; })) continue;
+        obs[net] = obs[net] || obstacles(net);
+        ok = !conflits({ x: x, y: y }, { x: x, y: y }, rv, 0, obs[net]).length;
+        if (ok) l.push({ x: x, y: y, perc: B.via.perc, diam: B.via.diam, net: net, couture: true });
+      }
+    }
+    if (!l.length) { message('Aucune via de couture posée (pas de masse ou pas de place).', true); return; }
+    B.vias = B.vias.concat(l); empiler(avant);
+    message(l.length + ' via(s) de couture posée(s)'); toutRafraichir();
+  }
+  function retirerCouture() {
+    var n = B.vias.filter(function (v) { return v.couture; }).length;
+    if (!n) return;
+    empiler(); B.vias = B.vias.filter(function (v) { return !v.couture; });
+    message(n + ' via(s) de couture retirée(s)'); toutRafraichir();
+  }
+  /* Outil Coupe : clics accrochés à la grille ; double-clic, clic droit ou Échap : fin */
+  function outilCoupe() {
+    if (B.mode !== 'placer') choisirMode('placer');
+    B.outilTexte = false; B.sel = null; B.selT = -1; B.outilCoupe = { pts: [], cur: null };
+    message('Coupe AGND / DGND : clics d\'un bord de la carte à l\'autre · double-clic, clic droit ou Échap : terminer');
+    toutRafraichir();
+  }
+  function pointCoupe(w) {
+    var o = B.outilCoupe, q = { x: accroche(w.x), y: accroche(w.y) }, d = o.pts[o.pts.length - 1];
+    if (!d || d.x !== q.x || d.y !== q.y) o.pts.push(q);
+    dessiner();
+  }
+  function finirCoupe() {
+    var o = B.outilCoupe;
+    B.outilCoupe = null;
+    if (o && o.pts.length >= 2) { empiler(); B.coupe = { pts: o.pts, agndG: true }; message('Coupe tracée : AGND à gauche du sens de tracé (Inverser dans la fiche)'); }
+    else message('Coupe annulée');
+    toutRafraichir();
+  }
+  function dessinerCoupe() {
+    var o = B.outilCoupe, l = B.coupe ? B.coupe.pts : null, k, a, b, dx, dy, n, m, p;
+    if (o) { l = o.pts.concat(o.cur ? [o.cur] : []); if (!l.length) return; }
+    if (!l) return;
+    monde();
+    ctx.strokeStyle = B.nc > 2 ? coulCouche(2) : '#D9A21B'; ctx.lineWidth = Math.max(2 * B.degPlan, 1.5 / B.z); ctx.setLineDash([6 / B.z, 4 / B.z]); ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.moveTo(l[0].x, l[0].y); for (k = 1; k < l.length; k++) ctx.lineTo(l[k].x, l[k].y); ctx.stroke(); ctx.setLineDash([]);
+    if (o || l.length < 2) return;
+    k = Math.floor((l.length - 1) / 2); a = l[k]; b = l[k + 1]; dx = b.x - a.x; dy = b.y - a.y; n = Math.sqrt(dx * dx + dy * dy) || 1;
+    m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    ecran(); ctx.font = '600 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = ctx.strokeStyle;
+    p = versEcran(m.x - dy / n * 3, m.y + dx / n * 3); ctx.fillText(B.coupe.agndG ? 'AGND' : 'DGND', p.x, p.y);
+    p = versEcran(m.x + dy / n * 3, m.y - dx / n * 3); ctx.fillText(B.coupe.agndG ? 'DGND' : 'AGND', p.x, p.y);
+  }
   /* Largeur 50 Ω en microruban (IPC-2141), FR4 εr 4,5, cuivre 35 µm */
   function largeur50() { var h = B.nc > 2 ? B.hDiel : B.substrat, t = 0.035, er = 4.5; return arr((5.98 * h / Math.exp(50 * Math.sqrt(er + 1.41) / 87) - t) / 0.8); }
   function largeurNet(net) { var n = netParNom(net); return n && n.type === 'rf' ? largeur50() : B.largeur; }
@@ -7767,10 +7989,16 @@ function traduire(s) {
       for (l = 0; l + 1 < t.pts.length; l++) if (distSeg(B.vias[j].x, B.vias[j].y, t.pts[l], t.pts[l + 1]) <= Math.max(t.w / 2, B.vias[j].diam / 2)) { u('T' + i, 'V' + j); break; }
     }
     if (B.nc > 2) {
-      l = netsPlan();
-      for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad') { t = netDe(pads[i].ref + ':' + pads[i].nom); if (t && l[t.nom]) u('P:' + pads[i].ref + ':' + pads[i].nom, 'PLAN:' + t.nom); }
-      for (j = 0; j < B.vias.length; j++) if (l[B.vias[j].net]) u('V' + j, 'PLAN:' + B.vias[j].net);
+      for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad') { t = netDe(pads[i].ref + ':' + pads[i].nom); l = t ? clePlan(t.nom, pads[i].e.x, pads[i].e.y) : null; if (l) u('P:' + pads[i].ref + ':' + pads[i].nom, l); }
+      for (j = 0; j < B.vias.length; j++) { l = clePlan(B.vias[j].net, B.vias[j].x, B.vias[j].y); if (l) u('V' + j, l); }
     }
+    [1, bas()].forEach(function (n) {
+      var q, nt;
+      if (!remplit(n)) return;
+      for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0) { nt = netDe(pads[i].ref + ':' + pads[i].nom); if (nt && relieMasse(nt.nom, pads[i].e.x, pads[i].e.y)) u('P:' + pads[i].ref + ':' + pads[i].nom, cleMasse(pads[i].e.x, pads[i].e.y)); }
+      for (j = 0; j < B.vias.length; j++) if (relieMasse(B.vias[j].net, B.vias[j].x, B.vias[j].y)) u('V' + j, cleMasse(B.vias[j].x, B.vias[j].y));
+      for (j = 0; j < B.pistes.length; j++) { q = B.pistes[j].pts[0]; if (B.pistes[j].couche === n && relieMasse(B.pistes[j].net, q.x, q.y)) u('T' + j, cleMasse(q.x, q.y)); }
+    });
     return f;
   }
   /* Chevelu restant : Kruskal sur les pattes de chaque équipotentielle, pattes déjà reliées fusionnées ;
@@ -7977,9 +8205,9 @@ function traduire(s) {
   function viaVersPlan(n) {
     var r = B.route, net, pl, der, pd;
     if (!r) return;
-    net = r.piste.net; pl = netsPlan()[net]; der = r.piste.pts[r.piste.pts.length - 1];
-    if (!pl) { message('Pas de plan pour ' + net + (n ? ' (' + nomCouche(n) + ')' : '') + '.', true); return; }
-    if (n && pl.indexOf(n) < 0) { message(nomCouche(n) + ' : autre équipotentielle que ' + net + '.', true); return; }
+    net = r.piste.net; der = r.piste.pts[r.piste.pts.length - 1]; pl = couchePlan(net, der.x, der.y);
+    if (!pl) { message('Pas de plan pour ' + net + (n ? ' (' + nomCouche(n) + ')' : '') + ' à cet endroit.', true); return; }
+    if (n && !planRelie(n, net, der.x, der.y)) { message(nomCouche(n) + ' : autre équipotentielle que ' + net + ' à cet endroit.', true); return; }
     pd = padSous(tousPads(), der.x, der.y, 0);
     if (pd && pd.e.t === 'smd') { message('Via sur pastille CMS : tracer d\'abord un segment.', true); return; }
     if (!pd) poserViaJonction(der);
@@ -8020,6 +8248,7 @@ function traduire(s) {
   }
   function choisirMode(m) {
     if (B.route) terminerRoute();
+    B.outilCoupe = null;
     B.mode = m; B.selP = null; B.selV = null; B.selT = -1; B.outilTexte = false;
     if (m === 'router') B.sel = null;
     cv.style.cursor = m === 'router' ? 'crosshair' : 'default';
@@ -8111,15 +8340,16 @@ function traduire(s) {
   function dessinerLiaisonsPlan() {
     var np, pads, i, t, n, d;
     if (B.nc === 2) return;
-    np = netsPlan(); pads = tousPads();
+    pads = tousPads();
     monde(); ctx.lineWidth = Math.max(0.15, 1.5 / B.z); ctx.lineCap = 'butt';
     function croix(x, y, r, c) { ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); ctx.stroke(); }
     for (i = 0; i < pads.length; i++) {
       if (pads[i].e.t !== 'pad') continue;
       t = netDe(pads[i].ref + ':' + pads[i].nom);
-      if (t && np[t.nom]) { n = np[t.nom][0]; d = pads[i].e.diam || 1; croix(pads[i].e.x, pads[i].e.y, d * 0.75, coulCouche(n)); }
+      n = t ? couchePlan(t.nom, pads[i].e.x, pads[i].e.y) : 0;
+      if (n) { d = pads[i].e.diam || 1; croix(pads[i].e.x, pads[i].e.y, d * 0.75, coulCouche(n)); }
     }
-    for (i = 0; i < B.vias.length; i++) if (np[B.vias[i].net]) croix(B.vias[i].x, B.vias[i].y, B.vias[i].diam * 0.75, coulCouche(np[B.vias[i].net][0]));
+    for (i = 0; i < B.vias.length; i++) { n = couchePlan(B.vias[i].net, B.vias[i].x, B.vias[i].y); if (n) croix(B.vias[i].x, B.vias[i].y, B.vias[i].diam * 0.75, coulCouche(n)); }
     ctx.lineCap = 'round';
   }
   function ficheRoutage(f) {
@@ -8548,7 +8778,7 @@ function traduire(s) {
     function aj(x0, y0, x1, y1) { b[0] = Math.min(b[0], x0); b[1] = Math.min(b[1], y0); b[2] = Math.max(b[2], x1); b[3] = Math.max(b[3], y1); }
     for (i = 0; i < B.comps.length; i++) { m = bboxMonde(B.comps[i]); aj(m[0], m[1], m[2], m[3]); }
     for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; for (j = 0; j < t.pts.length; j++) aj(t.pts[j].x - t.w / 2, t.pts[j].y - t.w / 2, t.pts[j].x + t.w / 2, t.pts[j].y + t.w / 2); }
-    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; aj(v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2); }
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!v.couture) aj(v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2); }
     for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; aj(t.x - m, t.y - m, t.x + m, t.y + m); }
     return b[0] > b[2] ? null : b;
   }
@@ -8756,61 +8986,126 @@ function traduire(s) {
   }
   function couchesExistantes() {
     var r = {}, i, pads = tousPads(), sDessous = false, vDessous = false;
-    toutesCouches().forEach(function (n) { r[n] = B.nc > 2; });
-    r[1] = B.comps.length > 0;
+    toutesCouches().forEach(function (n) { r[n] = B.nc > 2 || remplit(n); });
+    r[1] = B.comps.length > 0 || remplit(1);
     for (i = 0; i < B.pistes.length; i++) r[B.pistes[i].couche] = true;
     for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(bas()) >= 0) { r[bas()] = true; vDessous = true; }
     for (i = 0; i < B.comps.length; i++) if (B.comps[i].dessous) sDessous = true;
     for (i = 0; i < B.textes.length; i++) if (B.textes[i].dessous) sDessous = true;
     return { cuivre: r, vernisDessous: vDessous, serigDessous: sDessous };
   }
+  /* Rayons thermiques : croix de 4 rayons jusqu'au-delà du dégagement ; renvoie le centre */
+  function rayons(G, e, dg) {
+    var f = formePad(e), cx, cy, ex, ey, L = dg + 0.05;
+    if (f.disque) { cx = f.disque.x; cy = f.disque.y; ex = ey = f.disque.r; }
+    else { cx = e.x; cy = e.y; ex = 0; ey = 0; f.pts.forEach(function (q) { ex = Math.max(ex, Math.abs(q[0] - cx)); ey = Math.max(ey, Math.abs(q[1] - cy)); }); }
+    G.trait([{ x: cx - ex - L, y: cy }, { x: cx + ex + L, y: cy }], RAYON_THERMIQUE);
+    G.trait([{ x: cx, y: cy - ey - L }, { x: cx, y: cy + ey + L }], RAYON_THERMIQUE);
+    return { x: cx, y: cy };
+  }
+  function boiteAzs(ct) { var x = ct.x0 + COIN_MIRE + MIRE.anneau / 2 + 0.8 + 1.4, y = ct.y0 + COIN_MIRE; return [[x - 1.4, y - 0.8], [x + 1.4, y - 0.8], [x + 1.4, y + 0.8], [x - 1.4, y + 0.8]]; }
+  /* Cuivre de masse d'une couche (plan ou face remplie) : région moins le retrait, dégagements en polarité
+     claire (autres équipotentielles, zones des patchs, saignée de la coupe, mires, « AZS »), rayons
+     thermiques en polarité sombre ; renvoie les points d'ancrage (cuivre de l'équipotentielle) */
+  function phaseMasse(G, n, ct, plan) {
+    var pads = tousPads(), m = mires(ct), dg = B.degPlan, r = RETRAIT_PLAN, ancres = [], i, p, t, v, nt, meme;
+    function relie(net, x, y) { return plan ? planRelie(n, net, x, y) : relieMasse(net, x, y); }
+    G.region([[ct.x0 + r, ct.y0 + r], [ct.x1 - r, ct.y0 + r], [ct.x1 - r, ct.y1 - r], [ct.x0 + r, ct.y1 - r]]);
+    G.polarite(false);
+    patchs().forEach(function (c) { var z = cuivrePatch(c).zone; if (z) G.region(z); });
+    if (B.coupe && (!plan || typeCouche(n) === 'GND')) G.trait(coupeEtendue(), 2 * dg);
+    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
+    for (i = 0; i < pads.length; i++) {
+      p = pads[i];
+      if (plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) continue;
+      nt = netDe(p.ref + ':' + p.nom); meme = !!nt && relie(nt.nom, p.e.x, p.e.y);
+      if (meme && p.e.via) { ancres.push({ x: p.e.x, y: p.e.y }); continue; }
+      gPastille(G, p.e, dg);
+    }
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (relie(v.net, v.x, v.y)) ancres.push({ x: v.x, y: v.y }); else G.flash(v.x, v.y, v.diam + 2 * dg); }
+    if (!plan) for (i = 0; i < B.pistes.length; i++) {
+      t = B.pistes[i];
+      if (t.couche !== n) continue;
+      if (relie(t.net, t.pts[0].x, t.pts[0].y)) ancres = ancres.concat(t.pts);
+      else G.trait(t.pts, t.w + 2 * dg);
+    }
+    G.region(boiteAzs(ct));
+    G.polarite(true);
+    for (i = 0; i < pads.length; i++) {
+      p = pads[i];
+      if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via) continue;
+      nt = netDe(p.ref + ':' + p.nom);
+      if (nt && relie(nt.nom, p.e.x, p.e.y)) ancres.push(rayons(G, p.e, dg));
+    }
+    return ancres;
+  }
+  /* Îlots (« trop de masse tue la masse ») : la phase de masse est dessinée à 10 points par mm au plus,
+     tout cuivre qui ne touche aucun ancrage est retiré (rectangles en polarité claire, rangées fusionnées) */
+  var ILOTS = {};
+  function ilots(ecrire, ct) {
+    var Gt = new Gerber('t'), ancres = ecrire(Gt), w = ct.x1 - ct.x0, h = ct.y1 - ct.y0, s = Math.min(10, Math.sqrt(6e6 / (w * h))),
+        W = Math.ceil(w * s), H = Math.ceil(h * s), cv2 = document.createElement('canvas'), c, d, cu, lab, pile = [], i, k, x, y, a, rects = [],
+        prec = {}, cour, cle, nb = 0, vu;
+    cv2.width = W; cv2.height = H; c = cv2.getContext('2d');
+    c.setTransform(s, 0, 0, -s, -ct.x0 * s, ct.y1 * s);
+    tracerCouche(c, { ger: lireGerber(Gt.sortie()), coul: '#fff', nom: 't' }, null);
+    d = c.getImageData(0, 0, W, H).data;
+    cu = new Uint8Array(W * H); lab = new Uint8Array(W * H);
+    for (i = 0; i < W * H; i++) cu[i] = d[i * 4 + 3] > 127 ? 1 : 0;
+    function semer(k2) { if (cu[k2] && !lab[k2]) { lab[k2] = 1; pile.push(k2); } }
+    ancres.forEach(function (q) { x = Math.round((q.x - ct.x0) * s); y = Math.round((ct.y1 - q.y) * s); if (x >= 0 && y >= 0 && x < W && y < H) semer(y * W + x); });
+    while (pile.length) { k = pile.pop(); x = k % W; if (x > 0) semer(k - 1); if (x < W - 1) semer(k + 1); if (k >= W) semer(k - W); if (k < W * H - W) semer(k + W); }
+    /* nombre d'îlots retirés */
+    vu = new Uint8Array(W * H);
+    for (i = 0; i < W * H; i++) if (cu[i] && !lab[i] && !vu[i]) {
+      nb++; pile = [i]; vu[i] = 1;
+      while (pile.length) { k = pile.pop(); x = k % W; [x > 0 ? k - 1 : -1, x < W - 1 ? k + 1 : -1, k - W, k + W].forEach(function (q) { if (q >= 0 && q < W * H && cu[q] && !lab[q] && !vu[q]) { vu[q] = 1; pile.push(q); } }); }
+    }
+    for (y = 0; y < H; y++) {
+      cour = {}; x = 0;
+      while (x < W) {
+        if (cu[y * W + x] && !lab[y * W + x]) {
+          a = x; while (x < W && cu[y * W + x] && !lab[y * W + x]) x++;
+          cle = a + ',' + x;
+          if (prec[cle] !== undefined) { rects[prec[cle]][3] = y + 1; cour[cle] = prec[cle]; } else { rects.push([a, y, x, y + 1]); cour[cle] = rects.length - 1; }
+        } else x++;
+      }
+      prec = cour;
+    }
+    return { n: nb, rects: rects.map(function (q) { return [[ct.x0 + (q[0] - 0.5) / s, ct.y1 - (q[3] + 0.5) / s], [ct.x0 + (q[2] + 0.5) / s, ct.y1 - (q[3] + 0.5) / s],
+                                                               [ct.x0 + (q[2] + 0.5) / s, ct.y1 - (q[1] - 0.5) / s], [ct.x0 + (q[0] - 0.5) / s, ct.y1 - (q[1] - 0.5) / s]]; }) };
+  }
+  function retirerIlots(G, n, ct, plan) {
+    var res = ilots(function (Gt) { return phaseMasse(Gt, n, ct, plan); }, ct);
+    phaseMasse(G, n, ct, plan);
+    if (res.rects.length) { G.polarite(false); res.rects.forEach(function (q) { G.region(q); }); G.polarite(true); }
+    ILOTS[n] = res.n;
+  }
   function gerberCuivre(n, ct) {
     if (estPlan(n)) return gerberPlan(n, ct);
-    var G = new Gerber('Cuivre ' + n + (n === 1 ? ' (dessus)' : (n === bas() ? ' (dessous)' : ' (interne)'))), pads = tousPads(), i, t, m = mires(ct);
+    var G = new Gerber('Cuivre ' + n + (n === 1 ? ' (dessus)' : (n === bas() ? ' (dessous)' : ' (interne)')) + (remplit(n) ? ' · masse' : '')), pads = tousPads(), i, t, m = mires(ct);
+    if (remplit(n)) retirerIlots(G, n, ct, false);
     for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0) gPastille(G, pads[i].e, 0);
     for (i = 0; i < B.vias.length; i++) G.flash(B.vias[i].x, B.vias[i].y, B.vias[i].diam);
     for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; if (t.couche === n) G.trait(t.pts, t.w); }
     patchs().forEach(function (c) {
       var k = cuivrePatch(c);
       if (n === 1) { k.polys.forEach(function (l) { G.region(l); }); k.traits.forEach(function (t2) { G.trait(t2.pts, t2.w); }); }
-      else if (n === bas()) G.region(k.bande);
+      else if (n === bas() && k.bande) G.region(k.bande);
     });
     for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
     marquerAzs(G, ct, n === bas());
     return G.sortie();
   }
-  /* Plan (positif) : région du contour moins le retrait, puis en polarité claire les dégagements
-     des pastilles traversantes, des vias des autres équipotentielles, des mires et « AZS » gravé ;
-     en polarité sombre les couronnes et, pour l'équipotentielle du plan, 4 rayons thermiques.
-     Les vias de l'équipotentielle sont reliées en plein. */
+  /* Plan (positif) : phase de masse, îlots retirés, puis couronnes des pastilles traversantes, vias des
+     autres équipotentielles et mires en polarité sombre */
   function gerberPlan(n, ct) {
-    var net = netPlan(n), G = new Gerber('Cuivre ' + n + ' (plan ' + (net || typeCouche(n)) + ')'), pads = tousPads(), m = mires(ct),
-        dg = B.degPlan, r = RETRAIT_PLAN, i, p, f, cx, cy, ex, ey, L, v;
-    G.region([[ct.x0 + r, ct.y0 + r], [ct.x1 - r, ct.y0 + r], [ct.x1 - r, ct.y1 - r], [ct.x0 + r, ct.y1 - r]]);
-    G.polarite(false);
-    patchs().forEach(function (c) { G.region(cuivrePatch(c).zone); });
-    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
-    for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad' && !(pads[i].e.via && net && (netDe(pads[i].ref + ':' + pads[i].nom) || {}).nom === net)) gPastille(G, pads[i].e, dg);
-    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!net || v.net !== net) G.flash(v.x, v.y, v.diam + 2 * dg); }
-    marquerAzs(G, ct, false);
-    G.polarite(true);
+    var net = netPlan(n), G = new Gerber('Cuivre ' + n + ' (plan ' + (net || typeCouche(n)) + ')'), pads = tousPads(), m = mires(ct), i, v;
+    retirerIlots(G, n, ct, true);
     for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
-    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!net || v.net !== net) G.flash(v.x, v.y, v.diam); }
-    for (i = 0; i < pads.length; i++) {
-      p = pads[i];
-      if (p.e.t !== 'pad') continue;
-      gPastille(G, p.e, 0);
-      if (!net || p.e.via || (netDe(p.ref + ':' + p.nom) || {}).nom !== net) continue;
-      f = formePad(p.e);
-      if (f.disque) { cx = f.disque.x; cy = f.disque.y; ex = ey = f.disque.r; }
-      else {
-        cx = p.e.x; cy = p.e.y; ex = 0; ey = 0;
-        f.pts.forEach(function (q) { ex = Math.max(ex, Math.abs(q[0] - cx)); ey = Math.max(ey, Math.abs(q[1] - cy)); });
-      }
-      L = dg + 0.05;
-      G.trait([{ x: cx - ex - L, y: cy }, { x: cx + ex + L, y: cy }], RAYON_THERMIQUE);
-      G.trait([{ x: cx, y: cy - ey - L }, { x: cx, y: cy + ey + L }], RAYON_THERMIQUE);
-    }
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!planRelie(n, v.net, v.x, v.y)) G.flash(v.x, v.y, v.diam); }
+    for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad') gPastille(G, pads[i].e, 0);
+    marquerAzs(G, ct, false);
     return G.sortie();
   }
   function gerberVernis(dessous, ct) {
@@ -8885,7 +9180,7 @@ function traduire(s) {
       toutRafraichir();
       return;
     }
-    ex = couchesExistantes();
+    ex = couchesExistantes(); ILOTS = {};
     base = ascii($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_');
     toutesCouches().forEach(function (n) {
       if (n === 1) f.push([base + '-cuivre1.gtl', gerberCuivre(1, ct)]);
@@ -8898,7 +9193,8 @@ function traduire(s) {
     f.push([base + '-contour.gko', gerberContour(ct)]);
     f.push([base + '-percage.drl', excellon(ct)]);
     apercuGerber(f, ct);
-    message('Aperçu : ' + f.length + ' fichier(s) · ' + ct.nom + ' ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm' + (ct.tient ? '' : ' · le projet dépasse le format'), !ct.tient);
+    i = Object.keys(ILOTS).reduce(function (t, k) { return t + ILOTS[k]; }, 0);
+    message('Aperçu : ' + f.length + ' fichier(s)' + (i ? ' · ' + i + ' îlot(s) de masse isolé(s) supprimé(s)' : '') + ' · ' + ct.nom + ' ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm' + (ct.tient ? '' : ' · le projet dépasse le format'), !ct.tient);
   }
 
   /* ======================================================================
@@ -8910,7 +9206,7 @@ function traduire(s) {
     var g = {}, l = [], i, c, k, o, cp;
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
-      if (c.type === 'PAD' || c.type === 'PWR') continue;
+      if (c.type === 'PAD' || c.type === 'PWR' || c.type === 'PONT') continue;
       if (c.type === 'PATCH') {
         if (!/^WILK/.test(c.val)) continue;
         k = 'R|100|CMS0603';
@@ -9343,7 +9639,7 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'COUCHES=' + B.nc, 'PLANVCC=' + B.planVcc, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'COUCHES=' + B.nc, 'PLANVCC=' + B.planVcc, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
@@ -9373,7 +9669,7 @@ function traduire(s) {
       for (j = 1; j <= B.nc; j++) d.disque('CUIVRE_' + j, f.x, f.y, f.diam / 2);
       d.cercle('PERCAGE', f.x, f.y, f.perc / 2);
       d.g(0, 'POINT').g(8, 'AZSCAD').g(10, nb(f.x)).g(20, nb(f.y)).g(30, 0);
-      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net]);
+      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net].concat(f.couture ? ['COUTURE=1'] : []));
     }
     /* Textes libres de sérigraphie */
     for (i = 0; i < B.textes.length; i++) {
@@ -9400,7 +9696,7 @@ function traduire(s) {
       k = cles(xd);
       if (xd[0] === 'PISTE') dern = { couche: parseInt(k.COUCHE, 10) || 1, w: lireNb(k.W) || 1, net: k.NET || '', pts: [] };
       else if (xd[0] === 'TEXTE') r.textes.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, h: lireNb(k.H) || 1.5, rot: lireNb(k.ROT) || 0, dessous: k.FACE === 'dessous', txt: k.TXT || '' });
-      else if (xd[0] === 'VIA') r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' });
+      else if (xd[0] === 'VIA') { r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' }); if (k.COUTURE === '1') r.vias[r.vias.length - 1].couture = true; }
       else if (xd[0] === 'BOARD') {
         r.ok = true; r.lib = k.LIB || ''; r.sch = k.SCH || '';
         if (lireNb(k.LARGEUR)) r.largeur = lireNb(k.LARGEUR);
@@ -9411,6 +9707,10 @@ function traduire(s) {
         r.planVcc = k.PLANVCC || '';
         if (lireNb(k.DEGPLAN)) r.degPlan = lireNb(k.DEGPLAN);
         if (lireNb(k.HDIEL)) r.hDiel = lireNb(k.HDIEL);
+        r.remp = /^(H|B|HB)$/.test(k.REMP || '') ? k.REMP : '';
+        m = /^([GD]):(.+)$/.exec(k.COUPE || '');
+        if (m) r.coupe = { agndG: m[1] === 'G', pts: m[2].split(';').map(function (q) { q = q.split(','); return { x: parseFloat(q[0]), y: parseFloat(q[1]) }; }).filter(function (q) { return !isNaN(q.x) && !isNaN(q.y); }) };
+        if (r.coupe && r.coupe.pts.length < 2) r.coupe = null;
         m = /^(auto|carte|europe|perso):([\d.]+)x([\d.]+)(?:@(-?[\d.]+),(-?[\d.]+))?$/.exec(k.CONTOUR || '');
         if (m) { r.contour = { type: m[1], l: parseFloat(m[2]), h: parseFloat(m[3]) }; if (m[4] !== undefined) { r.contour.x0 = parseFloat(m[4]); r.contour.y0 = parseFloat(m[5]); } }
         m = (k.MEMO || '').split(';');
@@ -9441,7 +9741,7 @@ function traduire(s) {
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
     B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement;
     B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour;
-    B.planVcc = r.planVcc; B.degPlan = r.degPlan; B.hDiel = r.hDiel;
+    B.planVcc = r.planVcc; B.degPlan = r.degPlan; B.hDiel = r.hDiel; B.coupe = r.coupe || null; B.outilCoupe = null; B.remp = r.remp || '';
     if (r.nc) B.nc = r.nc;
     else if (!B.pistes.some(function (t) { return t.couche === 2 || t.couche === 3; })) { B.nc = 2; B.pistes.forEach(function (t) { if (t.couche === 4) t.couche = 2; }); }
     else { B.nc = 6; B.pistes.forEach(function (t) { t.couche = { 1: 1, 2: 3, 3: 3, 4: 6 }[t.couche] || 1; }); }
