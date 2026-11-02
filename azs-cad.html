@@ -6,12 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.13.0
+ Version    : 1.15.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
- Fichiers   : <projet>.lib (composants et gabarits du projet),
+ Fichiers   : <projet>.azs.zip, archive du projet qui contient
+              <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.1.1, Schéma 1.7.0, Circuit 1.10.0 (cartouche et
+ Modules    : Bibliothèque 1.1.1, Schéma 1.7.0, Circuit 1.11.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -68,14 +69,22 @@
    1.13.0 2026-11-02  Chantier 7c (Circuit 1.10.0) : masse des faces externes,
                       îlots isolés retirés à l'export (faces et plans), vias de
                       couture le long du contour
+   1.14.0 2026-11-02  Chantier 7d (Circuit 1.11.0) : raccord au plan par
+                      pastille, Frein thermique (défaut) ou Plein, au clic droit
+   1.15.0 2026-11-02  Chantier 7e : projet en un seul fichier <projet>.azs.zip
+                      (un seul téléchargement à l'enregistrement, un seul
+                      fichier à l'ouverture) ; ouverture des trois fichiers
+                      séparés conservée pour les anciens projets
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
    gabarits, cocher les composants utiles (copiés dans le projet).
-   Ouvrir un projet : choisir ensemble <projet>.lib et, s'ils existent,
-   <projet>.sch.dxf et <projet>.brd.dxf ; onglet Schéma.
-   Ctrl+S (ou Fichier ▸ Enregistrer le projet) : télécharge <projet>.lib,
-   <projet>.sch.dxf et <projet>.brd.dxf (ceux qui ne sont pas vides).
+   Ouvrir un projet : choisir <projet>.azs.zip ; onglet Schéma. Ancien
+   projet : choisir ensemble <projet>.lib et, s'ils existent,
+   <projet>.sch.dxf et <projet>.brd.dxf.
+   Ctrl+S (ou Fichier ▸ Enregistrer le projet) : télécharge <projet>.azs.zip,
+   archive zip qui contient <projet>.lib, <projet>.sch.dxf et
+   <projet>.brd.dxf (ceux qui ne sont pas vides, DXF R12 inchangé).
 
  Fonctionnement :
    Chaque module est une section <template> affichée dans son propre cadre
@@ -165,13 +174,13 @@
     <div class="bloc">
       <h2>Ouvrir un projet</h2>
       <button id="btOuvrir">Ouvrir un projet…</button>
-      <p class="aide">Choisir ensemble le fichier .lib du projet et, s'ils existent, ses fichiers .sch.dxf et .brd.dxf.</p>
+      <p class="aide">Choisir le fichier .azs.zip du projet (ancien projet : ensemble son .lib, son .sch.dxf et son .brd.dxf).</p>
     </div>
     <div id="erreurAccueil"></div>
     <div class="pied"><button id="btAnnulerAccueil">Annuler</button></div>
   </div>
 </div>
-<input type="file" id="fichiersProjet" multiple accept=".lib,.dxf,.txt">
+<input type="file" id="fichiersProjet" multiple accept=".zip,.lib,.dxf,.txt">
 
 <!-- ======================================================================
      Module Bibliothèque (ancien bibliotheque.html)
@@ -3289,6 +3298,8 @@ function traduire(s) {
     chargerProjet: chargerProjet,
     texteProjet: function () { return ecrireLib(PROJ, PROJ.nom); },
     enregistrerProjet: function () { enregistrer(PROJ); },
+    /* texte du .lib du projet pour l'archive <base>.azs.zip, marqué enregistré */
+    sauver: function (nom) { var t; fermerSaisie(true); t = ecrireLib(PROJ, PROJ.nom); nettoyer(PROJ); message('Enregistré : ' + nom); return t; },
     modifie: function () { return LIB.modifie || PROJ.modifie; }
   };
 })();
@@ -5549,6 +5560,8 @@ function traduire(s) {
     nom: nomCourant,
     nommer: function (n) { $('nomSch').value = n; },
     enregistrer: enregistrerSchema,
+    /* texte du .sch.dxf pour l'archive <base>.azs.zip, marqué enregistré */
+    sauver: function (nom) { var t = ecrireDxf(); S.modifie = false; $('modif').textContent = ''; message('Enregistré : ' + nom); return t; },
     vide: function () { return !S.comps.length && !S.fils.length; },
     modifie: function () { return S.modifie; }
   };
@@ -5567,7 +5580,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.10.0
+ Version    : 1.11.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -5729,6 +5742,12 @@ function traduire(s) {
                       l'export, faces et plans (« trop de masse tue la masse ») ;
                       vias de couture le long du contour (retrait 2 mm, pas
                       5 mm), posées ou retirées d'un bouton ; DXF : REMP, COUTURE
+   1.11.0 2026-11-02  Chantier 7d : raccord au plan par pastille, clic droit sur
+                      une pastille reliée à un plan ou à une face remplie :
+                      Frein thermique (défaut, 4 rayons) ou Plein (ni
+                      dégagement ni rayons, toutes couches) ; carré de la
+                      couleur du plan (blanc pour une face) sur une pastille en
+                      plein ; DXF : PL=<patte> dans COMP
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -5844,7 +5863,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.10.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.11.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -5969,6 +5988,9 @@ var TRAD_EN = [
   ['Pas de plan pour', 'No plane for'], ['autre équipotentielle que', 'other net than'], ['Via sur pastille CMS : tracer d\'abord un segment.', 'Via on an SMD pad: draw a segment first.'],
   ['Pistes sur la couche interne', 'Traces on inner layer'], [': les supprimer d\'abord.', ': delete them first.'],
   ['Thermiques : 4 rayons de 0,3 mm · retrait du bord 0,5 mm · vias reliées en plein', 'Thermals: 4 spokes 0.3 mm · edge pullback 0.5 mm · vias solidly connected'],
+  ['Clic droit sur une pastille : frein thermique ou plein', 'Right-click a pad: thermal relief or solid'], ['pastille(s) en plein', 'pad(s) solidly connected'],
+  ['Raccord au plan', 'Plane connection'], ['Frein thermique (4 rayons)', 'Thermal relief (4 spokes)'], ['Plein (ni dégagement ni rayons)', 'Solid (no clearance, no spokes)'],
+  ['Pastille non reliée à un plan ni à une face remplie.', 'Pad not connected to a plane or a filled face.'], ['en plein', 'solidly connected'], ['en frein thermique', 'with thermal relief'],
   ['Aucune équipotentielle GND : le plan GND reste isolé.', 'No GND net: the GND plane stays unconnected.'],
   ['touche', 'key'], ['en routage : via vers le plan', 'while routing: via to the plane'], ['microruban', 'microstrip'], ['Exporter la nomenclature (.csv)', 'Export the bill of materials (.csv)'],
   ['Une ligne par valeur et gabarit identiques, séparateur « ; »', 'One line per identical value and footprint, separator “;”'],
@@ -7503,6 +7525,8 @@ function traduire(s) {
     va = E('button', '', 'Poser les vias de couture'); va.title = 'Le long du contour, retrait 2 mm, pas 5 mm'; va.addEventListener('click', poserCouture); d.appendChild(va);
     if (B.vias.some(function (v) { return v.couture; })) { va = E('button', '', 'Retirer les vias de couture'); va.addEventListener('click', retirerCouture); d.appendChild(va); }
     b.appendChild(E('div', 'stat', 'Faces et plans : dégagement ' + String(B.degPlan).replace('.', ',') + ' mm, rayons thermiques, îlots isolés supprimés à l\'export · vias de couture : ' + B.vias.filter(function (v) { return v.couture; }).length));
+    va = tousPads().filter(function (p) { return enPlein(p.ref, p.nom) && coucheRaccord(p); }).length;
+    b.appendChild(E('div', 'stat', 'Clic droit sur une pastille : frein thermique ou plein' + (va ? ' · ' + va + ' pastille(s) en plein' : '')));
     if (B.nc === 2) return;
     sel = champ(b, 'Plan VCC', E('select'));
     va = netVccAuto();
@@ -7658,7 +7682,10 @@ function traduire(s) {
     ev.preventDefault();
     B.tDown2 = B.tDown1 || 0; B.tDown1 = Date.now();
     if (B.outilCoupe) { if (ev.button === 2) finirCoupe(); else if (ev.button === 0) pointCoupe(w); return; }
-    if (ev.button === 2 && !B.route) { s = segmentSous(w); if (s) { ouvrirMenuLargeur(ev, s.i); dessiner(); return; } }
+    if (ev.button === 2 && !B.route) {
+      if (ouvrirMenuRaccord(ev, w)) { dessiner(); return; }
+      s = segmentSous(w); if (s) { ouvrirMenuLargeur(ev, s.i); dessiner(); return; }
+    }
     if (B.mode === 'router') { if (sourisRouter(ev, w)) return; }
     else if (ev.button === 0) {
       if (B.outilTexte) { poserTexteLibre(w); return; }
@@ -7831,6 +7858,25 @@ function traduire(s) {
   function cleMasse(x, y) { return 'PLAN:GND' + (B.coupe ? coteCoupe(x, y) : ''); }
   /* Remplissage de masse des faces externes : '' aucun, H dessus, B dessous, HB les deux */
   function remplit(n) { return (n === 1 && B.remp.indexOf('H') >= 0) || (n === bas() && B.remp.indexOf('B') >= 0); }
+  /* Raccord au plan par pastille : frein thermique par défaut ; plein si la patte figure dans c.plein
+     (noms de pattes séparés par « | », chaîne simple pour que l'annulation la copie) */
+  function pattesPleines(c) { return c && c.plein ? String(c.plein).split('|') : []; }
+  function enPlein(ref, nom) { return pattesPleines(compParRef(ref)).indexOf(nom) >= 0; }
+  function fixerPlein(c, nom, plein) {
+    var l = pattesPleines(c).filter(function (q) { return q !== nom; });
+    if (plein && String(nom).indexOf('|') < 0) l.push(nom);
+    c.plein = l.sort(triNat).join('|');
+  }
+  /* Couche d'un plan ou d'une face remplie à laquelle la pastille est reliée (0 : aucune) */
+  function coucheRaccord(p) {
+    var nt = netDe(p.ref + ':' + p.nom), n;
+    if (!nt || p.e.via) return 0;
+    for (n = 1; n <= B.nc; n++) {
+      if (estPlan(n) ? p.e.t === 'pad' && planRelie(n, nt.nom, p.e.x, p.e.y)
+                     : remplit(n) && p.couches.indexOf(n) >= 0 && relieMasse(nt.nom, p.e.x, p.e.y)) return n;
+    }
+    return 0;
+  }
   function couchePlan(net, x, y) { var n; for (n = 2; n < B.nc; n++) if (estPlan(n) && planRelie(n, net, x, y)) return n; return 0; }
   function clePlan(net, x, y) { var n = couchePlan(net, x, y); return n ? 'PLAN:' + typeCouche(n) + (typeCouche(n) === 'GND' && B.coupe ? coteCoupe(x, y) : '') : null; }
   /* Côté de la coupe : 'A' (AGND, GND) ou 'D' (DGND) ; segment le plus proche, extrémités prolongées */
@@ -8338,13 +8384,21 @@ function traduire(s) {
   }
   /* Pastilles traversantes et vias reliées à un plan : croix de la couleur du plan */
   function dessinerLiaisonsPlan() {
-    var np, pads, i, t, n, d;
-    if (B.nc === 2) return;
+    var np, pads, i, t, n, d, e;
+    if (B.nc === 2 && !B.remp) return;
     pads = tousPads();
     monde(); ctx.lineWidth = Math.max(0.15, 1.5 / B.z); ctx.lineCap = 'butt';
     function croix(x, y, r, c) { ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); ctx.stroke(); }
+    /* pastille en plein : carré de la couleur du plan (blanc pour une face remplie) */
+    function carre(x, y, r, c) { ctx.strokeStyle = c; ctx.strokeRect(x - r, y - r, 2 * r, 2 * r); }
     for (i = 0; i < pads.length; i++) {
-      if (pads[i].e.t !== 'pad') continue;
+      e = pads[i].e;
+      if (enPlein(pads[i].ref, pads[i].nom) && (n = coucheRaccord(pads[i]))) {
+        d = e.t === 'pad' ? e.diam || 1 : Math.max(e.dx || 1, e.dy || 1);
+        carre(e.x, e.y, d * 0.7, estPlan(n) ? coulCouche(n) : '#ffffff');
+        continue;
+      }
+      if (B.nc === 2 || e.t !== 'pad') continue;
       t = netDe(pads[i].ref + ':' + pads[i].nom);
       n = t ? couchePlan(t.nom, pads[i].e.x, pads[i].e.y) : 0;
       if (n) { d = pads[i].e.diam || 1; croix(pads[i].e.x, pads[i].e.y, d * 0.75, coulCouche(n)); }
@@ -8585,6 +8639,32 @@ function traduire(s) {
     m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8) + 'px';
     m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 8) + 'px';
     B.selP = null;
+  }
+  /* Clic droit sur une pastille : raccord au plan (frein thermique / plein) ; renvoie true si le clic est consommé */
+  function ouvrirMenuRaccord(ev, w) {
+    var pin = patteSous(w), k, ref, nom, c, n = 0, plein, m;
+    if (!pin) return false;
+    k = pin.indexOf(':'); ref = pin.slice(0, k); nom = pin.slice(k + 1); c = compParRef(ref);
+    tousPads().forEach(function (p) { if (!n && p.ref === ref && p.nom === nom) n = coucheRaccord(p); });
+    if (!c || !n) { if (!segmentSous(w)) message('Pastille non reliée à un plan ni à une face remplie.', true); return false; }
+    plein = enPlein(ref, nom);
+    m = $('menu'); m.textContent = '';
+    m.appendChild(E('div', 'titre', 'Raccord au plan · ' + ref + '.' + nom));
+    [[false, 'Frein thermique (4 rayons)'], [true, 'Plein (ni dégagement ni rayons)']].forEach(function (o) {
+      var d = E('div', 'option' + (o[0] === plein ? ' actuel' : ''), o[1]);
+      d.addEventListener('mousedown', function (e2) {
+        e2.preventDefault(); e2.stopPropagation(); fermerMenu();
+        if (o[0] === enPlein(ref, nom)) return;
+        empiler(); fixerPlein(c, nom, o[0]);
+        message(ref + '.' + nom + ' ' + (o[0] ? 'en plein' : 'en frein thermique'));
+        toutRafraichir();
+      });
+      m.appendChild(d);
+    });
+    m.style.display = 'block';
+    m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8) + 'px';
+    m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 8) + 'px';
+    return true;
   }
   document.addEventListener('mousedown', function (ev) { if (!$('menu').contains(ev.target)) fermerMenu(); }, true);
 
@@ -9019,7 +9099,8 @@ function traduire(s) {
       p = pads[i];
       if (plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) continue;
       nt = netDe(p.ref + ':' + p.nom); meme = !!nt && relie(nt.nom, p.e.x, p.e.y);
-      if (meme && p.e.via) { ancres.push({ x: p.e.x, y: p.e.y }); continue; }
+      /* via de patch, ou pastille forcée en plein : reliée sans dégagement ni rayons */
+      if (meme && (p.e.via || enPlein(p.ref, p.nom))) { ancres.push({ x: p.e.x, y: p.e.y }); continue; }
       gPastille(G, p.e, dg);
     }
     for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (relie(v.net, v.x, v.y)) ancres.push({ x: v.x, y: v.y }); else G.flash(v.x, v.y, v.diam + 2 * dg); }
@@ -9033,7 +9114,7 @@ function traduire(s) {
     G.polarite(true);
     for (i = 0; i < pads.length; i++) {
       p = pads[i];
-      if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via) continue;
+      if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via || enPlein(p.ref, p.nom)) continue;
       nt = netDe(p.ref + ':' + p.nom);
       if (nt && relie(nt.nom, p.e.x, p.e.y)) ancres.push(rayons(G, p.e, dg));
     }
@@ -9644,7 +9725,8 @@ function traduire(s) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
       d.xdata(['COMP', 'ID=' + c.id, 'SID=' + c.sid, 'TYPE=' + c.type, 'REF=' + c.ref, 'VAL=' + c.val, 'POL=' + (c.pol || ''),
-               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)]);
+               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)]
+               .concat(pattesPleines(c).map(function (q) { return 'PL=' + q; })));
       tp = posTexte(c);
       d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, 1.0, libelle(c), c.dessous);
     }
@@ -9719,6 +9801,7 @@ function traduire(s) {
         r.comps.push({ id: parseInt(k.ID, 10), sid: parseInt(k.SID, 10), type: k.TYPE, ref: k.REF || '', val: k.VAL || '', pol: k.POL || '', gab: k.GAB || '',
                        dessous: k.FACE === 'dessous', tx: lireNb(k.TX) || 0, ty: lireNb(k.TY) || 0,
                        th: lireNb(k.TH) || 1.0, trot: lireNb(k.TR) || 0, ta: k.TA !== undefined ? k.TA !== '0' : !(lireNb(k.TX) || lireNb(k.TY)),
+                       plein: xd.filter(function (q) { return q.indexOf('PL=') === 0 && q.length > 3; }).map(function (q) { return q.slice(3); }).join('|'),
                        x: lireNb(groupe(e, 10)) || 0, y: lireNb(groupe(e, 20)) || 0, rot: lireNb(groupe(e, 50)) || 0 });
       } else if (xd[0] === 'NET') r.nets.push({ nom: k.NOM || '', type: k.TYPE || 'n', pins: k.P });
     }
@@ -9821,6 +9904,8 @@ function traduire(s) {
     recevoirSchema: recevoirSchema,
     nommer: function (n) { $('nomBrd').value = n; },
     enregistrer: enregistrerBrd,
+    /* texte du .brd.dxf pour l'archive <base>.azs.zip, marqué enregistré */
+    sauver: function (nom) { var t = ecrireBrd(); B.modifie = false; $('modif').textContent = ''; message('Enregistré : ' + nom); return t; },
     vide: function () { return !B.comps.length; },
     modifie: function () { return B.modifie; }
   };
@@ -9842,7 +9927,8 @@ function traduire(s) {
     'CAO de circuits imprimés': 'Printed circuit board CAD', 'Créer un projet': 'Create a project', 'Créer': 'Create',
     'Nom du projet (ex. dvb)': 'Project name (e.g. dvb)', 'Ouvrir un projet': 'Open a project', 'Ouvrir un projet…': 'Open a project…',
     'On commence par l\'onglet Bibliothèque : cocher les composants utiles au projet.': 'Start with the Library tab: check the components the project needs.',
-    'Choisir ensemble le fichier .lib du projet et, s\'ils existent, ses fichiers .sch.dxf et .brd.dxf.': 'Select together the project .lib file and, if they exist, its .sch.dxf and .brd.dxf files.',
+    'Choisir le fichier .azs.zip du projet (ancien projet : ensemble son .lib, son .sch.dxf et son .brd.dxf).': 'Choose the project .azs.zip file (older project: select together its .lib, .sch.dxf and .brd.dxf).',
+    'Archive zip illisible': 'Unreadable zip archive', 'Décompression zip non prise en charge par ce navigateur.': 'Zip decompression not supported by this browser.',
     'Annuler': 'Cancel', 'Donner un nom au projet.': 'Give the project a name.',
     'Choisir un seul fichier .lib : celui du projet.': 'Choose a single .lib file: the project one.',
     'Abandonner les modifications du projet en cours ?': 'Discard the changes to the current project?',
@@ -9923,12 +10009,77 @@ function traduire(s) {
       montrer('lib');
     });
   }
-  function lire(f) { return f.text().then(function (t) { return { nom: f.name, texte: t }; }); }
+  /* --- Projet en un seul fichier <base>.azs.zip : <base>.lib, <base>.sch.dxf, <base>.brd.dxf (DXF R12)
+         Écriture : archive « stockée » (sans compression), noms et textes en UTF-8, CRC-32 EDB88320.
+         Lecture : méthodes 0 (stockée) et 8 (deflate, DecompressionStream), dossiers ignorés --- */
+  var TABLE_CRC = null;
+  function crc32(o) {
+    var c, i, k;
+    if (!TABLE_CRC) { TABLE_CRC = []; for (i = 0; i < 256; i++) { c = i; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; TABLE_CRC[i] = c >>> 0; } }
+    c = 0xFFFFFFFF;
+    for (i = 0; i < o.length; i++) c = TABLE_CRC[(c ^ o[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipProjet(fichiers) {
+    var enc = new TextEncoder(), parts = [], central = [], pos = 0, tailleC = 0, d = new Date(), i, nom, don, crc, loc, cen, v,
+        heure = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+        jour = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    for (i = 0; i < fichiers.length; i++) {
+      nom = enc.encode(fichiers[i][0]); don = enc.encode(fichiers[i][1]); crc = crc32(don);
+      loc = new DataView(new ArrayBuffer(30));
+      loc.setUint32(0, 0x04034b50, true); loc.setUint16(4, 20, true); loc.setUint16(6, 0x0800, true); loc.setUint16(8, 0, true);
+      loc.setUint16(10, heure, true); loc.setUint16(12, jour, true); loc.setUint32(14, crc, true);
+      loc.setUint32(18, don.length, true); loc.setUint32(22, don.length, true); loc.setUint16(26, nom.length, true); loc.setUint16(28, 0, true);
+      cen = new DataView(new ArrayBuffer(46));
+      cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true); cen.setUint16(6, 20, true); cen.setUint16(8, 0x0800, true); cen.setUint16(10, 0, true);
+      cen.setUint16(12, heure, true); cen.setUint16(14, jour, true); cen.setUint32(16, crc, true);
+      cen.setUint32(20, don.length, true); cen.setUint32(24, don.length, true); cen.setUint16(28, nom.length, true);
+      cen.setUint16(30, 0, true); cen.setUint16(32, 0, true); cen.setUint16(34, 0, true); cen.setUint16(36, 0, true); cen.setUint32(38, 0, true);
+      cen.setUint32(42, pos, true);
+      parts.push(loc, nom, don); central.push(cen, nom);
+      pos += 30 + nom.length + don.length; tailleC += 46 + nom.length;
+    }
+    v = new DataView(new ArrayBuffer(22));
+    v.setUint32(0, 0x06054b50, true); v.setUint16(4, 0, true); v.setUint16(6, 0, true);
+    v.setUint16(8, fichiers.length, true); v.setUint16(10, fichiers.length, true);
+    v.setUint32(12, tailleC, true); v.setUint32(16, pos, true); v.setUint16(20, 0, true);
+    return new Blob(parts.concat(central, [v]), { type: 'application/zip' });
+  }
+  function lireZipProjet(buf) {
+    var dv = new DataView(buf), n = buf.byteLength, dec = new TextDecoder('utf-8'), i, fin = -1, nb, pos, lnom, lext, lcom, l = [];
+    function err() { return new Error(T('Archive zip illisible')); }
+    for (i = n - 22; i >= Math.max(0, n - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { fin = i; break; }
+    if (fin < 0) return Promise.reject(err());
+    nb = dv.getUint16(fin + 10, true); pos = dv.getUint32(fin + 16, true);
+    for (i = 0; i < nb; i++) {
+      if (pos + 46 > n || dv.getUint32(pos, true) !== 0x02014b50) return Promise.reject(err());
+      lnom = dv.getUint16(pos + 28, true); lext = dv.getUint16(pos + 30, true); lcom = dv.getUint16(pos + 32, true);
+      l.push({ nom: dec.decode(new Uint8Array(buf, pos + 46, lnom)), meth: dv.getUint16(pos + 10, true), tc: dv.getUint32(pos + 20, true), loc: dv.getUint32(pos + 42, true) });
+      pos += 46 + lnom + lext + lcom;
+    }
+    l = l.filter(function (x) { return !/\/$/.test(x.nom) && !/(^|\/)__MACOSX\//.test(x.nom) && /\.(lib|txt|dxf)$/i.test(x.nom); });
+    return Promise.all(l.map(function (x) {
+      var deb, brut, p;
+      if (x.loc + 30 > n || dv.getUint32(x.loc, true) !== 0x04034b50) return Promise.reject(err());
+      deb = x.loc + 30 + dv.getUint16(x.loc + 26, true) + dv.getUint16(x.loc + 28, true);
+      if (deb + x.tc > n) return Promise.reject(err());
+      brut = new Uint8Array(buf, deb, x.tc);
+      if (x.meth === 0) p = Promise.resolve(brut);
+      else if (x.meth !== 8) return Promise.reject(err());
+      else if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error(T('Décompression zip non prise en charge par ce navigateur.')));
+      else p = new Response(new Blob([brut]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+      return p.then(function (b) { return { nom: x.nom.slice(x.nom.lastIndexOf('/') + 1), texte: dec.decode(b) }; });
+    }));
+  }
+  function lire(f) {
+    if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(lireZipProjet);
+    return f.text().then(function (t) { return [{ nom: f.name, texte: t }]; });
+  }
   function ouvrirFichiers(liste) {
     var fs = Array.prototype.slice.call(liste || []);
     if (!fs.length) return;
-    Promise.all(fs.map(lire)).then(function (lus) {
-      var libs = lus.filter(function (x) { return /\.(lib|txt)$/i.test(x.nom); }), sch = null, brd = null, lib, base;
+    Promise.all(fs.map(lire)).then(function (paquets) {
+      var lus = [].concat.apply([], paquets), libs = lus.filter(function (x) { return /\.(lib|txt)$/i.test(x.nom); }), sch = null, brd = null, lib, base;
       lus.forEach(function (x) {
         if (!/\.dxf$/i.test(x.nom)) return;
         if (/\.sch\.dxf$/i.test(x.nom) || (!/\.brd\.dxf$/i.test(x.nom) && /^SCHEMA\s*$/m.test(x.texte))) sch = x; else brd = x;
@@ -9949,14 +10100,20 @@ function traduire(s) {
         cacherAccueil();
         montrer('sch');
       });
-    }, function () { $('erreurAccueil').textContent = T('Lecture impossible'); });
+    }, function (e) { afficherAccueil(); $('erreurAccueil').textContent = T('Lecture impossible') + (e && e.message ? ' : ' + e.message : ''); });
   }
+  /* Un seul téléchargement : <base>.azs.zip (bibliothèque du projet, schéma et circuit s'ils ne sont pas vides) */
   function enregistrerProjet() {
-    var s = api('sch'), b = api('brd');
+    var s = api('sch'), b = api('brd'), base, nom, f, url, a;
     if (!P.projet) return;
-    api('lib').enregistrerProjet();
-    if (s && !s.vide()) setTimeout(function () { s.enregistrer(); }, 350);
-    if (b && !b.vide()) setTimeout(function () { b.enregistrer(); }, 700);
+    base = P.projet.base; nom = base + '.azs.zip';
+    f = [[base + '.lib', api('lib').sauver(nom)]];
+    if (s && !s.vide()) f.push([base + '.sch.dxf', s.sauver(nom)]);
+    if (b && !b.vide()) f.push([base + '.brd.dxf', b.sauver(nom)]);
+    url = URL.createObjectURL(zipProjet(f));
+    a = document.createElement('a'); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
   function abandonOk() { return !modifie() || confirm(T('Abandonner les modifications du projet en cours ?')); }
   function afficherAccueil() {
