@@ -6,13 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.15.0
+ Version    : 1.15.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.1.1, Schéma 1.7.0, Circuit 1.11.0 (cartouche et
+ Modules    : Bibliothèque 1.1.3, Schéma 1.7.1, Circuit 1.11.1 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -75,6 +75,12 @@
                       (un seul téléchargement à l'enregistrement, un seul
                       fichier à l'ouverture) ; ouverture des trois fichiers
                       séparés conservée pour les anciens projets
+   1.15.1 2026-11-02  Bibliothèque 1.1.2 : Ouvrir un projet… et Importer… sans
+                      filtre d'extension (Firefox ne montrait plus les .zip)
+   1.15.2 2026-11-02  Chantier 8g (Bibliothèque 1.1.3, Schéma 1.7.1, Circuit
+                      1.11.1) : menu Fichier en groupes titrés (Projet,
+                      Bibliothèque de gabarits, Composant fournisseur),
+                      intitulés avec le type de fichier attendu
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -180,7 +186,7 @@
     <div class="pied"><button id="btAnnulerAccueil">Annuler</button></div>
   </div>
 </div>
-<input type="file" id="fichiersProjet" multiple accept=".zip,.lib,.dxf,.txt">
+<input type="file" id="fichiersProjet" multiple>
 
 <!-- ======================================================================
      Module Bibliothèque (ancien bibliotheque.html)
@@ -194,7 +200,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.1.1
+ Version    : 1.1.3
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -259,6 +265,11 @@
    1.1.1  2026-11-02  Fichier ▸ Importer un dossier… : dossier d'un zip décompressé
                       (complet, ou seulement KiCad / EAGLE), même choix que dans
                       un zip ; ancien .lib KiCad reconnu à son contenu
+   1.1.2  2026-11-02  Importer… : sélecteur sans filtre d'extension (Firefox ne
+                      montrait plus les .zip) ; type vérifié à la lecture
+   1.1.3  2026-11-02  Menu Fichier en trois groupes titrés : Projet, Bibliothèque
+                      de gabarits (commune à tous les projets), Composant
+                      fournisseur ; intitulés avec le type de fichier attendu
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -417,6 +428,8 @@
   #menuFichier .op:hover{background:var(--accentClair)}
   #menuFichier .raccourci{color:var(--discret); font-size:12px}
   #menuFichier .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
+  #menuFichier .groupeMenu{padding:7px 10px 2px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--discret); cursor:default; white-space:nowrap}
+  #menuFichier .groupeMenu span{text-transform:none; font-weight:400; letter-spacing:0}
   li.item{align-items:center}
   li.item input.coche{flex:none; margin:0 2px 0 0; cursor:pointer}
   li.item .info{margin-left:auto}
@@ -444,11 +457,11 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.1.1</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.1.3</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
-  <input type="file" id="fichierImport" accept=".zip,.lbr,.kicad_mod,.mod,.kicad_sym,.lib" multiple>
+  <input type="file" id="fichierImport" multiple>
   <input type="file" id="dossierImport" webkitdirectory multiple>
   <label for="nomFichier">Bibliothèque</label>
   <input type="text" id="nomFichier" value="" placeholder="aucune : Fichier ▸ Ouvrir ou Nouvelle bibliothèque" spellcheck="false">
@@ -458,16 +471,19 @@
   <select id="selGrille"></select>
 </div>
 <div id="menuFichier">
+  <div class="groupeMenu">Projet</div>
   <div class="op" data-action="nouvProj">Nouveau projet…</div>
-  <div class="op" data-action="ouvrProj">Ouvrir un projet…</div>
+  <div class="op" data-action="ouvrProj">Ouvrir un projet (.azs.zip)…</div>
   <div class="op" data-action="enrProj">Enregistrer le projet<span class="raccourci">Ctrl+S</span></div>
   <div class="sepMenu"></div>
+  <div class="groupeMenu">Bibliothèque de gabarits · <span>commune à tous les projets</span></div>
   <div class="op" data-action="nouvLib">Nouvelle bibliothèque…</div>
-  <div class="op" data-action="ouvrLib">Ouvrir une bibliothèque…</div>
+  <div class="op" data-action="ouvrLib">Ouvrir une bibliothèque (.lib)…</div>
   <div class="op" data-action="enrLib">Enregistrer la bibliothèque</div>
   <div class="sepMenu"></div>
-  <div class="op" data-action="importer">Importer un composant (.zip, EAGLE, KiCad)…</div>
-  <div class="op" data-action="importerDossier" title="Dossier d'un zip décompressé (tout le composant, ou seulement KiCad / EAGLE)">Importer un dossier…</div>
+  <div class="groupeMenu">Composant fournisseur · <span>SamacSys, KiCad, EAGLE</span></div>
+  <div class="op" data-action="importer">Importer un fichier (.zip, .lbr, .kicad_mod)…</div>
+  <div class="op" data-action="importerDossier" title="Dossier d'un zip décompressé (tout le composant, ou seulement KiCad / EAGLE)">Importer un dossier décompressé…</div>
 </div>
 
 <div id="gauche">
@@ -599,6 +615,9 @@
    ====================================================================== */
 var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
 var TRAD_EN = [
+  ['Ouvrir un projet (.azs.zip)…', 'Open a project (.azs.zip)…'], ['Ouvrir une bibliothèque (.lib)…', 'Open a library (.lib)…'], ['Bibliothèque de gabarits', 'Footprint library'],
+  ['commune à tous les projets', 'shared by all projects'], ['Composant fournisseur', 'Vendor component'], ['Importer un fichier (.zip, .lbr, .kicad_mod)…', 'Import a file (.zip, .lbr, .kicad_mod)…'],
+  ['Importer un dossier décompressé…', 'Import an unzipped folder…'], ['Projet', 'Project'],
   /* phrases d'aide et messages */
   ['Fichier ▸ Ouvrir une bibliothèque de gabarits (commune à tous les projets) ou Nouvelle bibliothèque. Cocher un composant le copie dans le projet.', 'File ▸ Open a footprint library (shared by all projects) or New library. Checking a component copies it into the project.'],
   ['aucune : Fichier ▸ Ouvrir ou Nouvelle bibliothèque', 'none: File ▸ Open or New library'],
@@ -3317,7 +3336,7 @@ function traduire(s) {
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.7.0
+ Version    : 1.7.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3412,6 +3431,8 @@ function traduire(s) {
                       plus de VCC+ et GND), symbole de masse avec son nom ;
                       bouton Pont : pont de masse à 2 pattes AGND et DGND
                       (point unique de jonction des deux masses)
+   1.7.1  2026-11-02  Menu Fichier : groupe titré Projet, Ouvrir un projet
+                      (.azs.zip)…
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -3462,6 +3483,8 @@ function traduire(s) {
   #menuFichier .op:hover{background:var(--accentClair)}
   #menuFichier .raccourci{color:var(--discret); font-size:12px}
   #menuFichier .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
+  #menuFichier .groupeMenu{padding:7px 10px 2px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--discret); cursor:default; white-space:nowrap}
+  #menuFichier .groupeMenu span{text-transform:none; font-weight:400; letter-spacing:0}
 
   #gauche{grid-area:gauche; background:var(--panneau); border-right:1px solid var(--bord); display:flex; flex-direction:column; min-height:0}
   #gauche h3{margin:12px 0 6px; padding:0 12px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--discret)}
@@ -3518,7 +3541,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.7.0</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.7.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -3530,8 +3553,9 @@ function traduire(s) {
   <select id="selGrille"><option value="1.27">1,27 mm</option><option value="2.54" selected>2,54 mm</option></select>
 </div>
 <div id="menuFichier">
+  <div class="groupeMenu">Projet</div>
   <div class="op" data-action="nouvProj">Nouveau projet…</div>
-  <div class="op" data-action="ouvrProj">Ouvrir un projet…</div>
+  <div class="op" data-action="ouvrProj">Ouvrir un projet (.azs.zip)…</div>
   <div class="op" data-action="enrProj">Enregistrer le projet<span class="raccourci">Ctrl+S</span></div>
 </div>
 
@@ -3599,6 +3623,9 @@ var TRAD_PAGE = [['Circuits', 'ICs'], ['Circuit', 'IC']];
    ====================================================================== */
 var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
 var TRAD_EN = [
+  ['Ouvrir un projet (.azs.zip)…', 'Open a project (.azs.zip)…'], ['Ouvrir une bibliothèque (.lib)…', 'Open a library (.lib)…'], ['Bibliothèque de gabarits', 'Footprint library'],
+  ['commune à tous les projets', 'shared by all projects'], ['Composant fournisseur', 'Vendor component'], ['Importer un fichier (.zip, .lbr, .kicad_mod)…', 'Import a file (.zip, .lbr, .kicad_mod)…'],
+  ['Importer un dossier décompressé…', 'Import an unzipped folder…'], ['Projet', 'Project'],
   /* phrases d'aide et messages */
   ['Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · 1-4 : couche (via)', 'Click a pad: start · click: 45°/90° bend · junction with the same net (any layer): end · right-click / Esc: stop · double-click: cancel the trace or unroute · 1-4: layer (via)'],
   ['Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le décaler, double-clic = recentrer · T : texte libre', 'Click: select · drag: move · R: rotate · F: top/bottom · Shift + drag the text: offset it, double-click = recenter · T: free text'],
@@ -5580,7 +5607,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-02
- Version    : 1.11.0
+ Version    : 1.11.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -5748,6 +5775,8 @@ function traduire(s) {
                       dégagement ni rayons, toutes couches) ; carré de la
                       couleur du plan (blanc pour une face) sur une pastille en
                       plein ; DXF : PL=<patte> dans COMP
+   1.11.1 2026-11-02  Menu Fichier : groupe titré Projet, Ouvrir un projet
+                      (.azs.zip)…
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -5799,6 +5828,8 @@ function traduire(s) {
   #menuFichier .op:hover{background:var(--accentClair)}
   #menuFichier .raccourci{color:var(--discret); font-size:12px}
   #menuFichier .sepMenu{height:1px; background:var(--bord); margin:4px 2px}
+  #menuFichier .groupeMenu{padding:7px 10px 2px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--discret); cursor:default; white-space:nowrap}
+  #menuFichier .groupeMenu span{text-transform:none; font-weight:400; letter-spacing:0}
   #liste{flex:1; overflow:auto; min-height:0; list-style:none; margin:0; padding:0 0 10px}
   #liste li{padding:4px 12px; cursor:pointer; border-left:3px solid transparent; display:flex; justify-content:space-between; gap:6px; white-space:nowrap}
   #liste li:hover{background:var(--survol)}
@@ -5863,7 +5894,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.11.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.11.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -5901,8 +5932,9 @@ function traduire(s) {
 </div>
 <div id="menu"></div>
 <div id="menuFichier">
+  <div class="groupeMenu">Projet</div>
   <div class="op" data-action="nouvProj">Nouveau projet…</div>
-  <div class="op" data-action="ouvrProj">Ouvrir un projet…</div>
+  <div class="op" data-action="ouvrProj">Ouvrir un projet (.azs.zip)…</div>
   <div class="op" data-action="enrProj">Enregistrer le projet<span class="raccourci">Ctrl+S</span></div>
   <div class="sepMenu"></div>
   <div class="op" data-action="maj" title="Circuit vide : import ; sinon mise à jour (seul ce qui a changé repart en chevelu)">Mettre à jour depuis le schéma</div>
@@ -5931,6 +5963,9 @@ function traduire(s) {
    ====================================================================== */
 var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
 var TRAD_EN = [
+  ['Ouvrir un projet (.azs.zip)…', 'Open a project (.azs.zip)…'], ['Ouvrir une bibliothèque (.lib)…', 'Open a library (.lib)…'], ['Bibliothèque de gabarits', 'Footprint library'],
+  ['commune à tous les projets', 'shared by all projects'], ['Composant fournisseur', 'Vendor component'], ['Importer un fichier (.zip, .lbr, .kicad_mod)…', 'Import a file (.zip, .lbr, .kicad_mod)…'],
+  ['Importer un dossier décompressé…', 'Import an unzipped folder…'], ['Projet', 'Project'],
   /* phrases d'aide et messages */
   ['Clic sur une pastille : départ · clic : coude 45°/90° · jonction avec la même équipotentielle (toutes couches) : fin · clic droit / Échap : arrêter · double-clic : annuler le tracé ou dé-router · chiffre : couche (via) · V : via vers le plan', 'Click a pad: start · click: 45°/90° bend · junction with the same net (any layer): end · right-click / Esc: stop · double-click: cancel the trace or unroute · digit: layer (via) · V: via to the plane'],
   ['Clic : sélection · glisser : déplacer · R : rotation · F : dessus/dessous · Maj + glisser le texte : le déplacer, double-clic = placement automatique · T : texte libre', 'Click: select · drag: move · R: rotate · F: top/bottom · Shift + drag the text: move it, double-click = automatic placement · T: free text'],
@@ -9930,7 +9965,7 @@ function traduire(s) {
     'Choisir le fichier .azs.zip du projet (ancien projet : ensemble son .lib, son .sch.dxf et son .brd.dxf).': 'Choose the project .azs.zip file (older project: select together its .lib, .sch.dxf and .brd.dxf).',
     'Archive zip illisible': 'Unreadable zip archive', 'Décompression zip non prise en charge par ce navigateur.': 'Zip decompression not supported by this browser.',
     'Annuler': 'Cancel', 'Donner un nom au projet.': 'Give the project a name.',
-    'Choisir un seul fichier .lib : celui du projet.': 'Choose a single .lib file: the project one.',
+    'Choisir le fichier .azs.zip du projet (ou un seul fichier .lib).': 'Choose the project .azs.zip file (or a single .lib file).',
     'Abandonner les modifications du projet en cours ?': 'Discard the changes to the current project?',
     'Modifications non enregistrées': 'Unsaved changes', 'Lecture impossible': 'Cannot read'
   };
@@ -10084,7 +10119,7 @@ function traduire(s) {
         if (!/\.dxf$/i.test(x.nom)) return;
         if (/\.sch\.dxf$/i.test(x.nom) || (!/\.brd\.dxf$/i.test(x.nom) && /^SCHEMA\s*$/m.test(x.texte))) sch = x; else brd = x;
       });
-      if (libs.length !== 1) { afficherAccueil(); $('erreurAccueil').textContent = T('Choisir un seul fichier .lib : celui du projet.'); return; }
+      if (libs.length !== 1) { afficherAccueil(); $('erreurAccueil').textContent = T('Choisir le fichier .azs.zip du projet (ou un seul fichier .lib).'); return; }
       lib = libs[0]; base = nomBase(lib.nom.replace(/\.txt$/i, ''));
       nommer(base);
       monter(function () {
