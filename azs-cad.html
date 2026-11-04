@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-02
- Version    : 1.15.2
+ Date       : 2026-11-04
+ Version    : 1.15.3
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.1.3, Schéma 1.7.1, Circuit 1.11.1 (cartouche et
+ Modules    : Bibliothèque 1.1.3, Schéma 1.7.2, Circuit 1.11.1 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -81,6 +81,9 @@
                       1.11.1) : menu Fichier en groupes titrés (Projet,
                       Bibliothèque de gabarits, Composant fournisseur),
                       intitulés avec le type de fichier attendu
+   1.15.3 2026-11-04  Schéma 1.7.2 : menu Fichier, « Ouvrir un schéma (.sch.dxf)… »
+                      à la place de « Ouvrir un projet » (la bibliothèque du
+                      projet est ouverte avant le schéma)
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -3335,8 +3338,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
- Date       : 2026-11-02
- Version    : 1.7.1
+ Date       : 2026-11-04
+ Version    : 1.7.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3433,6 +3436,8 @@ function traduire(s) {
                       (point unique de jonction des deux masses)
    1.7.1  2026-11-02  Menu Fichier : groupe titré Projet, Ouvrir un projet
                       (.azs.zip)…
+   1.7.2  2026-11-04  Menu Fichier : « Ouvrir un schéma (.sch.dxf)… » à la place
+                      de « Ouvrir un projet (.azs.zip)… »
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -3541,7 +3546,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.7.1</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.7.2</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -3555,7 +3560,7 @@ function traduire(s) {
 <div id="menuFichier">
   <div class="groupeMenu">Projet</div>
   <div class="op" data-action="nouvProj">Nouveau projet…</div>
-  <div class="op" data-action="ouvrProj">Ouvrir un projet (.azs.zip)…</div>
+  <div class="op" data-action="ouvrSch">Ouvrir un schéma (.sch.dxf)…</div>
   <div class="op" data-action="enrProj">Enregistrer le projet<span class="raccourci">Ctrl+S</span></div>
 </div>
 
@@ -3623,7 +3628,7 @@ var TRAD_PAGE = [['Circuits', 'ICs'], ['Circuit', 'IC']];
    ====================================================================== */
 var LANGUE = String((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
 var TRAD_EN = [
-  ['Ouvrir un projet (.azs.zip)…', 'Open a project (.azs.zip)…'], ['Ouvrir une bibliothèque (.lib)…', 'Open a library (.lib)…'], ['Bibliothèque de gabarits', 'Footprint library'],
+  ['Ouvrir un projet (.azs.zip)…', 'Open a project (.azs.zip)…'], ['Ouvrir un schéma (.sch.dxf)…', 'Open a schematic (.sch.dxf)…'], ['Ouvrir une bibliothèque (.lib)…', 'Open a library (.lib)…'], ['Bibliothèque de gabarits', 'Footprint library'],
   ['commune à tous les projets', 'shared by all projects'], ['Composant fournisseur', 'Vendor component'], ['Importer un fichier (.zip, .lbr, .kicad_mod)…', 'Import a file (.zip, .lbr, .kicad_mod)…'],
   ['Importer un dossier décompressé…', 'Import an unzipped folder…'], ['Projet', 'Project'],
   /* phrases d'aide et messages */
@@ -5529,6 +5534,7 @@ function traduire(s) {
   var ACTIONS = {
     nouvProj: function () { if (hote()) hote().nouveauProjet(); },
     ouvrProj: function () { if (hote()) hote().ouvrirProjet(); },
+    ouvrSch: function () { $('fichierSch').click(); },
     enrProj: function () { if (hote()) hote().enregistrerProjet(); }
   };
   function fermerMenuFichier() { $('menuFichier').className = ''; }
