@@ -64,7 +64,19 @@ Outputs ready to send to a PCB manufacturer / assembler (a "maker"):
 - **Gerber RS-274X + Excellon** in a single zip, with a preview before export: copper of each layer, planes with thermal reliefs and islands removed, solder mask, silkscreen, drills.
 - **Bill of materials** `.bom.xls` and `.bom.csv` (`;` separator, UTF-8) with the columns of `BOMsample.xls`: Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. One line per type + value + footprint + side, designators grouped.
 
-![Gerber preview](screenshot-gerber-preview.png)
+File menu of the Board tab:
+
+![File menu](sorties-menu-fichier.png)
+
+Gerber preview before download: one thumbnail per produced file (copper of the 6 layers, solder mask, silkscreen…), then a detailed view of one layer, with check boxes to overlay layers.
+
+![Gerber preview, thumbnails](sorties-gerber-miniatures.png)
+
+![Gerber preview, copper 1](sorties-gerber-couche.png)
+
+`.bom.csv` produced for `tvp5150_essai`:
+
+![Bill of materials](sorties-bom-tableau.png)
 
 ## License
 

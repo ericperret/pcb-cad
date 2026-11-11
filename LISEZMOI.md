@@ -64,7 +64,19 @@ Sorties prêtes à envoyer à un fabricant de circuits imprimés / assembleur (�
 - **Gerber RS-274X + Excellon** en un seul zip, avec aperçu avant export : cuivre de chaque couche, plans avec frein thermique et îlots supprimés, masque, sérigraphie, perçages.
 - **Nomenclature** `.bom.xls` et `.bom.csv` (séparateur `;`, UTF-8) aux colonnes de `BOMsample.xls` : Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. Une ligne par type + valeur + gabarit + face, repères regroupés.
 
-![Aperçu Gerber](capture-apercu-gerber.png)
+Menu Fichier de l'onglet Circuit :
+
+![Menu Fichier](sorties-menu-fichier.png)
+
+Aperçu Gerber avant téléchargement : une miniature par fichier produit (cuivre des 6 couches, vernis, sérigraphie…), puis vue détaillée d'une couche, avec cases à cocher pour superposer les couches.
+
+![Aperçu Gerber, miniatures](sorties-gerber-miniatures.png)
+
+![Aperçu Gerber, cuivre 1](sorties-gerber-couche.png)
+
+Nomenclature `.bom.csv` produite pour `tvp5150_essai` :
+
+![Nomenclature](sorties-bom-tableau.png)
 
 ## Licence
 
