@@ -20,6 +20,21 @@ Une seule page HTML, `azs-cad.html` : bibliothèque, schéma et circuit imprimé
 
 ![Patch](capture-patch.png)
 
+## Optimiser le schéma
+
+Le schéma est chargé tel qu'il a été enregistré. Le bouton **Optimiser ▾** de l'onglet Schéma range l'ensemble ; Ctrl+Z revient à l'état d'avant.
+
+- **Symboles lisibles** : circuits intégrés et connecteurs redessinés en symboles logiques (entrées à gauche, sorties à droite), sans chercher à ressembler au boîtier réel.
+- **Placement automatique** de gauche à droite, passifs placés dans l'axe de leur patte, GND / VCC réduits.
+- **Fils à 45°**, écartés les uns des autres, croisements à angle droit seulement.
+- **Étiquettes de réseau** à la place des fils longs, noms de réseaux uniques, aucun texte sur un fil.
+- **Clic** sur un fil ou une étiquette : tout le réseau (pattes et fils) s'allume. **Clic droit** : renomme le réseau.
+- **Wire instead of labels** : remplace une étiquette par un fil, un par un.
+
+| Avant | Après |
+|---|---|
+| ![Avant](optimiser-schema-avant.png) | ![Après](optimiser-schema-apres.png) |
+
 ## Optimiser le circuit
 
 Pour un circuit routé entièrement à la main. Menu **Optimiser ▾** de l'onglet Circuit, sur tout le circuit ou sur la piste / via sélectionnée. Ctrl+Z annule.
@@ -42,20 +57,14 @@ Par ordre de priorité :
 
 Sur `tvp5150_essai` : 1707 → 1156 mm de piste, 41 → 13 vias, plus aucune sortie de pastille hors axe, plus aucun îlot de cuivre dans les plans (contrôlé sur les Gerber).
 
-## Optimiser le schéma
+## Gerber et nomenclature (format fabricant)
 
-Le schéma est chargé tel qu'il a été enregistré. Le bouton **Optimiser ▾** de l'onglet Schéma range l'ensemble ; Ctrl+Z revient à l'état d'avant.
+Sorties prêtes à envoyer à un fabricant de circuits imprimés / assembleur (« maker ») :
 
-- **Symboles lisibles** : circuits intégrés et connecteurs redessinés en symboles logiques (entrées à gauche, sorties à droite), sans chercher à ressembler au boîtier réel.
-- **Placement automatique** de gauche à droite, passifs placés dans l'axe de leur patte, GND / VCC réduits.
-- **Fils à 45°**, écartés les uns des autres, croisements à angle droit seulement.
-- **Étiquettes de réseau** à la place des fils longs, noms de réseaux uniques, aucun texte sur un fil.
-- **Clic** sur un fil ou une étiquette : tout le réseau (pattes et fils) s'allume. **Clic droit** : renomme le réseau.
-- **Wire instead of labels** : remplace une étiquette par un fil, un par un.
+- **Gerber RS-274X + Excellon** en un seul zip, avec aperçu avant export : cuivre de chaque couche, plans avec frein thermique et îlots supprimés, masque, sérigraphie, perçages.
+- **Nomenclature** `.bom.xls` et `.bom.csv` (séparateur `;`, UTF-8) aux colonnes de `BOMsample.xls` : Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. Une ligne par type + valeur + gabarit + face, repères regroupés.
 
-| Avant | Après |
-|---|---|
-| ![Avant](optimiser-schema-avant.png) | ![Après](optimiser-schema-apres.png) |
+![Aperçu Gerber](capture-apercu-gerber.png)
 
 ## Licence
 

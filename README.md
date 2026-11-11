@@ -20,6 +20,21 @@ A single HTML page, `azs-cad.html`: library, schematic and board of one project,
 
 ![Patch](screenshot-patch.png)
 
+## Optimizing the schematic
+
+The schematic loads as it was saved. The **Optimize ▾** button of the Schematic tab tidies everything; Ctrl+Z goes back.
+
+- **Readable symbols**: ICs and connectors redrawn as logical symbols (inputs left, outputs right), not trying to look like the real package.
+- **Automatic placement** from left to right, passives placed in the axis of their pin, GND / VCC reduced.
+- **45° wires**, kept apart, crossings at right angles only.
+- **Net labels** instead of long wires, unique net names, no text on a wire.
+- **Click** a wire or a label: the whole net (pins and wires) lights up. **Right-click**: renames the net.
+- **Wire instead of labels**: replaces a label by a wire, one at a time.
+
+| Before | After |
+|---|---|
+| ![Before](optimiser-schema-avant.png) | ![After](optimiser-schema-apres.png) |
+
 ## Optimizing the board
 
 For a board routed entirely by hand. **Optimize ▾** menu of the Board tab, on the whole board or on the selected trace / via. Ctrl+Z undoes.
@@ -42,20 +57,14 @@ In order of priority:
 
 On `tvp5150_essai`: 1707 → 1156 mm of trace, 41 → 13 vias, no pad exit off-axis left, no copper island left in the planes (checked on the Gerbers).
 
-## Optimizing the schematic
+## Gerber and bill of materials (maker format)
 
-The schematic loads as it was saved. The **Optimize ▾** button of the Schematic tab tidies everything; Ctrl+Z goes back.
+Outputs ready to send to a PCB manufacturer / assembler (a "maker"):
 
-- **Readable symbols**: ICs and connectors redrawn as logical symbols (inputs left, outputs right), not trying to look like the real package.
-- **Automatic placement** from left to right, passives placed in the axis of their pin, GND / VCC reduced.
-- **45° wires**, kept apart, crossings at right angles only.
-- **Net labels** instead of long wires, unique net names, no text on a wire.
-- **Click** a wire or a label: the whole net (pins and wires) lights up. **Right-click**: renames the net.
-- **Wire instead of labels**: replaces a label by a wire, one at a time.
+- **Gerber RS-274X + Excellon** in a single zip, with a preview before export: copper of each layer, planes with thermal reliefs and islands removed, solder mask, silkscreen, drills.
+- **Bill of materials** `.bom.xls` and `.bom.csv` (`;` separator, UTF-8) with the columns of `BOMsample.xls`: Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. One line per type + value + footprint + side, designators grouped.
 
-| Before | After |
-|---|---|
-| ![Before](optimiser-schema-avant.png) | ![After](optimiser-schema-apres.png) |
+![Gerber preview](screenshot-gerber-preview.png)
 
 ## License
 
