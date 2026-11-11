@@ -6,13 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-11
- Version    : 1.25.0
+ Version    : 1.26.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.1.3, Schéma 1.11.0, Circuit 1.16.0 (cartouche et
+ Modules    : Bibliothèque 1.2.0, Schéma 1.11.0, Circuit 1.17.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -107,6 +107,14 @@
                       (45°, espacés)
    1.25.0 2026-11-11  Schéma 1.11.0 : étiquettes d'équipotentielle à la place des
                       fils trop longs
+   1.26.0 2026-11-11  Gabarits normalisés d'après IPC-7351 (Bibliothèque 1.2.0,
+                      Circuit 1.17.0) : SSOP, TSSOP pas 0,5, MSOP ; TQFP pas 0,65
+                      et 0,4, jusqu'à 208 pattes ; QFN pas 0,65 et 0,4, jusqu'à
+                      64 pattes, sans chevauchement de pastilles ; DFN / SON ;
+                      BGA, FBGA, uBGA/CSP, WLCSP ; SOT-23-8, SOT-143, SOT-323,
+                      SOT-363, D2PAK ; quartz HC-49S, HC-49U et CMS 3215 à 7050 ;
+                      CMS 0201, 1812, tantale A à D ; Fichier ▸ Charger
+                      internal.lib (tous les gabarits normalisés)
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -231,8 +239,8 @@
  Objet      : Bibliothèque : composants (nom, gabarit, nom des pattes)
               et gabarits normalisés
  Auteur     : Eric PERRET
- Date       : 2026-11-02
- Version    : 1.1.3
+ Date       : 2026-11-11
+ Version    : 1.2.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -302,6 +310,11 @@
    1.1.3  2026-11-02  Menu Fichier en trois groupes titrés : Projet, Bibliothèque
                       de gabarits (commune à tous les projets), Composant
                       fournisseur ; intitulés avec le type de fichier attendu
+   1.2.0  2026-11-11  Gabarits normalisés d'après IPC-7351 (SSOP, MSOP, TSSOP 0,5,
+                      TQFP 0,65 / 0,4, QFN 0,65 / 0,4, DFN / SON, BGA et CSP, SOT
+                      supplémentaires, D2PAK, quartz, CMS 0201 / 1812, tantale) ;
+                      Fichier ▸ Charger internal.lib : tous les gabarits
+                      normalisés intégrés, chargés d'un coup
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -489,7 +502,7 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.1.3</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.2.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
@@ -511,6 +524,7 @@
   <div class="groupeMenu">Bibliothèque de gabarits · <span>commune à tous les projets</span></div>
   <div class="op" data-action="nouvLib">Nouvelle bibliothèque…</div>
   <div class="op" data-action="ouvrLib">Ouvrir une bibliothèque (.lib)…</div>
+  <div class="op" data-action="chargerInterne" title="Tous les gabarits normalisés intégrés (DIP, SOIC, QFP, QFN, BGA, SOT, quartz…)">Charger internal.lib (gabarits normalisés)</div>
   <div class="op" data-action="enrLib">Enregistrer la bibliothèque</div>
   <div class="sepMenu"></div>
   <div class="groupeMenu">Composant fournisseur · <span>SamacSys, KiCad, EAGLE</span></div>
@@ -812,6 +826,12 @@ var TRAD_EN = [
   ['Polarisé : patte 1 = +', 'Polarized: pin 1 = +'],
   ['Diode CMS (patte 1 = cathode)', 'SMD diode (pin 1 = cathode)'],
   ['QFN pas 0,5 (+ pastille centrale)', 'QFN pitch 0.5 (+ center pad)'],
+  ['Charger internal.lib (gabarits normalisés)', 'Load internal.lib (standard footprints)'],
+  ['QFN pas 0,65 (+ pastille centrale)', 'QFN pitch 0.65 (+ center pad)'], ['QFN pas 0,4 (+ pastille centrale)', 'QFN pitch 0.4 (+ center pad)'],
+  ['DFN / SON (+ pastille centrale)', 'DFN / SON (+ center pad)'], ['TQFP pas 0,65', 'TQFP pitch 0.65'], ['TQFP pas 0,4', 'TQFP pitch 0.4'],
+  ['TSSOP large pas 0,5', 'TSSOP wide pitch 0.5'], ['SSOP pas 0,65', 'SSOP pitch 0.65'], ['BGA pas 1,27', 'BGA pitch 1.27'], ['BGA pas 1,0', 'BGA pitch 1.0'],
+  ['FBGA pas 0,8', 'FBGA pitch 0.8'], ['FBGA pas 0,65', 'FBGA pitch 0.65'], ['uBGA / CSP pas 0,5', 'uBGA / CSP pitch 0.5'], ['WLCSP pas 0,4', 'WLCSP pitch 0.4'],
+  ['Quartz HC-49S / HC-49U', 'Crystal HC-49S / HC-49U'], ['Quartz CMS', 'SMD crystal'], ['Tantale CMS (patte 1 = +)', 'SMD tantalum (pin 1 = +)'],
   ['Vierge (dessin libre)', 'Blank (free drawing)'],
   ['DIL (traversant)', 'THT (through-hole)'],
   ['DIP étroit', 'DIP narrow'], ['DIP large', 'DIP wide'], ['SOIC étroit', 'SOIC narrow'], ['SOIC large', 'SOIC wide'],
@@ -1153,26 +1173,80 @@ function traduire(s) {
     return gTextes(g);
   }
   function genQfp(n, pas, corps) {
-    var g = Gab('TQFP' + n + '-' + pas), c = corps / 2 + 0.85, larg = pas >= 0.8 ? 0.55 : 0.3, s = corps / 2;
+    var g = Gab('TQFP' + n + '-' + pas), c = corps / 2 + 0.85, larg = pas >= 0.8 ? 0.55 : pas >= 0.65 ? 0.4 : pas >= 0.5 ? 0.3 : 0.22, s = corps / 2;
     quatreCotes(n, pas, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 1.5, larg); else gSmd(g, p, x, y, larg, 1.5); }, 'gauche');
     gRect(g, -s, -s, s, s);
     gPoint(g, -s + 0.9, s - 0.9, 0.35);
     return gTextes(g);
   }
-  function genQfn(n) {
-    var corps = { 16: 3, 20: 4, 24: 4, 32: 5, 48: 7 }[n], g = Gab('QFN' + n), c = corps / 2 - 0.3, s = corps / 2 + 0.3, ep = corps * 0.55;
-    quatreCotes(n, 0.5, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 0.8, 0.28); else gSmd(g, p, x, y, 0.28, 0.8); }, 'gauche');
+  /* QFN : n pattes, pas, corps carré, pastille largeur x longueur, pastille centrale */
+  function genQfnP(n, pas, corps, larg, lg, nom) {
+    var k = n / 4, g, c, s = corps / 2 + 0.3, ep;
+    lg = Math.min(lg, corps / 2 + 0.1 - (k - 1) * pas / 2 - larg / 2 - 0.1);   /* pas de chevauchement aux coins */
+    g = Gab(nom); c = corps / 2 + 0.1 - lg / 2;
+    ep = Math.min(corps * 0.55, 2 * (corps / 2 + 0.1 - lg - 0.2));
+    quatreCotes(n, pas, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, lg, larg); else gSmd(g, p, x, y, larg, lg); }, 'gauche');
     gSmd(g, n + 1, 0, 0, ep, ep);
     gRect(g, -s, -s, s, s);
     gPoint(g, -s - 0.45, s - 0.1, 0.25);
     return gTextes(g);
   }
+  function genQfn(n) { return genQfnP(n, 0.5, { 16: 3, 20: 4, 24: 4, 28: 5, 32: 5, 36: 6, 40: 6, 44: 7, 48: 7, 56: 8, 64: 9 }[n], 0.28, 0.8, 'QFN' + n); }
+  function genQfn65(n) { return genQfnP(n, 0.65, { 16: 4, 20: 5, 24: 5, 32: 7 }[n], 0.35, 0.8, 'QFN' + n + '-0.65'); }
+  function genQfn40(n) { return genQfnP(n, 0.4, { 32: 4, 40: 5, 48: 6, 64: 8 }[n], 0.22, 0.7, 'QFN' + n + '-0.4'); }
+  /* DFN / SON : deux côtés, pastille centrale ; n : [pas, longueur, largeur du corps] */
+  var DFN = { 6: [0.65, 2, 2], 8: [0.65, 3, 3], 10: [0.5, 3, 3], 12: [0.5, 4, 3], 14: [0.5, 4, 3], 16: [0.5, 5, 3] };
+  function genDfn(n) {
+    var d = DFN[n], pas = d[0], W = d[2], lg = W <= 2 ? 0.6 : 0.8, g = Gab('DFN' + n), c = W / 2 + 0.1 - lg / 2, k = n / 2, s = W / 2 + 0.3, L = d[1] / 2 + 0.3,
+        ey = 2 * (c - lg / 2 - 0.2), ex = (k - 1) * pas;
+    doubleRangee(n, pas, 2 * c, function (p, x, y) { gSmd(g, p, x, y, pas >= 0.65 ? 0.35 : 0.28, lg); });
+    gSmd(g, n + 1, 0, 0, ex, ey);
+    gRect(g, -L, -s, L, s);
+    gPoint(g, -L - 0.4, -c, 0.25);
+    return gTextes(g);
+  }
+  /* BGA / CSP : matrice LxC, pas ; pastilles carrées, noms A1, B1… (JEDEC : sans I O Q S X Z) */
+  var BGA_PAD = { 1.27: 0.65, 1: 0.5, 0.8: 0.4, 0.65: 0.32, 0.5: 0.25, 0.4: 0.2 };
+  function ligneBga(i) {
+    var L = 'ABCDEFGHJKLMNPRTUVWY';
+    return i < 20 ? L.charAt(i) : L.charAt(Math.floor(i / 20) - 1) + L.charAt(i % 20);
+  }
+  function genBga(v, pas, pref) {
+    var rc = String(v).split('x'), R = +rc[0], C = +rc[1], g = Gab(pref + R + 'x' + C + '-' + pas), d = BGA_PAD[pas], r, c, hx = (C - 1) * pas / 2 + pas * 0.75, hy = (R - 1) * pas / 2 + pas * 0.75;
+    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d);
+    gRect(g, -hx, -hy, hx, hy);
+    gPoint(g, -hx - 0.35, hy, 0.25);
+    return gTextes(g);
+  }
+  function matrices(a, b) { var r = [], i; for (i = a.length - 1; i >= 0; i--) r.unshift(a[i] + 'x' + a[i]); return r; }
+  function billes(v) { var rc = String(v).split('x'); return v + ' = ' + rc[0] * rc[1] + ' billes'; }
+  /* Quartz CMS : [longueur, largeur, entraxe x, entraxe y, pastille x, pastille y] ; 3215 : deux pastilles */
+  var QZ = { '3215': [3.2, 1.5, 1.25, 0, 1.0, 1.9], '3225': [3.2, 2.5, 1.0, 0.8, 1.2, 0.95], '2520': [2.5, 2.0, 0.8, 0.7, 1.0, 0.8],
+             '2016': [2.0, 1.6, 0.6, 0.55, 0.9, 0.7], '1612': [1.6, 1.2, 0.5, 0.45, 0.7, 0.6], '5032': [5.0, 3.2, 1.65, 1.05, 1.7, 1.1],
+             '7050': [7.0, 5.0, 2.5, 1.5, 2.0, 1.8] };
+  function genQuartzCms(code) {
+    var q = QZ[code], g = Gab('XTAL' + code), sx = q[0] / 2 + 0.3, sy = Math.max(q[1] / 2, q[3] + q[5] / 2) + 0.3;
+    if (q[3] === 0) { gSmd(g, 1, -q[2], 0, q[4], q[5]); gSmd(g, 2, q[2], 0, q[4], q[5]); }
+    else { gSmd(g, 1, -q[2], -q[3], q[4], q[5]); gSmd(g, 2, q[2], -q[3], q[4], q[5]); gSmd(g, 3, q[2], q[3], q[4], q[5]); gSmd(g, 4, -q[2], q[3], q[4], q[5]); }
+    gRect(g, -sx, -sy, sx, sy, 0.15);
+    gPoint(g, -sx - 0.3, -(q[3] || 0), 0.2);
+    return gTextes(g);
+  }
+  /* Quartz traversant HC-49S (bas profil) et HC-49U */
+  function genHc49b(code) {
+    var u = code === 'HC-49U', g = Gab(u ? 'HC49U' : 'HC49S'), l = u ? 4.1 : 3.15, r = u ? 2.55 : 2.3;
+    gPad(g, 1, -2.44, 0, 0.8, 1.6, 'ROND'); gPad(g, 2, 2.44, 0, 0.8, 1.6, 'ROND');
+    gTrait(g, -l, -r, l, -r); gTrait(g, -l, r, l, r);
+    gArc(g, -l, 0, r, 90, 270); gArc(g, l, 0, r, 270, 90);
+    return gTextes(g);
+  }
   /* Composants CMS à 2 pattes : [entraxe, largeur pad, hauteur pad] */
   var CMS2 = {
-    '0402': [1.0, 0.6, 0.7], '0603': [1.6, 0.9, 0.95], '0805': [1.9, 1.0, 1.45], '1206': [3.0, 1.15, 1.8],
-    '1210': [3.0, 1.15, 2.7], '2010': [4.6, 1.2, 2.7], '2512': [6.0, 1.4, 3.4],
+    '0201': [0.66, 0.36, 0.4], '0402': [1.0, 0.6, 0.7], '0603': [1.6, 0.9, 0.95], '0805': [1.9, 1.0, 1.45], '1206': [3.0, 1.15, 1.8],
+    '1210': [3.0, 1.15, 2.7], '1812': [4.1, 1.6, 3.5], '2010': [4.6, 1.2, 2.7], '2512': [6.0, 1.4, 3.4],
     'MiniMELF': [3.4, 1.2, 1.6], 'MELF': [5.2, 1.4, 2.6], 'SOD-123': [3.4, 1.0, 1.2], 'SOD-323': [2.4, 0.7, 0.6],
-    'SMA': [4.0, 1.5, 1.7], 'SMB': [4.4, 2.0, 2.3], 'SMC': [6.8, 2.4, 3.3]
+    'SMA': [4.0, 1.5, 1.7], 'SMB': [4.4, 2.0, 2.3], 'SMC': [6.8, 2.4, 3.3],
+    'TANT-A': [2.7, 1.5, 1.5], 'TANT-B': [3.0, 1.6, 2.3], 'TANT-C': [4.6, 2.2, 2.4], 'TANT-D': [5.6, 2.4, 2.8]
   };
   function genDeux(code, nom, cathode) {
     var d = CMS2[code], g = Gab(nom), xr = d[0] / 2 + d[1] / 2 + 0.2, yr = d[2] / 2 + 0.2;
@@ -1194,6 +1268,22 @@ function traduire(s) {
       case 'SOT-223':
         gSmd(g, 1, -2.3, -3.15, 1.0, 2.0); gSmd(g, 2, 0, -3.15, 1.0, 2.0); gSmd(g, 3, 2.3, -3.15, 1.0, 2.0); gSmd(g, 4, 0, 3.15, 3.3, 2.0);
         gRect(g, -3.4, -1.8, 3.4, 1.8, 0.15); gPoint(g, -3.3, -3.15, 0.3); return gTextes(g);
+      case 'SOT-143':
+        gSmd(g, 1, -0.9, -1.1, 0.9, 0.9); gSmd(g, 2, 1.0, -1.1, 0.6, 0.9); gSmd(g, 3, 0.95, 1.1, 0.6, 0.9); gSmd(g, 4, -0.95, 1.1, 0.6, 0.9);
+        gRect(g, -1.5, -0.45, 1.5, 0.45, 0.15); gPoint(g, -1.9, -1.1, 0.25); return gTextes(g);
+      case 'SOT-323':
+        gSmd(g, 1, -0.65, -0.95, 0.4, 0.7); gSmd(g, 2, 0.65, -0.95, 0.4, 0.7); gSmd(g, 3, 0, 0.95, 0.4, 0.7);
+        gRect(g, -1.0, -0.4, 1.0, 0.4, 0.15); gPoint(g, -1.4, -0.95, 0.2); return gTextes(g);
+      case 'SOT-363':
+        gSmd(g, 1, -0.65, -0.95, 0.4, 0.7); gSmd(g, 2, 0, -0.95, 0.4, 0.7); gSmd(g, 3, 0.65, -0.95, 0.4, 0.7);
+        gSmd(g, 4, 0.65, 0.95, 0.4, 0.7); gSmd(g, 5, 0, 0.95, 0.4, 0.7); gSmd(g, 6, -0.65, 0.95, 0.4, 0.7);
+        gRect(g, -1.0, -0.4, 1.0, 0.4, 0.15); gPoint(g, -1.4, -0.95, 0.2); return gTextes(g);
+      case 'SOT-23-8':
+        for (var q = 0; q < 4; q++) { gSmd(g, q + 1, (q - 1.5) * 0.65, -1.35, 0.4, 1.0); gSmd(g, 8 - q, (q - 1.5) * 0.65, 1.35, 0.4, 1.0); }
+        gRect(g, -1.45, -0.7, 1.45, 0.7, 0.15); gPoint(g, -1.95, -1.35, 0.2); return gTextes(g);
+      case 'D2PAK':
+        gSmd(g, 1, -2.54, -6.0, 1.2, 3.0); gSmd(g, 3, 2.54, -6.0, 1.2, 3.0); gSmd(g, 2, 0, 1.8, 10.0, 8.0);
+        gRect(g, -5.2, -3.4, 5.2, 6.0, 0.15); gPoint(g, -3.6, -7.5, 0.3); return gTextes(g);
       case 'DPAK':
         gSmd(g, 1, -2.28, -3.1, 1.2, 2.0); gSmd(g, 3, 2.28, -3.1, 1.2, 2.0); gSmd(g, 2, 0, 2.4, 6.0, 6.2);
         gRect(g, -3.4, -1.6, 3.4, 5.8, 0.15); gPoint(g, -3.6, -3.1, 0.3); return gTextes(g);
@@ -1218,16 +1308,33 @@ function traduire(s) {
     { g: 'Boîtiers DIL', nom: 'TO-126', v: [3], lib: pattes, gen: genTo126 },
     { g: 'Boîtiers DIL', nom: 'TO-220', v: [3], lib: pattes, gen: genTo220 },
     { g: 'Boîtiers DIL', nom: 'Quartz HC-49', v: [2], lib: pattes, gen: genHc49 },
+    { g: 'Boîtiers DIL', nom: 'Quartz HC-49S / HC-49U', v: ['HC-49S', 'HC-49U'], lib: brut, gen: genHc49b },
     { g: 'Circuits CMS', nom: 'SOIC étroit', v: [8, 14, 16], lib: pattes, gen: function (n) { return genSo(n, 1.27, 2.7, 0.6, 1.55, 1.65, n / 2 * 1.27, 'SOIC' + n); } },
     { g: 'Circuits CMS', nom: 'SOIC large', v: [14, 16, 18, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 1.27, 4.65, 0.6, 2.0, 3.4, n / 2 * 1.27 + 0.2, 'SOIC' + n + 'L'); } },
     { g: 'Circuits CMS', nom: 'TSSOP', v: [8, 14, 16, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 0.65, 2.9, 0.4, 1.5, 1.95, n / 2 * 0.65 + 0.4, 'TSSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'TSSOP large pas 0,5', v: [38, 48, 56], lib: pattes, gen: function (n) { return genSo(n, 0.5, 3.8, 0.3, 1.5, 2.9, n / 2 * 0.5 + 0.4, 'TSSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'SSOP pas 0,65', v: [14, 16, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 0.65, 3.6, 0.4, 1.5, 2.4, n / 2 * 0.65 + 0.4, 'SSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'MSOP', v: [8, 10], lib: pattes, gen: function (n) { return genSo(n, n === 8 ? 0.65 : 0.5, 2.2, n === 8 ? 0.4 : 0.3, 1.4, 1.4, 3.0, 'MSOP' + n); } },
     { g: 'Circuits CMS', nom: 'PLCC', v: [20, 28, 44, 52, 68, 84], lib: pattes, gen: genPlcc },
     { g: 'Circuits CMS', nom: 'TQFP pas 0,8', v: [32, 44, 64], lib: pattes, gen: function (n) { return genQfp(n, 0.8, { 32: 7, 44: 10, 64: 14 }[n]); } },
-    { g: 'Circuits CMS', nom: 'TQFP pas 0,5', v: [48, 64, 100, 144], lib: pattes, gen: function (n) { return genQfp(n, 0.5, { 48: 7, 64: 10, 100: 14, 144: 20 }[n]); } },
-    { g: 'Circuits CMS', nom: 'QFN pas 0,5 (+ pastille centrale)', v: [16, 20, 24, 32, 48], lib: pattes, gen: genQfn },
-    { g: 'Passifs CMS', nom: 'CMS 2 pattes', v: ['0402', '0603', '0805', '1206', '1210', '2010', '2512'], lib: brut, gen: function (c) { return genDeux(c, 'CMS' + c, false); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,5', v: [48, 64, 80, 100, 144, 176, 208], lib: pattes, gen: function (n) { return genQfp(n, 0.5, { 48: 7, 64: 10, 80: 12, 100: 14, 144: 20, 176: 24, 208: 28 }[n]); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,65', v: [52, 80], lib: pattes, gen: function (n) { return genQfp(n, 0.65, { 52: 10, 80: 14 }[n]); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,4', v: [100, 120, 144], lib: pattes, gen: function (n) { return genQfp(n, 0.4, { 100: 12, 120: 14, 144: 16 }[n]); } },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,5 (+ pastille centrale)', v: [16, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64], lib: pattes, gen: genQfn },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,65 (+ pastille centrale)', v: [16, 20, 24, 32], lib: pattes, gen: genQfn65 },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,4 (+ pastille centrale)', v: [32, 40, 48, 64], lib: pattes, gen: genQfn40 },
+    { g: 'Circuits CMS', nom: 'DFN / SON (+ pastille centrale)', v: [6, 8, 10, 12, 14, 16], lib: pattes, gen: genDfn },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,27', v: matrices([6, 8, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 1.27, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,65', v: matrices([6, 8, 10, 12, 14, 16]), lib: billes, gen: function (v) { return genBga(v, 0.65, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'uBGA / CSP pas 0,5', v: matrices([4, 5, 6, 8, 10, 12, 14]), lib: billes, gen: function (v) { return genBga(v, 0.5, 'CSP'); } },
+    { g: 'Circuits CMS', nom: 'WLCSP pas 0,4', v: matrices([3, 4, 5, 6, 8, 10]), lib: billes, gen: function (v) { return genBga(v, 0.4, 'WLCSP'); } },
+    { g: 'Passifs CMS', nom: 'CMS 2 pattes', v: ['0201', '0402', '0603', '0805', '1206', '1210', '1812', '2010', '2512'], lib: brut, gen: function (c) { return genDeux(c, 'CMS' + c, false); } },
     { g: 'Diodes CMS', nom: 'Diode CMS (patte 1 = cathode)', v: ['MiniMELF', 'MELF', 'SOD-123', 'SOD-323', 'SMA', 'SMB', 'SMC'], lib: brut, gen: function (c) { return genDeux(c, c.toUpperCase().replace('-', ''), true); } },
-    { g: 'Transistors CMS', nom: 'SOT / DPAK', v: ['SOT-23', 'SOT-23-5', 'SOT-23-6', 'SOT-89', 'SOT-223', 'DPAK'], lib: brut, gen: genSot }
+    { g: 'Transistors CMS', nom: 'SOT / DPAK', v: ['SOT-23', 'SOT-23-5', 'SOT-23-6', 'SOT-23-8', 'SOT-143', 'SOT-323', 'SOT-363', 'SOT-89', 'SOT-223', 'DPAK', 'D2PAK'], lib: brut, gen: genSot },
+    { g: 'Passifs CMS', nom: 'Tantale CMS (patte 1 = +)', v: ['A 3216', 'B 3528', 'C 6032', 'D 7343'], lib: brut, gen: function (c) { return genDeux('TANT-' + c.charAt(0), 'TANT' + c.replace(' ', ''), true); } },
+    { g: 'Quartz CMS', nom: 'Quartz CMS', v: ['3215', '3225', '2520', '2016', '1612', '5032', '7050'], lib: brut, gen: genQuartzCms }
   ];
 
   /* ======================================================================
@@ -2648,6 +2755,19 @@ function traduire(s) {
       if (LIB.modifie && !confirm('Abandonner les modifications de ' + LIB.nom + ' ?')) return;
       $('fichier').click();
     },
+    chargerInterne: function () {
+      var vus = {}, i, j, g, n = 0;
+      if (LIB.modifie && !confirm('Abandonner les modifications de ' + LIB.nom + ' ?')) return;
+      chargerLib('', 'internal.lib');
+      for (i = 0; i < FAMILLES.length; i++) for (j = 0; j < FAMILLES[i].v.length; j++) {
+        g = FAMILLES[i].gen(FAMILLES[i].v[j]);
+        if (!g.el.length || vus[g.nom]) continue;
+        vus[g.nom] = 1; LIB.packages.push({ nom: g.nom, el: copieEls(g.el) }); n++;
+      }
+      LIB.modifie = false; trierLib(); remplirListes(); etatFichiers();
+      if (LIB.packages.length) afficherGabarit(LIB.packages[0]);
+      message('internal.lib : ' + n + ' gabarit(s) normalisés chargés.');
+    },
     enrLib: function () { enregistrer(LIB); },
     nouvProj: function () { if (hote()) hote().nouveauProjet(); },
     ouvrProj: function () { if (hote()) hote().ouvrirProjet(); },
@@ -3860,6 +3980,12 @@ var TRAD_EN = [
   ['Polarisé : patte 1 = +', 'Polarized: pin 1 = +'],
   ['Diode CMS (patte 1 = cathode)', 'SMD diode (pin 1 = cathode)'],
   ['QFN pas 0,5 (+ pastille centrale)', 'QFN pitch 0.5 (+ center pad)'],
+  ['Charger internal.lib (gabarits normalisés)', 'Load internal.lib (standard footprints)'],
+  ['QFN pas 0,65 (+ pastille centrale)', 'QFN pitch 0.65 (+ center pad)'], ['QFN pas 0,4 (+ pastille centrale)', 'QFN pitch 0.4 (+ center pad)'],
+  ['DFN / SON (+ pastille centrale)', 'DFN / SON (+ center pad)'], ['TQFP pas 0,65', 'TQFP pitch 0.65'], ['TQFP pas 0,4', 'TQFP pitch 0.4'],
+  ['TSSOP large pas 0,5', 'TSSOP wide pitch 0.5'], ['SSOP pas 0,65', 'SSOP pitch 0.65'], ['BGA pas 1,27', 'BGA pitch 1.27'], ['BGA pas 1,0', 'BGA pitch 1.0'],
+  ['FBGA pas 0,8', 'FBGA pitch 0.8'], ['FBGA pas 0,65', 'FBGA pitch 0.65'], ['uBGA / CSP pas 0,5', 'uBGA / CSP pitch 0.5'], ['WLCSP pas 0,4', 'WLCSP pitch 0.4'],
+  ['Quartz HC-49S / HC-49U', 'Crystal HC-49S / HC-49U'], ['Quartz CMS', 'SMD crystal'], ['Tantale CMS (patte 1 = +)', 'SMD tantalum (pin 1 = +)'],
   ['Vierge (dessin libre)', 'Blank (free drawing)'],
   ['DIL (traversant)', 'THT (through-hole)'],
   ['DIP étroit', 'DIP narrow'], ['DIP large', 'DIP wide'], ['SOIC étroit', 'SOIC narrow'], ['SOIC large', 'SOIC wide'],
@@ -6488,7 +6614,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-11
- Version    : 1.16.0
+ Version    : 1.17.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -6724,6 +6850,8 @@ function traduire(s) {
                       n'arrive sur une pastille que dans son axe, à 45° près ;
                       îlots de masse cherchés à 20 points par mm (petits éclats
                       entre deux isolements retirés)
+   1.17.0 2026-11-11  Catalogue de gabarits normalisés complété (voir Bibliothèque
+                      1.2.0) : proposé au choix du gabarit des composants
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -6841,7 +6969,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.16.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.17.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -7085,6 +7213,12 @@ var TRAD_EN = [
   ['Polarisé : patte 1 = +', 'Polarized: pin 1 = +'],
   ['Diode CMS (patte 1 = cathode)', 'SMD diode (pin 1 = cathode)'],
   ['QFN pas 0,5 (+ pastille centrale)', 'QFN pitch 0.5 (+ center pad)'],
+  ['Charger internal.lib (gabarits normalisés)', 'Load internal.lib (standard footprints)'],
+  ['QFN pas 0,65 (+ pastille centrale)', 'QFN pitch 0.65 (+ center pad)'], ['QFN pas 0,4 (+ pastille centrale)', 'QFN pitch 0.4 (+ center pad)'],
+  ['DFN / SON (+ pastille centrale)', 'DFN / SON (+ center pad)'], ['TQFP pas 0,65', 'TQFP pitch 0.65'], ['TQFP pas 0,4', 'TQFP pitch 0.4'],
+  ['TSSOP large pas 0,5', 'TSSOP wide pitch 0.5'], ['SSOP pas 0,65', 'SSOP pitch 0.65'], ['BGA pas 1,27', 'BGA pitch 1.27'], ['BGA pas 1,0', 'BGA pitch 1.0'],
+  ['FBGA pas 0,8', 'FBGA pitch 0.8'], ['FBGA pas 0,65', 'FBGA pitch 0.65'], ['uBGA / CSP pas 0,5', 'uBGA / CSP pitch 0.5'], ['WLCSP pas 0,4', 'WLCSP pitch 0.4'],
+  ['Quartz HC-49S / HC-49U', 'Crystal HC-49S / HC-49U'], ['Quartz CMS', 'SMD crystal'], ['Tantale CMS (patte 1 = +)', 'SMD tantalum (pin 1 = +)'],
   ['Vierge (dessin libre)', 'Blank (free drawing)'],
   ['DIL (traversant)', 'THT (through-hole)'],
   ['DIP étroit', 'DIP narrow'], ['DIP large', 'DIP wide'], ['SOIC étroit', 'SOIC narrow'], ['SOIC large', 'SOIC wide'],
@@ -7950,26 +8084,80 @@ function traduire(s) {
     return gTextes(g);
   }
   function genQfp(n, pas, corps) {
-    var g = Gab('TQFP' + n + '-' + pas), c = corps / 2 + 0.85, larg = pas >= 0.8 ? 0.55 : 0.3, s = corps / 2;
+    var g = Gab('TQFP' + n + '-' + pas), c = corps / 2 + 0.85, larg = pas >= 0.8 ? 0.55 : pas >= 0.65 ? 0.4 : pas >= 0.5 ? 0.3 : 0.22, s = corps / 2;
     quatreCotes(n, pas, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 1.5, larg); else gSmd(g, p, x, y, larg, 1.5); }, 'gauche');
     gRect(g, -s, -s, s, s);
     gPoint(g, -s + 0.9, s - 0.9, 0.35);
     return gTextes(g);
   }
-  function genQfn(n) {
-    var corps = { 16: 3, 20: 4, 24: 4, 32: 5, 48: 7 }[n], g = Gab('QFN' + n), c = corps / 2 - 0.3, s = corps / 2 + 0.3, ep = corps * 0.55;
-    quatreCotes(n, 0.5, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, 0.8, 0.28); else gSmd(g, p, x, y, 0.28, 0.8); }, 'gauche');
+  /* QFN : n pattes, pas, corps carré, pastille largeur x longueur, pastille centrale */
+  function genQfnP(n, pas, corps, larg, lg, nom) {
+    var k = n / 4, g, c, s = corps / 2 + 0.3, ep;
+    lg = Math.min(lg, corps / 2 + 0.1 - (k - 1) * pas / 2 - larg / 2 - 0.1);   /* pas de chevauchement aux coins */
+    g = Gab(nom); c = corps / 2 + 0.1 - lg / 2;
+    ep = Math.min(corps * 0.55, 2 * (corps / 2 + 0.1 - lg - 0.2));
+    quatreCotes(n, pas, c, function (p, x, y, o) { if (o === 'h') gSmd(g, p, x, y, lg, larg); else gSmd(g, p, x, y, larg, lg); }, 'gauche');
     gSmd(g, n + 1, 0, 0, ep, ep);
     gRect(g, -s, -s, s, s);
     gPoint(g, -s - 0.45, s - 0.1, 0.25);
     return gTextes(g);
   }
+  function genQfn(n) { return genQfnP(n, 0.5, { 16: 3, 20: 4, 24: 4, 28: 5, 32: 5, 36: 6, 40: 6, 44: 7, 48: 7, 56: 8, 64: 9 }[n], 0.28, 0.8, 'QFN' + n); }
+  function genQfn65(n) { return genQfnP(n, 0.65, { 16: 4, 20: 5, 24: 5, 32: 7 }[n], 0.35, 0.8, 'QFN' + n + '-0.65'); }
+  function genQfn40(n) { return genQfnP(n, 0.4, { 32: 4, 40: 5, 48: 6, 64: 8 }[n], 0.22, 0.7, 'QFN' + n + '-0.4'); }
+  /* DFN / SON : deux côtés, pastille centrale ; n : [pas, longueur, largeur du corps] */
+  var DFN = { 6: [0.65, 2, 2], 8: [0.65, 3, 3], 10: [0.5, 3, 3], 12: [0.5, 4, 3], 14: [0.5, 4, 3], 16: [0.5, 5, 3] };
+  function genDfn(n) {
+    var d = DFN[n], pas = d[0], W = d[2], lg = W <= 2 ? 0.6 : 0.8, g = Gab('DFN' + n), c = W / 2 + 0.1 - lg / 2, k = n / 2, s = W / 2 + 0.3, L = d[1] / 2 + 0.3,
+        ey = 2 * (c - lg / 2 - 0.2), ex = (k - 1) * pas;
+    doubleRangee(n, pas, 2 * c, function (p, x, y) { gSmd(g, p, x, y, pas >= 0.65 ? 0.35 : 0.28, lg); });
+    gSmd(g, n + 1, 0, 0, ex, ey);
+    gRect(g, -L, -s, L, s);
+    gPoint(g, -L - 0.4, -c, 0.25);
+    return gTextes(g);
+  }
+  /* BGA / CSP : matrice LxC, pas ; pastilles carrées, noms A1, B1… (JEDEC : sans I O Q S X Z) */
+  var BGA_PAD = { 1.27: 0.65, 1: 0.5, 0.8: 0.4, 0.65: 0.32, 0.5: 0.25, 0.4: 0.2 };
+  function ligneBga(i) {
+    var L = 'ABCDEFGHJKLMNPRTUVWY';
+    return i < 20 ? L.charAt(i) : L.charAt(Math.floor(i / 20) - 1) + L.charAt(i % 20);
+  }
+  function genBga(v, pas, pref) {
+    var rc = String(v).split('x'), R = +rc[0], C = +rc[1], g = Gab(pref + R + 'x' + C + '-' + pas), d = BGA_PAD[pas], r, c, hx = (C - 1) * pas / 2 + pas * 0.75, hy = (R - 1) * pas / 2 + pas * 0.75;
+    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d);
+    gRect(g, -hx, -hy, hx, hy);
+    gPoint(g, -hx - 0.35, hy, 0.25);
+    return gTextes(g);
+  }
+  function matrices(a, b) { var r = [], i; for (i = a.length - 1; i >= 0; i--) r.unshift(a[i] + 'x' + a[i]); return r; }
+  function billes(v) { var rc = String(v).split('x'); return v + ' = ' + rc[0] * rc[1] + ' billes'; }
+  /* Quartz CMS : [longueur, largeur, entraxe x, entraxe y, pastille x, pastille y] ; 3215 : deux pastilles */
+  var QZ = { '3215': [3.2, 1.5, 1.25, 0, 1.0, 1.9], '3225': [3.2, 2.5, 1.0, 0.8, 1.2, 0.95], '2520': [2.5, 2.0, 0.8, 0.7, 1.0, 0.8],
+             '2016': [2.0, 1.6, 0.6, 0.55, 0.9, 0.7], '1612': [1.6, 1.2, 0.5, 0.45, 0.7, 0.6], '5032': [5.0, 3.2, 1.65, 1.05, 1.7, 1.1],
+             '7050': [7.0, 5.0, 2.5, 1.5, 2.0, 1.8] };
+  function genQuartzCms(code) {
+    var q = QZ[code], g = Gab('XTAL' + code), sx = q[0] / 2 + 0.3, sy = Math.max(q[1] / 2, q[3] + q[5] / 2) + 0.3;
+    if (q[3] === 0) { gSmd(g, 1, -q[2], 0, q[4], q[5]); gSmd(g, 2, q[2], 0, q[4], q[5]); }
+    else { gSmd(g, 1, -q[2], -q[3], q[4], q[5]); gSmd(g, 2, q[2], -q[3], q[4], q[5]); gSmd(g, 3, q[2], q[3], q[4], q[5]); gSmd(g, 4, -q[2], q[3], q[4], q[5]); }
+    gRect(g, -sx, -sy, sx, sy, 0.15);
+    gPoint(g, -sx - 0.3, -(q[3] || 0), 0.2);
+    return gTextes(g);
+  }
+  /* Quartz traversant HC-49S (bas profil) et HC-49U */
+  function genHc49b(code) {
+    var u = code === 'HC-49U', g = Gab(u ? 'HC49U' : 'HC49S'), l = u ? 4.1 : 3.15, r = u ? 2.55 : 2.3;
+    gPad(g, 1, -2.44, 0, 0.8, 1.6, 'ROND'); gPad(g, 2, 2.44, 0, 0.8, 1.6, 'ROND');
+    gTrait(g, -l, -r, l, -r); gTrait(g, -l, r, l, r);
+    gArc(g, -l, 0, r, 90, 270); gArc(g, l, 0, r, 270, 90);
+    return gTextes(g);
+  }
   /* Composants CMS à 2 pattes : [entraxe, largeur pad, hauteur pad] */
   var CMS2 = {
-    '0402': [1.0, 0.6, 0.7], '0603': [1.6, 0.9, 0.95], '0805': [1.9, 1.0, 1.45], '1206': [3.0, 1.15, 1.8],
-    '1210': [3.0, 1.15, 2.7], '2010': [4.6, 1.2, 2.7], '2512': [6.0, 1.4, 3.4],
+    '0201': [0.66, 0.36, 0.4], '0402': [1.0, 0.6, 0.7], '0603': [1.6, 0.9, 0.95], '0805': [1.9, 1.0, 1.45], '1206': [3.0, 1.15, 1.8],
+    '1210': [3.0, 1.15, 2.7], '1812': [4.1, 1.6, 3.5], '2010': [4.6, 1.2, 2.7], '2512': [6.0, 1.4, 3.4],
     'MiniMELF': [3.4, 1.2, 1.6], 'MELF': [5.2, 1.4, 2.6], 'SOD-123': [3.4, 1.0, 1.2], 'SOD-323': [2.4, 0.7, 0.6],
-    'SMA': [4.0, 1.5, 1.7], 'SMB': [4.4, 2.0, 2.3], 'SMC': [6.8, 2.4, 3.3]
+    'SMA': [4.0, 1.5, 1.7], 'SMB': [4.4, 2.0, 2.3], 'SMC': [6.8, 2.4, 3.3],
+    'TANT-A': [2.7, 1.5, 1.5], 'TANT-B': [3.0, 1.6, 2.3], 'TANT-C': [4.6, 2.2, 2.4], 'TANT-D': [5.6, 2.4, 2.8]
   };
   function genDeux(code, nom, cathode) {
     var d = CMS2[code], g = Gab(nom), xr = d[0] / 2 + d[1] / 2 + 0.2, yr = d[2] / 2 + 0.2;
@@ -7991,6 +8179,22 @@ function traduire(s) {
       case 'SOT-223':
         gSmd(g, 1, -2.3, -3.15, 1.0, 2.0); gSmd(g, 2, 0, -3.15, 1.0, 2.0); gSmd(g, 3, 2.3, -3.15, 1.0, 2.0); gSmd(g, 4, 0, 3.15, 3.3, 2.0);
         gRect(g, -3.4, -1.8, 3.4, 1.8, 0.15); gPoint(g, -3.3, -3.15, 0.3); return gTextes(g);
+      case 'SOT-143':
+        gSmd(g, 1, -0.9, -1.1, 0.9, 0.9); gSmd(g, 2, 1.0, -1.1, 0.6, 0.9); gSmd(g, 3, 0.95, 1.1, 0.6, 0.9); gSmd(g, 4, -0.95, 1.1, 0.6, 0.9);
+        gRect(g, -1.5, -0.45, 1.5, 0.45, 0.15); gPoint(g, -1.9, -1.1, 0.25); return gTextes(g);
+      case 'SOT-323':
+        gSmd(g, 1, -0.65, -0.95, 0.4, 0.7); gSmd(g, 2, 0.65, -0.95, 0.4, 0.7); gSmd(g, 3, 0, 0.95, 0.4, 0.7);
+        gRect(g, -1.0, -0.4, 1.0, 0.4, 0.15); gPoint(g, -1.4, -0.95, 0.2); return gTextes(g);
+      case 'SOT-363':
+        gSmd(g, 1, -0.65, -0.95, 0.4, 0.7); gSmd(g, 2, 0, -0.95, 0.4, 0.7); gSmd(g, 3, 0.65, -0.95, 0.4, 0.7);
+        gSmd(g, 4, 0.65, 0.95, 0.4, 0.7); gSmd(g, 5, 0, 0.95, 0.4, 0.7); gSmd(g, 6, -0.65, 0.95, 0.4, 0.7);
+        gRect(g, -1.0, -0.4, 1.0, 0.4, 0.15); gPoint(g, -1.4, -0.95, 0.2); return gTextes(g);
+      case 'SOT-23-8':
+        for (var q = 0; q < 4; q++) { gSmd(g, q + 1, (q - 1.5) * 0.65, -1.35, 0.4, 1.0); gSmd(g, 8 - q, (q - 1.5) * 0.65, 1.35, 0.4, 1.0); }
+        gRect(g, -1.45, -0.7, 1.45, 0.7, 0.15); gPoint(g, -1.95, -1.35, 0.2); return gTextes(g);
+      case 'D2PAK':
+        gSmd(g, 1, -2.54, -6.0, 1.2, 3.0); gSmd(g, 3, 2.54, -6.0, 1.2, 3.0); gSmd(g, 2, 0, 1.8, 10.0, 8.0);
+        gRect(g, -5.2, -3.4, 5.2, 6.0, 0.15); gPoint(g, -3.6, -7.5, 0.3); return gTextes(g);
       case 'DPAK':
         gSmd(g, 1, -2.28, -3.1, 1.2, 2.0); gSmd(g, 3, 2.28, -3.1, 1.2, 2.0); gSmd(g, 2, 0, 2.4, 6.0, 6.2);
         gRect(g, -3.4, -1.6, 3.4, 5.8, 0.15); gPoint(g, -3.6, -3.1, 0.3); return gTextes(g);
@@ -8014,16 +8218,33 @@ function traduire(s) {
     { g: 'Boîtiers DIL', nom: 'TO-126', v: [3], lib: pattes, gen: genTo126 },
     { g: 'Boîtiers DIL', nom: 'TO-220', v: [3], lib: pattes, gen: genTo220 },
     { g: 'Boîtiers DIL', nom: 'Quartz HC-49', v: [2], lib: pattes, gen: genHc49 },
+    { g: 'Boîtiers DIL', nom: 'Quartz HC-49S / HC-49U', v: ['HC-49S', 'HC-49U'], lib: brut, gen: genHc49b },
     { g: 'Circuits CMS', nom: 'SOIC étroit', v: [8, 14, 16], lib: pattes, gen: function (n) { return genSo(n, 1.27, 2.7, 0.6, 1.55, 1.65, n / 2 * 1.27, 'SOIC' + n); } },
     { g: 'Circuits CMS', nom: 'SOIC large', v: [14, 16, 18, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 1.27, 4.65, 0.6, 2.0, 3.4, n / 2 * 1.27 + 0.2, 'SOIC' + n + 'L'); } },
     { g: 'Circuits CMS', nom: 'TSSOP', v: [8, 14, 16, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 0.65, 2.9, 0.4, 1.5, 1.95, n / 2 * 0.65 + 0.4, 'TSSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'TSSOP large pas 0,5', v: [38, 48, 56], lib: pattes, gen: function (n) { return genSo(n, 0.5, 3.8, 0.3, 1.5, 2.9, n / 2 * 0.5 + 0.4, 'TSSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'SSOP pas 0,65', v: [14, 16, 20, 24, 28], lib: pattes, gen: function (n) { return genSo(n, 0.65, 3.6, 0.4, 1.5, 2.4, n / 2 * 0.65 + 0.4, 'SSOP' + n); } },
+    { g: 'Circuits CMS', nom: 'MSOP', v: [8, 10], lib: pattes, gen: function (n) { return genSo(n, n === 8 ? 0.65 : 0.5, 2.2, n === 8 ? 0.4 : 0.3, 1.4, 1.4, 3.0, 'MSOP' + n); } },
     { g: 'Circuits CMS', nom: 'PLCC', v: [20, 28, 44, 52, 68, 84], lib: pattes, gen: genPlcc },
     { g: 'Circuits CMS', nom: 'TQFP pas 0,8', v: [32, 44, 64], lib: pattes, gen: function (n) { return genQfp(n, 0.8, { 32: 7, 44: 10, 64: 14 }[n]); } },
-    { g: 'Circuits CMS', nom: 'TQFP pas 0,5', v: [48, 64, 100, 144], lib: pattes, gen: function (n) { return genQfp(n, 0.5, { 48: 7, 64: 10, 100: 14, 144: 20 }[n]); } },
-    { g: 'Circuits CMS', nom: 'QFN pas 0,5 (+ pastille centrale)', v: [16, 20, 24, 32, 48], lib: pattes, gen: genQfn },
-    { g: 'Passifs CMS', nom: 'CMS 2 pattes', v: ['0402', '0603', '0805', '1206', '1210', '2010', '2512'], lib: brut, gen: function (c) { return genDeux(c, 'CMS' + c, false); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,5', v: [48, 64, 80, 100, 144, 176, 208], lib: pattes, gen: function (n) { return genQfp(n, 0.5, { 48: 7, 64: 10, 80: 12, 100: 14, 144: 20, 176: 24, 208: 28 }[n]); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,65', v: [52, 80], lib: pattes, gen: function (n) { return genQfp(n, 0.65, { 52: 10, 80: 14 }[n]); } },
+    { g: 'Circuits CMS', nom: 'TQFP pas 0,4', v: [100, 120, 144], lib: pattes, gen: function (n) { return genQfp(n, 0.4, { 100: 12, 120: 14, 144: 16 }[n]); } },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,5 (+ pastille centrale)', v: [16, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64], lib: pattes, gen: genQfn },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,65 (+ pastille centrale)', v: [16, 20, 24, 32], lib: pattes, gen: genQfn65 },
+    { g: 'Circuits CMS', nom: 'QFN pas 0,4 (+ pastille centrale)', v: [32, 40, 48, 64], lib: pattes, gen: genQfn40 },
+    { g: 'Circuits CMS', nom: 'DFN / SON (+ pastille centrale)', v: [6, 8, 10, 12, 14, 16], lib: pattes, gen: genDfn },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,27', v: matrices([6, 8, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 1.27, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,65', v: matrices([6, 8, 10, 12, 14, 16]), lib: billes, gen: function (v) { return genBga(v, 0.65, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'uBGA / CSP pas 0,5', v: matrices([4, 5, 6, 8, 10, 12, 14]), lib: billes, gen: function (v) { return genBga(v, 0.5, 'CSP'); } },
+    { g: 'Circuits CMS', nom: 'WLCSP pas 0,4', v: matrices([3, 4, 5, 6, 8, 10]), lib: billes, gen: function (v) { return genBga(v, 0.4, 'WLCSP'); } },
+    { g: 'Passifs CMS', nom: 'CMS 2 pattes', v: ['0201', '0402', '0603', '0805', '1206', '1210', '1812', '2010', '2512'], lib: brut, gen: function (c) { return genDeux(c, 'CMS' + c, false); } },
     { g: 'Diodes CMS', nom: 'Diode CMS (patte 1 = cathode)', v: ['MiniMELF', 'MELF', 'SOD-123', 'SOD-323', 'SMA', 'SMB', 'SMC'], lib: brut, gen: function (c) { return genDeux(c, c.toUpperCase().replace('-', ''), true); } },
-    { g: 'Transistors CMS', nom: 'SOT / DPAK', v: ['SOT-23', 'SOT-23-5', 'SOT-23-6', 'SOT-89', 'SOT-223', 'DPAK'], lib: brut, gen: genSot }
+    { g: 'Transistors CMS', nom: 'SOT / DPAK', v: ['SOT-23', 'SOT-23-5', 'SOT-23-6', 'SOT-23-8', 'SOT-143', 'SOT-323', 'SOT-363', 'SOT-89', 'SOT-223', 'DPAK', 'D2PAK'], lib: brut, gen: genSot },
+    { g: 'Passifs CMS', nom: 'Tantale CMS (patte 1 = +)', v: ['A 3216', 'B 3528', 'C 6032', 'D 7343'], lib: brut, gen: function (c) { return genDeux('TANT-' + c.charAt(0), 'TANT' + c.replace(' ', ''), true); } },
+    { g: 'Quartz CMS', nom: 'Quartz CMS', v: ['3215', '3225', '2520', '2016', '1612', '5032', '7050'], lib: brut, gen: genQuartzCms }
   ];
   /* Pastille seule : traversante [perçage, Ø] ou CMS [dx, dy] */
   var PADS_T = [[0.8, 1.6], [0.6, 1.2], [1.0, 2.0], [1.2, 2.4], [1.5, 3.0], [2.0, 4.0], [3.2, 6.0]];
