@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-11
- Version    : 1.26.0
+ Date       : 2026-11-12
+ Version    : 1.35.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.2.0, Schéma 1.11.0, Circuit 1.17.0 (cartouche et
+ Modules    : Bibliothèque 1.2.1, Schéma 1.11.0, Circuit 1.25.2 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -115,6 +115,33 @@
                       SOT-363, D2PAK ; quartz HC-49S, HC-49U et CMS 3215 à 7050 ;
                       CMS 0201, 1812, tantale A à D ; Fichier ▸ Charger
                       internal.lib (tous les gabarits normalisés)
+   1.27.0 2026-11-12  Numéro de version affiché en haut à gauche, entre azs-cad
+                      et le nom du projet
+   1.28.0 2026-11-12  Circuit 1.18.0 : clic droit sur une piste ▸ Centrer entre les
+                      voisines (aussi dans Optimiser, hors « Tout »)
+   1.28.1 2026-11-12  Circuit 1.18.1 : Centrer entre les voisines dégage aussi
+                      une piste en contact avec un cuivre étranger
+   1.29.0 2026-11-12  Circuit 1.19.0 : Optimiser ▸ Router le chevelu (routage
+                      automatique des liaisons non routées, existant conservé)
+   1.30.0 2026-11-12  Circuit 1.20.0 : minimums de fabrication PCBCart + 50 %,
+                      réglages automatiques d'après le boîtier à billes le plus
+                      fin, nouveau circuit en 6 couches
+   1.31.0 2026-11-12  Circuit 1.21.0 : Router le chevelu en spirale horaire depuis
+                      l'IC le plus dense
+   1.32.0 2026-11-12  Circuit 1.22.0 : Router le chevelu trace large, loin des
+                      pattes voisines ; Optimiser resserre en seconde passe
+   1.33.0 2026-11-12  Circuit 1.23.0, Bibliothèque 1.2.1 : minimums PCBCart
+                      + 33 %, via dans la pastille des boîtiers à billes (routeur,
+                      plans, manuel), matrices 22 × 22 aux pas de 1,0 et 0,8,
+                      circuits en 8 couches
+   1.34.0 2026-11-12  Circuit 1.24.0 : Re-router garde un tracé inférieur ou égal ;
+                      2, 4, 6 ou 8 couches ; Router le chevelu accéléré
+   1.35.0 2026-11-12  Circuit 1.25.0 : Router le chevelu en deux passes (dessus
+                      horaire, puis dessous anti-horaire)
+   1.35.1 2026-11-12  Circuit 1.25.1 : les pistes ne passent plus sous une bille
+                      qui attend sa via
+   1.35.2 2026-11-12  Circuit 1.25.2 : aucune piste sous une bille, même déjà
+                      desservie
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -155,6 +182,7 @@
   #onglets{position:absolute; left:0; right:0; top:0; height:36px; display:flex; align-items:flex-end; gap:2px; padding:0 10px; background:#1d2733; color:#cfd8e3}
   #onglets .marque{align-self:center; font-weight:700; color:#fff; margin-right:14px; white-space:nowrap}
   #onglets .marque span{font-weight:600; color:#9fc1ff; margin-left:6px}
+  #onglets .marque span.version{font-weight:400; font-size:11px; color:#c9d6ea; margin-left:6px}
   #onglets .onglet{border:none; border-radius:6px 6px 0 0; background:#2b3746; color:#cfd8e3; padding:7px 16px; font-weight:600}
   #onglets .onglet:hover{background:#364558; color:#fff}
   #onglets .onglet.actif{background:var(--fond); color:var(--texte)}
@@ -192,7 +220,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.35.2</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -240,7 +268,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-11
- Version    : 1.2.0
+ Version    : 1.2.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -315,6 +343,8 @@
                       supplémentaires, D2PAK, quartz, CMS 0201 / 1812, tantale) ;
                       Fichier ▸ Charger internal.lib : tous les gabarits
                       normalisés intégrés, chargés d'un coup
+   1.2.1  2026-11-12  Matrices 22 × 22 aux pas de 1,0 (BGA22x22-1, FCG484) et de
+                      0,8 (FBGA22x22-0.8, FCVG484)
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -502,7 +532,7 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.2.0</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.2.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
@@ -1325,8 +1355,8 @@ function traduire(s) {
     { g: 'Circuits CMS', nom: 'QFN pas 0,4 (+ pastille centrale)', v: [32, 40, 48, 64], lib: pattes, gen: genQfn40 },
     { g: 'Circuits CMS', nom: 'DFN / SON (+ pastille centrale)', v: [6, 8, 10, 12, 14, 16], lib: pattes, gen: genDfn },
     { g: 'Circuits CMS', nom: 'BGA pas 1,27', v: matrices([6, 8, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 1.27, 'BGA'); } },
-    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
-    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 22, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 22]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
     { g: 'Circuits CMS', nom: 'FBGA pas 0,65', v: matrices([6, 8, 10, 12, 14, 16]), lib: billes, gen: function (v) { return genBga(v, 0.65, 'FBGA'); } },
     { g: 'Circuits CMS', nom: 'uBGA / CSP pas 0,5', v: matrices([4, 5, 6, 8, 10, 12, 14]), lib: billes, gen: function (v) { return genBga(v, 0.5, 'CSP'); } },
     { g: 'Circuits CMS', nom: 'WLCSP pas 0,4', v: matrices([3, 4, 5, 6, 8, 10]), lib: billes, gen: function (v) { return genBga(v, 0.4, 'WLCSP'); } },
@@ -6613,8 +6643,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-11
- Version    : 1.17.0
+ Date       : 2026-11-12
+ Version    : 1.25.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -6852,8 +6882,68 @@ function traduire(s) {
                       entre deux isolements retirés)
    1.17.0 2026-11-11  Catalogue de gabarits normalisés complété (voir Bibliothèque
                       1.2.0) : proposé au choix du gabarit des composants
+   1.18.0 2026-11-12  Clic droit sur une piste ▸ Centrer entre les voisines : chaque
+                      segment intérieur glisse à mi-distance du cuivre étranger
+                      de chaque côté (les voisines ne bougent pas, rien ne bouge
+                      s'il n'y a du cuivre que d'un côté) ; aussi dans Optimiser,
+                      hors « Tout »
+   1.18.1 2026-11-12  Centrer entre les voisines : une piste en contact ou trop
+                      près d'un cuivre étranger est d'abord dégagée (première
+                      place libre), puis centrée
+   1.19.0 2026-11-12  Optimiser ▸ Router le chevelu : chaque liaison non routée est
+                      tracée automatiquement, des équipotentielles les plus
+                      courtes aux plus longues (recherche A* du re-routage,
+                      toutes les couches de signal, vias) ; pistes et vias déjà
+                      posées jamais modifiées ; liaison impossible laissée en
+                      chevelu et comptée ; hors 50 Ω, plans, faces remplies et
+                      patchs ; un seul Ctrl+Z
+   1.20.0 2026-11-12  Règles de fabrication : minimums PCBCart standard + 50 %
+                      (piste et isolement 0,115 mm, perçage 0,23 mm, couronne
+                      0,115 mm, au lieu de × 2) ; réglages automatiques
+                      (isolement, largeur, via par défaut) d'après le boîtier à
+                      billes le plus fin posé, coupés par une saisie à la main,
+                      enregistrés dans le .brd.dxf (un ancien circuit garde ses
+                      valeurs) ; nouveau circuit en 6 couches ; largeurs 0,115
+                      et 0,15 mm au clic droit
+   1.21.0 2026-11-12  Router le chevelu : ordre en spirale horaire, du centre de
+                      l'IC le plus dense vers l'extérieur (ses pastilles couronne
+                      par couronne, sens horaire depuis midi), puis les autres
+                      équipotentielles de la plus proche à la plus lointaine
+   1.22.0 2026-11-12  Router le chevelu trace large : halo de 2 mm autour de chaque
+                      pastille étrangère où passer coûte cher (la piste sort
+                      droit et s'éloigne des pattes voisines, sans les enfermer ;
+                      vias plus chères, surtout près des pastilles) ;
+                      pistes non tendues après tracé ; resserrer est laissé à
+                      Optimiser, en seconde passe (re-routage inchangé)
+   1.23.0 2026-11-12  Minimums de fabrication PCBCart + 33 % (piste et isolement
+                      0,105 mm, perçage 0,205 mm, couronne 0,105 mm, via
+                      0,415 mm) ; via dans la pastille pour les boîtiers à
+                      billes : Router le chevelu fait partir la liaison du centre
+                      de la bille sur une autre couche, les billes de plan
+                      reçoivent leur via vers le plan, la via vers le plan (V)
+                      est acceptée sur une bille en routage manuel ; réglages
+                      automatiques recalculés pour la via dans la bille ;
+                      matrices 22 × 22 aux pas de 1,0 et 0,8 (FCG484, FCVG484) ;
+                      circuits en 8 couches (signaux 1, 3, 6, 8)
+   1.24.0 2026-11-12  Re-router : tracé gardé s'il est inférieur ou égal (une
+                      piste mal dessinée est redessinée sans gain de longueur) ;
+                      10 couches retiré (2, 4, 6 ou 8) ; Router le chevelu
+                      accéléré : recherche A* pondérée, connexité recalculée
+                      seulement pour les équipotentielles déjà entamées, écran
+                      rafraîchi au plus toutes les 0,7 s
+   1.25.0 2026-11-12  Router le chevelu en deux passes : 1, spirale horaire, face
+                      du dessus seule (aucune via) ; 2, ce qui reste en spirale
+                      anti-horaire, dessous prioritaire, autres couches en second
+                      choix ; rien de posé n'est retiré
+   1.25.1 2026-11-12  Router le chevelu : la place de la via est réservée sous
+                      chaque bille pas encore desservie ; les pistes des couches
+                      internes et du dessous passent entre les billes, plus
+                      dessous
+   1.25.2 2026-11-12  Router le chevelu : place réservée sous toutes les billes,
+                      même déjà desservies sur le dessus ; aucune piste d'une
+                      autre couche ne passe sous une bille
 
- Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4 ou 6
+ Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4, 6 ou 8
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
                  PERCAGE, plus CHEVELU et AZSCAD (données)
  Affichage     : fond noir, dessus rouge et blanc, dessous bleu, vue de dessus
@@ -6969,7 +7059,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.17.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.25.2</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -7115,7 +7205,7 @@ var TRAD_EN = [
   ['Tout, dans cet ordre de priorité', 'Everything, in this order of priority'], ['Vias : au plus court, inutiles supprimées', 'Vias: shortest path, useless ones removed'],
   ['Coudes à 45° au lieu de 90°', '45° corners instead of 90°'], ['Écarter les pistes qui se longent', 'Spread traces running side by side'],
   ['Arrivées centrées, dans l\'axe des pastilles', 'Trace ends centred, along the pad axis'], ['sortie(s) de pastille hors axe restante(s) (Re-router)', 'off-axis pad exit(s) remaining (Re-route)'], ['Aligner sur la grille', 'Align to the grid'], ['Ctrl+Z annule', 'Ctrl+Z undoes'],
-  ['via(s) déplacée(s)', 'via(s) moved'], ['supprimée(s)', 'removed'], ['coude(s) à 45°', '45° corner(s)'], ['segment(s) écarté(s)', 'segment(s) spread'],
+  ['via(s) déplacée(s)', 'via(s) moved'], ['supprimée(s)', 'removed'], ['coude(s) à 45°', '45° corner(s)'], ['segment(s) écarté(s)', 'segment(s) spread'], ['Réglages automatiques', 'Automatic settings'], ['Isolement, largeur et via réglés sur le boîtier à billes le plus fin posé', 'Clearance, width and via set from the finest ball-grid package placed'], ['Fabrication (PCBCart + 33 %) : piste et isolement', 'Fabrication (PCBCart + 33%): trace and clearance'], ['via dans la bille', 'via in the ball pad'], ['via(s) de plan dans les billes', 'plane via(s) in ball pads'], ['au minimum', 'minimum'], ['Billes au pas de', 'Balls at pitch'], ['via entre quatre billes', 'via between four balls'], ['aucune via ne tient entre les billes', 'no via fits between the balls'], ['une piste entre deux billes', 'one trace between two balls'], ['aucune piste ne tient entre deux billes', 'no trace fits between two balls'], ['Router le chevelu (liaisons non routées)', 'Route the ratsnest (unrouted links)'], ['Routage du chevelu', 'Ratsnest routing'], ['sur le dessus', 'on top'], ['liaison(s) routée(s)', 'link(s) routed'], ['restante(s)', 'remaining'], ['liaison(s) de plan, de masse ou 50 Ω non traitée(s)', 'plane, ground or 50 Ω link(s) not handled'], ['segment(s) centré(s) entre les voisines', 'segment(s) centred between neighbours'], ['Centrer entre les voisines (hors « Tout »)', 'Centre between neighbours (not in "Everything")'], ['Centrer entre les voisines', 'Centre between neighbours'],
   ['arrivée(s) centrée(s)', 'end(s) centred'], ['segment(s) aligné(s) sur la grille', 'segment(s) aligned to the grid'], ['étape(s) annulée(s) (connexions)', 'step(s) cancelled (connections)'],
   ['Colonnes de BOMsample.xls : une ligne par valeur, gabarit et face identiques', 'BOMsample.xls columns: one line per identical value, footprint and side'], ['Mêmes colonnes, séparateur « ; »', 'Same columns, separator “;”'],
   ['Une ligne par valeur et gabarit identiques, séparateur « ; »', 'One line per identical value and footprint, separator “;”'],
@@ -7345,7 +7435,7 @@ function traduire(s) {
     annul: [], retab: [], modifie: false,
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 1.0, via: { perc: 0.8, diam: 1.6 },
-    substrat: 1.6, isolement: 0.2, nc: 2, planVcc: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
+    substrat: 1.6, isolement: 0.2, nc: 6, reglesAuto: true, planVcc: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
     textes: [], selT: -1, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }
   };
   var $ = function (id) { return document.getElementById(id); };
@@ -7722,7 +7812,7 @@ function traduire(s) {
   function gabCoupleur(fr, db, h) {
     var k = Math.pow(10, -db / 20), z0e = 50 * Math.sqrt((1 + k) / (1 - k)), z0o = 50 * Math.sqrt((1 - k) / (1 + k)), cp = couplees(z0e, z0o, h),
         w50 = largeurZ(50, h), ee50 = epsEff(w50, h), l0 = 299792.458 / fr, m = 3 * w50, g, L, xa, yc, yD, xd, xz0, xz1, ym, yz, pas, nv, w, sp;
-    if (!cp || cp.s < MINI.isolement) return { erreur: 'Couplage ' + db + ' dB : écart ' + mmP(cp ? cp.s : 0) + ' < 0,152 mm (minimum de fabrication) sur h ' + mmP(h) };
+    if (!cp || cp.s < MINI.isolement) return { erreur: 'Couplage ' + db + ' dB : écart ' + mmP(cp ? cp.s : 0) + ' < ' + String(MINI.isolement).replace('.', ',') + ' mm (minimum de fabrication) sur h ' + mmP(h) };
     w = cp.w; sp = cp.s;
     L = l0 / Math.sqrt(epsEff(w, h)) / 4;
     xa = L / 2; yc = -(sp / 2 + w / 2); yD = sp / 2 + w + Math.max(2 * w50, 3); xd = xa + (yD - Math.abs(yc));
@@ -7778,7 +7868,7 @@ function traduire(s) {
       jz = i === 1 ? Math.sqrt(Math.PI * D / (2 * gk[0])) : (i === n + 1 ? Math.sqrt(Math.PI * D / (2 * gk[n - 1] * gk[n])) : Math.PI * D / (2 * Math.sqrt(gk[i - 2] * gk[i - 1])));
       z0e = 50 * (1 + jz + jz * jz); z0o = 50 * (1 - jz + jz * jz);
       cp = couplees(z0e, z0o, h);
-      if (!cp || cp.s < MINI.isolement) return { erreur: 'Passe-bande ' + bw + ' % : section ' + i + ', écart ' + mmP(cp ? cp.s : 0) + ' < 0,152 mm (minimum de fabrication) sur h ' + mmP(h) + ' ; choisir une bande plus étroite' };
+      if (!cp || cp.s < MINI.isolement) return { erreur: 'Passe-bande ' + bw + ' % : section ' + i + ', écart ' + mmP(cp ? cp.s : 0) + ' < ' + String(MINI.isolement).replace('.', ',') + ' mm (minimum de fabrication) sur h ' + mmP(h) + ' ; choisir une bande plus étroite' };
       ee = epsEff(cp.w, h);
       sec.push({ w: cp.w, s: cp.s, l: l0 / Math.sqrt(ee) / 4, dl: h * 0.412 * (ee + 0.3) * (cp.w / h + 0.264) / ((ee - 0.258) * (cp.w / h + 0.8)), z0e: z0e, z0o: z0o });
     }
@@ -8235,8 +8325,8 @@ function traduire(s) {
     { g: 'Circuits CMS', nom: 'QFN pas 0,4 (+ pastille centrale)', v: [32, 40, 48, 64], lib: pattes, gen: genQfn40 },
     { g: 'Circuits CMS', nom: 'DFN / SON (+ pastille centrale)', v: [6, 8, 10, 12, 14, 16], lib: pattes, gen: genDfn },
     { g: 'Circuits CMS', nom: 'BGA pas 1,27', v: matrices([6, 8, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 1.27, 'BGA'); } },
-    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
-    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
+    { g: 'Circuits CMS', nom: 'BGA pas 1,0', v: matrices([6, 8, 10, 12, 14, 16, 17, 20, 22, 24, 28]), lib: billes, gen: function (v) { return genBga(v, 1, 'BGA'); } },
+    { g: 'Circuits CMS', nom: 'FBGA pas 0,8', v: matrices([5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 22]), lib: billes, gen: function (v) { return genBga(v, 0.8, 'FBGA'); } },
     { g: 'Circuits CMS', nom: 'FBGA pas 0,65', v: matrices([6, 8, 10, 12, 14, 16]), lib: billes, gen: function (v) { return genBga(v, 0.65, 'FBGA'); } },
     { g: 'Circuits CMS', nom: 'uBGA / CSP pas 0,5', v: matrices([4, 5, 6, 8, 10, 12, 14]), lib: billes, gen: function (v) { return genBga(v, 0.5, 'CSP'); } },
     { g: 'Circuits CMS', nom: 'WLCSP pas 0,4', v: matrices([3, 4, 5, 6, 8, 10]), lib: billes, gen: function (v) { return genBga(v, 0.4, 'WLCSP'); } },
@@ -8720,7 +8810,7 @@ function traduire(s) {
     f.appendChild(b);
     b.appendChild(E('h4', '', 'Couches'));
     sel = champ(b, 'Nombre', E('select'));
-    [2, 4, 6].forEach(function (v) { var o = E('option', '', v + ' couches'); o.value = v; sel.appendChild(o); });
+    [2, 4, 6, 8].forEach(function (v) { var o = E('option', '', v + ' couches'); o.value = v; sel.appendChild(o); });
     sel.value = String(B.nc);
     sel.addEventListener('change', function () { if (!changerNbCouches(parseInt(this.value, 10))) this.value = String(B.nc); });
     toutesCouches().forEach(function (n) {
@@ -8805,7 +8895,7 @@ function traduire(s) {
     });
     bs.appendChild(bt);
   }
-  function toutRafraichir() { majGrille(); calculerConflits(); majBoutonsCouche(); remplirListe(); fiche(); dessiner(); }
+  function toutRafraichir() { reglerAuto(); majGrille(); calculerConflits(); majBoutonsCouche(); remplirListe(); fiche(); dessiner(); }
   /* Grille automatique : moitié du pas le plus fin parmi les gabarits posés, pour que les coudes
      tombent entre deux pattes voisines ; 1,27 mm sans composant */
   var PAS_GAB = {};
@@ -9030,12 +9120,63 @@ function traduire(s) {
      Routage manuel (pistes, vias) et connexité
      Piste : { couche: 1..4, w, net, pts: [{x, y}] } — Via : { x, y, perc, diam, net }
      ====================================================================== */
-  /* Minimums de fabrication : PCBCart standard (piste/isolement 0,076, perçage 0,152, couronne 0,076) × 2 */
-  var MINI = { piste: 0.152, isolement: 0.152, percage: 0.304, couronne: 0.152 };
+  /* Minimums de fabrication : PCBCart standard (piste/isolement 3 mil = 0,076, perçage 6 mil = 0,152,
+     couronne 3 mil = 0,076) + 33 %, arrondis au 0,005 mm supérieur */
+  var MINI = { piste: 0.105, isolement: 0.105, percage: 0.205, couronne: 0.105 };
+  /* Réglages automatiques (B.reglesAuto) : isolement, largeur de piste et via par défaut suivent le boîtier à
+     matrice de billes le plus fin posé (pas, g = pas - pastille) ; la via va dans la bille :
+       via       : la via minimale (perçage + 2 couronnes) ;
+       piste et isolement : égaux, au plus 0,2 mm, tels qu'une piste passe entre deux billes sur le dessus et
+                   entre deux vias de billes sur les autres couches, marge de la grille du routeur comprise.
+     Sans matrice de billes, rien n'est modifié. Un réglage saisi à la main coupe l'automatisme */
+  var MAT_GAB = {};
+  function matriceGabarit(p) {
+    var pads, cles = {}, pas, i, e, k, d = 0, ok = false;
+    if (MAT_GAB.hasOwnProperty(p.nom)) return MAT_GAB[p.nom];
+    pads = p.el.filter(function (e2) { return e2.t === 'smd'; });
+    pas = pads.length >= 9 ? pasGabarit(p) : Infinity;
+    function cle(x, y) { return Math.round(x * 1000) + ',' + Math.round(y * 1000); }
+    if (isFinite(pas)) {
+      for (i = 0; i < pads.length; i++) { cles[cle(pads[i].x, pads[i].y)] = true; d = Math.max(d, pads[i].dx, pads[i].dy); }
+      for (i = 0; i < pads.length && !ok; i++) { e = pads[i]; ok = cles[cle(e.x + pas, e.y)] && cles[cle(e.x, e.y + pas)] && cles[cle(e.x + pas, e.y + pas)]; }
+    }
+    k = ok && pas - d > 0 ? { pas: arr(pas), g: arr(pas - d) } : null;
+    MAT_GAB[p.nom] = k;
+    return k;
+  }
+  function reglesCalculees() {
+    var g = Infinity, pas = 0, vus = {}, i, c, p, m, viaMin = MINI.percage + 2 * MINI.couronne, iso, w, vd, gi, rg;
+    function bas5(v) { return Math.floor(v / 0.005 + 1e-6) * 0.005; }
+    for (i = 0; i < B.comps.length; i++) {
+      c = B.comps[i];
+      if (!c.gab || vus[c.gab] || c.type === 'PATCH' || c.type === 'PONT') continue;
+      vus[c.gab] = true; p = gab(c); m = p ? matriceGabarit(p) : null;
+      if (m && m.g < g) { g = m.g; pas = m.pas; }
+    }
+    if (!isFinite(g)) return null;
+    vd = arr(viaMin); gi = Math.min(g, pas - vd); rg = pas / 8;
+    iso = gi * gi / 4 - rg * rg / 2;
+    iso = arr(Math.min(0.2, Math.max(MINI.isolement, bas5((iso > 0 ? Math.sqrt(iso) : 0) / 1.5))));
+    w = iso;
+    return { pas: pas, isolement: iso, largeur: w, via: { perc: arr(MINI.percage), diam: vd }, pistePasse: gi >= w + 2 * iso - 1e-6 };
+  }
+  /* Pastille d'un boîtier à matrice de billes : la via se pose dans la pastille */
+  function estBille(p) {
+    var c = compParRef(p.ref), g = c && c.type !== 'PATCH' && c.type !== 'PONT' ? gab(c) : null;
+    return !!g && p.e.t === 'smd' && !!matriceGabarit(g);
+  }
+  function reglerAuto() {
+    var r;
+    if (!B.reglesAuto) return;
+    r = reglesCalculees();
+    if (!r) return;
+    B.isolement = r.isolement; B.largeur = r.largeur; B.via = { perc: r.via.perc, diam: r.via.diam };
+  }
   function refusMini(t, v) { message(t + ' : minimum ' + String(v).replace('.', ',') + ' mm', true); }
   /* Empilement (vu de dessus) : S = signaux routés ; GND, VCC = plans remplis à l'export */
-  var EMPIL = { 2: ['S', 'S'], 4: ['S', 'GND', 'VCC', 'S'], 6: ['S', 'GND', 'S', 'VCC', 'GND', 'S'] };
-  var COUL_INTERNE = { 2: '#D9A21B', 3: '#2E9E5B', 4: '#A855F7', 5: '#14B8A6' };
+  var EMPIL = { 2: ['S', 'S'], 4: ['S', 'GND', 'VCC', 'S'], 6: ['S', 'GND', 'S', 'VCC', 'GND', 'S'],
+                8: ['S', 'GND', 'S', 'VCC', 'GND', 'S', 'GND', 'S'] };
+  var COUL_INTERNE = { 2: '#D9A21B', 3: '#2E9E5B', 4: '#A855F7', 5: '#14B8A6', 6: '#E879A6', 7: '#84CC16' };
   var RETRAIT_PLAN = 0.5, RAYON_THERMIQUE = 0.3;
   function bas() { return B.nc; }
   function toutesCouches() { var r = [], n; for (n = 1; n <= B.nc; n++) r.push(n); return r; }
@@ -9473,8 +9614,8 @@ function traduire(s) {
     if (!pl) { message('Pas de plan pour ' + net + (n ? ' (' + nomCouche(n) + ')' : '') + ' à cet endroit.', true); return; }
     if (n && !planRelie(n, net, der.x, der.y)) { message(nomCouche(n) + ' : autre équipotentielle que ' + net + ' à cet endroit.', true); return; }
     pd = padSous(tousPads(), der.x, der.y, 0);
-    if (pd && pd.e.t === 'smd') { message('Via sur pastille CMS : tracer d\'abord un segment.', true); return; }
-    if (!pd) poserViaJonction(der);
+    if (pd && pd.e.t === 'smd' && !estBille(pd)) { message('Via sur pastille CMS : tracer d\'abord un segment.', true); return; }
+    if (!pd || estBille(pd)) poserViaJonction(der);
     terminerRoute();
   }
   /* Boutons de couche : couleur de la couche, bouton actif plein, plan en pointillés */
@@ -9649,18 +9790,26 @@ function traduire(s) {
     sel.value = String(B.couche);
     sel.addEventListener('change', function () { choisirCouche(parseInt(this.value, 10)); });
     inp = champ(b, 'Largeur (mm)', E('input')); inp.value = B.largeur;
-    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.piste) refusMini('Largeur', MINI.piste); else if (v) { B.largeur = arr(v); marquer(); } this.value = B.largeur; });
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.piste) refusMini('Largeur', MINI.piste); else if (v) { B.largeur = arr(v); B.reglesAuto = false; marquer(); fiche(); return; } this.value = B.largeur; });
     inp = champ(b, 'Via perçage', E('input')); inp.value = B.via.perc;
-    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.percage) refusMini('Perçage', MINI.percage); else if (v && v + 2 * MINI.couronne > B.via.diam) refusMini('Couronne', MINI.couronne); else if (v) { B.via.perc = arr(v); marquer(); } this.value = B.via.perc; });
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.percage) refusMini('Perçage', MINI.percage); else if (v && v + 2 * MINI.couronne > B.via.diam) refusMini('Couronne', MINI.couronne); else if (v) { B.via.perc = arr(v); B.reglesAuto = false; marquer(); fiche(); return; } this.value = B.via.perc; });
     inp = champ(b, 'Via Ø', E('input')); inp.value = B.via.diam;
-    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < B.via.perc + 2 * MINI.couronne) refusMini('Ø via', arr(B.via.perc + 2 * MINI.couronne)); else if (v) { B.via.diam = arr(v); marquer(); } this.value = B.via.diam; });
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < B.via.perc + 2 * MINI.couronne) refusMini('Ø via', arr(B.via.perc + 2 * MINI.couronne)); else if (v) { B.via.diam = arr(v); B.reglesAuto = false; marquer(); fiche(); return; } this.value = B.via.diam; });
     sel = champ(b, 'Substrat', E('select'));
     [['1.6', 'FR4 1,6 mm'], ['0.8', 'FR4 0,8 mm']].forEach(function (v) { var o = E('option', '', v[1]); o.value = v[0]; sel.appendChild(o); });
     sel.value = String(B.substrat);
     sel.addEventListener('change', function () { B.substrat = parseFloat(this.value); marquer(); toutRafraichir(); });
     b.appendChild(E('div', 'stat', 'Lignes 50 Ω : ' + String(largeur50()).replace('.', ',') + ' mm (FR4 εr 4,5, cuivre 35 µm, microruban, h ' + String(B.nc > 2 ? B.hDiel : B.substrat).replace('.', ',') + ' mm)'));
     inp = champ(b, 'Isolement', E('input')); inp.value = B.isolement;
-    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.isolement) refusMini('Isolement', MINI.isolement); else if (v) { B.isolement = arr(v); marquer(); } this.value = B.isolement; });
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.isolement) refusMini('Isolement', MINI.isolement); else if (v) { B.isolement = arr(v); B.reglesAuto = false; marquer(); fiche(); return; } this.value = B.isolement; });
+    inp = champ(b, 'Réglages automatiques', E('input')); inp.type = 'checkbox'; inp.checked = !!B.reglesAuto;
+    inp.title = traduire('Isolement, largeur et via réglés sur le boîtier à billes le plus fin posé');
+    inp.addEventListener('change', function () { B.reglesAuto = this.checked; marquer(); toutRafraichir(); });
+    (function () {
+      var rc = reglesCalculees(), mm2 = function (v) { return String(v).replace('.', ','); };
+      b.appendChild(E('div', 'stat', 'Fabrication (PCBCart + 33 %) : piste et isolement ' + mm2(MINI.piste) + ' mm, via ' + mm2(MINI.percage) + ' / ' + mm2(arr(MINI.percage + 2 * MINI.couronne)) + ' mm au minimum'));
+      if (rc) b.appendChild(E('div', 'stat', 'Billes au pas de ' + mm2(rc.pas) + ' mm : ' + 'via dans la bille, ' + (rc.pistePasse ? 'une piste entre deux billes' : 'aucune piste ne tient entre deux billes')));
+    })();
     b.appendChild(E('div', 'stat', 'Liaisons restant à router : ' + chevelu().length));
   }
 
@@ -9822,7 +9971,7 @@ function traduire(s) {
   /* ======================================================================
      Clic droit sur une piste : largeur standard ou saisie
      ====================================================================== */
-  var LARGEURS = [0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.27, 1.5, 2.0, 2.54];
+  var LARGEURS = [0.105, 0.125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.27, 1.5, 2.0, 2.54];
   function fermerMenu() { $('menu').style.display = 'none'; }
   function appliquerLargeur(t, v) {
     if (!v || v < MINI.piste) { refusMini('Largeur', MINI.piste); return false; }
@@ -9852,6 +10001,9 @@ function traduire(s) {
         else if (e2.key === 'Escape') fermerMenu();
       });
       m.appendChild(saisie);
+      o = E('div', 'option', 'Centrer entre les voisines');
+      o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); B.selV = null; B.selP = { i: i, k: 0 }; optimiser('milieu'); });
+      m.appendChild(o);
     }
     m.style.display = 'block';
     m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8) + 'px';
@@ -11037,6 +11189,56 @@ function traduire(s) {
     return n;
   }
 
+  /* --- Centrer entre les voisines (clic droit sur une piste, ou Optimiser) : chaque segment intérieur glisse
+         perpendiculairement jusqu'à mi-distance du cuivre étranger trouvé de chaque côté (pistes, pastilles, vias,
+         bord de carte) ; ses deux voisins gardent leur direction ; rien ne bouge s'il n'y a du cuivre que d'un
+         côté ; les voisines ne sont pas touchées ; hors « Tout » --- */
+  function optMilieu(seule) {
+    var n = 0, i, t, k, a, b, l, nx, ny, h, att, np, passe, change, pas = Math.min(B.grille / 4, 0.1), M = Math.ceil(2.54 / pas), lo, hi, m, d, fin, sg, lib;
+    /* le segment décalé de m pas est-il à l'isolement de tout cuivre étranger ? */
+    function libre(m2) {
+      var o = pas * m2;
+      if (lib[m2 + M] === undefined) lib[m2 + M] = optLibre({ x: a.x + nx * o, y: a.y + ny * o }, { x: b.x + nx * o, y: b.y + ny * o }, h, t.couche, t.net);
+      return lib[m2 + M];
+    }
+    for (passe = 0; passe < 4; passe++) {
+      change = false;
+      for (i = 0; i < B.pistes.length; i++) {
+        t = B.pistes[i];
+        if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+        h = t.w / 2; att = null;
+        for (k = 1; k + 2 < t.pts.length; k++) {
+          a = t.pts[k]; b = t.pts[k + 1]; l = dist(a, b);
+          if (l < 0.2) continue;
+          nx = -(b.y - a.y) / l; ny = (b.x - a.x) / l; lib = [];
+          if (libre(0)) {
+            /* place libre autour de la position actuelle : centre de l'intervalle, s'il est borné des deux côtés */
+            for (hi = 0; hi < M && libre(hi + 1); hi++) { /* */ }
+            for (lo = 0; lo > -M && libre(lo - 1); lo--) { /* */ }
+            if (hi >= M || lo <= -M) continue;
+            d = Math.trunc((lo + hi) / 2); fin = d > 0 ? 1 : -1;
+          } else {
+            /* contact ou isolement non tenu : première place libre la plus proche, puis centre de l'intervalle
+               qui s'ouvre là (ou juste l'isolement s'il n'y a pas de cuivre plus loin) */
+            for (m = 1; m <= M && !libre(m) && !libre(-m); m++) { /* */ }
+            if (m > M) continue;
+            fin = libre(m) ? m : -m; sg = fin > 0 ? 1 : -1;
+            for (hi = fin; Math.abs(hi) < M && libre(hi + sg); hi += sg) { /* */ }
+            d = Math.abs(hi) >= M ? fin : Math.trunc((fin + hi) / 2);
+          }
+          att = att || optAttaches(i);
+          sg = d > 0 ? 1 : -1;
+          for (; d !== 0 && d * sg >= fin * sg; d -= sg) {
+            np = optGlisser(t.pts, k, nx * pas * d, ny * pas * d);
+            if (np && optPisteOk(i, np, att)) { t.pts = np; n++; change = true; OPT.obs = {}; break; }
+          }
+        }
+      }
+      if (!change) break;
+    }
+    return n;
+  }
+
   /* --- 4. Arrivées centrées : le bout de piste est ramené au centre de sa pastille ou de sa via ;
          le dernier segment garde sa direction (le précédent s'ajuste), sinon trajet à 45° --- */
   function optCentrer(seule) {
@@ -11155,10 +11357,13 @@ function traduire(s) {
       }
     }
   }
-  /* Tracé complet d'une équipotentielle (aucune de ses pistes n'est posée) ; renvoie { pistes, vias } ou null */
-  function optRouterNet(net, w) {
+  /* Tracé complet d'une équipotentielle (aucune de ses pistes n'est posée) ; renvoie { pistes, vias } ou null.
+     Avec « gr » (groupe de cuivre déjà relié de chaque pastille, Router le chevelu) : seuls les groupes séparés sont
+     reliés, de pastille à pastille ; une liaison impossible est laissée (les autres sont gardées) et comptée
+     dans « manque » */
+  function optRouterNet(net, w, gr, passe) {
     var L = couchesSignal(), nl = L.length, h = w / 2, iso = B.isolement, vd = B.via.diam, ct = OPT.ct, pi = [], i, j, k, p, r, X0, Y0, X1, Y1, nx, ny, N,
-        mt, mv, mm, blk = [], cher = [], vb, gs, par, res = { pistes: [], vias: [] }, sources, reste, t, tg, ch, d, best, relies, mg, o,
+        mt, mv, mm, blk = [], cher = [], larg = [], kl = 0, lv = null, hk = gr ? LARGE_HEUR : 1, clr = null, strict = !!(passe && passe.stricte), vb, gs, par, res = { pistes: [], vias: [], manque: 0 }, sources, reste, t, tg, ch, d, best, relies, mg, o, np0, nv0, ns0, okc, vus2,
         DX = [1, 1, 0, -1, -1, -1, 0, 1], DY = [0, 1, 1, 1, 0, -1, -1, -1], PEN = [0, 0.3, 0.8], nbp, oc;
     for (i = 0; i < OPT.pads.length; i++) if (OPT.cuPads[i].net === net) pi.push(i);
     if (pi.length < 2 || !ct) return null;
@@ -11197,6 +11402,16 @@ function traduire(s) {
     }
     optObs(net).forEach(function (ob) { marquer(ob, false); });
     OPT.cuPads.forEach(function (ob) { if (ob.net === net) marquer(ob, true); });
+    /* Router le chevelu : place d'une via réservée sous chaque bille des autres équipotentielles (desservie ou non,
+       reliée ou non) ; sur toutes les couches, les pistes passent entre les billes, jamais dessous */
+    if (gr) (function () {
+      var tc2 = toutesCouches();
+      OPT.cuPads.forEach(function (ob, q) {
+        var pd = OPT.pads[q];
+        if ((ob.net && ob.net === net) || !estBille(pd)) return;
+        marquer(optBoite({ k: 'd', c: { x: pd.e.x, y: pd.e.y }, r: vd / 2, couches: tc2 }), false);
+      });
+    })();
     /* freins thermiques des faces remplies : passer dans la couronne d'une pastille de masse coupe ses rayons ;
        ces nœuds restent permis mais coûtent cher (1,5 mm de détour par pas), le tracé n'y passe que faute de mieux */
     for (i = 0; i < nl; i++) cher.push(null);
@@ -11212,6 +11427,37 @@ function traduire(s) {
       }
     });
     OPT.pz.forEach(function (q) { marquer(optBoite({ k: 'p', pts: [{ x: q[0], y: q[1] }, { x: q[2], y: q[1] }, { x: q[2], y: q[3] }, { x: q[0], y: q[3] }], tout: true, couches: [] }), false); });
+    /* Router le chevelu : tracé large. Autour de chaque pastille étrangère (routée ou non), un halo de LARGE_HALO mm
+       où chaque pas coûte plus cher, d'autant plus qu'il est près de la pastille : la piste sort droit, s'éloigne des
+       pattes voisines et ne les enferme pas ; resserrer est le travail d'Optimiser, en seconde passe */
+    if (gr) {
+      for (i = 0; i < nl; i++) larg.push(new Uint8Array(N));
+      lv = new Uint8Array(N);
+      OPT.cuPads.forEach(function (ob) {
+        var H = LARGE_HALO, ix0, ix1, iy0, iy1, ix, iy, z, li2 = [], qx, qy, ddx, ddy, v, k3;
+        if (ob.net && ob.net === net) return;
+        for (z = 0; z < nl; z++) if (ob.couches.indexOf(L[z]) >= 0) li2.push(z);
+        if (!li2.length) return;
+        ix0 = Math.max(0, Math.ceil((ob.bx[0] - H - X0) / r)); ix1 = Math.min(nx - 1, Math.floor((ob.bx[2] + H - X0) / r));
+        iy0 = Math.max(0, Math.ceil((ob.bx[1] - H - Y0) / r)); iy1 = Math.min(ny - 1, Math.floor((ob.bx[3] + H - Y0) / r));
+        for (iy = iy0; iy <= iy1; iy++) for (ix = ix0; ix <= ix1; ix++) {
+          qx = X0 + ix * r; qy = Y0 + iy * r;
+          ddx = Math.max(ob.bx[0] - qx, 0, qx - ob.bx[2]); ddy = Math.max(ob.bx[1] - qy, 0, qy - ob.bx[3]);
+          v = 1 - Math.sqrt(ddx * ddx + ddy * ddy) / H;
+          if (v <= 0) continue;
+          v = Math.round(255 * v); k3 = iy * nx + ix;
+          for (z = 0; z < li2.length; z++) if (larg[li2[z]][k3] < v) larg[li2[z]][k3] = v;
+          if (lv[k3] < v) lv[k3] = v;
+        }
+      });
+      kl = r * LARGE_POIDS / 255;
+      /* couche prioritaire de la passe : sur les autres couches chaque pas coûte plus cher (la face opposée un peu,
+         les couches internes davantage) ; passe stricte : la couche prioritaire seule, sans via */
+      if (passe) {
+        clr = [];
+        for (i = 0; i < nl; i++) clr.push(L[i] === passe.couche ? 0 : r * (L[i] === 1 || L[i] === bas() ? PASSE_FACE : PASSE_INTERNE));
+      }
+    }
     /* accès à une pastille : les nœuds voisins de son centre, joints au centre par un trajet à 45° libre */
     /* accès à une pastille : départ du centre, droit dans un axe de la pastille jusqu'au-delà de son bord plus une
        largeur de piste, puis (si le nœud n'est pas exactement dans l'axe) un pas à 45° jusqu'au nœud */
@@ -11227,7 +11473,7 @@ function traduire(s) {
           P = lat < 1e-6 ? null : optPt(c.x + d[0] * (t2 - lat), c.y + d[1] * (t2 - lat));
           lead = P ? [c, P] : [c]; full = lead.concat([n2]);
           for (z = 0; z < nl; z++) {
-            if (pd.couches.indexOf(L[z]) < 0 || blk[z][k2]) continue;
+            if (pd.couches.indexOf(L[z]) < 0 || blk[z][k2] || (strict && L[z] !== passe.couche)) continue;
             cle = z * N + k2; cout = optLong(full) + A.pen + (P ? 0.2 : 0);
             if (vus[cle] && vus[cle].c <= cout) continue;
             ok2 = true;
@@ -11236,20 +11482,35 @@ function traduire(s) {
           }
         }
       });
-      return Object.keys(vus).map(function (k3) { return vus[k3]; });
+      vus = Object.keys(vus).map(function (k3) { return vus[k3]; });
+      /* Router le chevelu, boîtier à billes : via dans la pastille ; la liaison part du centre de la bille sur une
+         autre couche de signal (via déjà posée dans la bille : départ sans coût) */
+      if (gr && !strict && estBille(pd)) (function () {
+        var ix = Math.round((c.x - X0) / r), iy = Math.round((c.y - Y0) / r), kc, z, deja;
+        if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) return;
+        kc = iy * nx + ix;
+        if (!optEg(pt(kc), c)) return;
+        deja = B.vias.some(function (v2) { return v2.net === net && optEg(v2, c); }) || res.vias.some(function (v2) { return optEg(v2, c); });
+        if (!deja && optJeu(c, c, vd / 2, 0, net, iso) < iso - 1e-6) return;
+        for (z = 0; z < nl; z++) {
+          if (pd.couches.indexOf(L[z]) >= 0 || blk[z][kc]) continue;
+          vus.push({ k: kc, li: z, c: deja ? 0 : vd + LARGE_VIA_BILLE, lead: null, bille: !deja });
+        }
+      })();
+      return vus;
     }
     gs = new Float32Array(N * nl * 8); par = new Int32Array(N * nl * 8);
     /* A* : état = (couche, nœud, direction d'arrivée) */
     function chercher(src, cibles, but) {
       var tas = optTas(), estCible = {}, deSrc = {}, e, s, g, node, k2, li, ix, iy, dir, dd, nd, nk, ns, c, z, q, hx, bx = (but.x - X0) / r, by = (but.y - Y0) / r, tours = 0, chemin, v;
-      function heur(ax, ay) { var ddx = Math.abs(ax - bx), ddy = Math.abs(ay - by); return r * (Math.max(ddx, ddy) + 0.41421356 * Math.min(ddx, ddy)); }
+      function heur(ax, ay) { var ddx = Math.abs(ax - bx), ddy = Math.abs(ay - by); return hk * r * (Math.max(ddx, ddy) + 0.41421356 * Math.min(ddx, ddy)); }
       gs.fill(Infinity); par.fill(-1);
       /* direction (0 à 7) d'un vecteur ; un départ de pastille garde la direction de son amorce (pas de coude
          à 90° juste après), une arrivée sur pastille n'est acceptée que dans l'axe de son amorce, à 45° près */
       function sens(a, b) { return (Math.round(Math.atan2(b.y - a.y, b.x - a.x) / (Math.PI / 4)) + 8) & 7; }
-      cibles.forEach(function (q2) { estCible[q2.li * N + q2.k] = q2; q2.dout = sens(pt(q2.k), q2.lead[q2.lead.length - 1]); });
+      cibles.forEach(function (q2) { estCible[q2.li * N + q2.k] = q2; q2.dout = q2.lead ? sens(pt(q2.k), q2.lead[q2.lead.length - 1]) : -1; });
       src.forEach(function (q2) {
-        var nd2 = q2.li * N + q2.k, d2, d0 = q2.lead ? sens(q2.lead[q2.lead.length - 1], pt(q2.k)) : -1;
+        var nd2 = q2.li * N + q2.k, d2, d0 = q2.lead && q2.lead.length ? sens(q2.lead[q2.lead.length - 1], pt(q2.k)) : -1;
         if (deSrc[nd2] && deSrc[nd2].c <= q2.c) return;
         deSrc[nd2] = q2;
         for (d2 = 0; d2 < 8; d2++) {
@@ -11261,7 +11522,7 @@ function traduire(s) {
         e = tas.prendre(); s = e.s; g = gs[s];
         node = s >> 3; dir = s & 7; li = Math.floor(node / N); k2 = node - li * N; ix = k2 % nx; iy = (k2 - ix) / nx;
         if (e.f > g + heur(ix, iy) + 1e-4) continue;
-        if (estCible[node] && [0, 1, 7].indexOf((estCible[node].dout - dir + 8) & 7) >= 0) {
+        if (estCible[node] && (estCible[node].dout < 0 || [0, 1, 7].indexOf((estCible[node].dout - dir + 8) & 7) >= 0)) {
           chemin = []; v = s;
           while (v >= 0) { chemin.push(v >> 3); if (par[v] === -2) break; v = par[v]; }
           chemin.reverse();
@@ -11272,26 +11533,33 @@ function traduire(s) {
           if (q < 0 || z < 0 || q >= nx || z >= ny) continue;
           nk = z * nx + q;
           if (blk[li][nk]) continue;
-          c = g + (nd & 1 ? r * 1.41421356 : r) + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0); ns = (li * N + nk) * 8 + nd;
+          c = g + (nd & 1 ? r * 1.41421356 : r) + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0) + (kl ? larg[li][nk] * kl : 0) + (clr ? clr[li] : 0); ns = (li * N + nk) * 8 + nd;
           if (c < gs[ns] - 1e-6) { gs[ns] = c; par[ns] = s; tas.mettre(ns, c + heur(q, z)); }
         }
-        if (!vb[k2]) for (z = 0; z < nl; z++) {
+        if (!vb[k2] && !strict) for (z = 0; z < nl; z++) {
           if (z === li || blk[z][k2]) continue;
-          c = g + vd; hx = heur(ix, iy);
+          /* tracé large : une via coûte plus cher, et bien plus dans le halo d'une pastille étrangère (quelle que soit la couche) */
+          c = g + vd + (lv ? LARGE_VIA + lv[k2] * LARGE_VIA_HALO / 255 : 0); hx = heur(ix, iy);
           for (nd = 0; nd < 8; nd++) { ns = (z * N + k2) * 8 + nd; if (c < gs[ns] - 1e-6) { gs[ns] = c; par[ns] = s; tas.mettre(ns, c + hx); } }
         }
       }
       return null;
     }
-    relies = [pi[0]]; reste = pi.slice(1); sources = portails(pi[0]);
+    relies = gr ? pi.filter(function (q) { return gr(q) === gr(pi[0]); }) : [pi[0]];
+    reste = pi.filter(function (q) { return relies.indexOf(q) < 0; });
+    sources = []; relies.forEach(function (q) { sources = sources.concat(portails(q)); });
     if (!sources.length) return null;
     while (reste.length) {
       best = 0; d = Infinity;
       reste.forEach(function (q, iq) { relies.forEach(function (q2) { var dd2 = dist(OPT.pads[q].e, OPT.pads[q2].e); if (dd2 < d) { d = dd2; best = iq; } }); });
       t = reste.splice(best, 1)[0]; tg = portails(t);
-      if (!tg.length) return null;
+      if (!tg.length) { if (gr) continue; return null; }
       ch = chercher(sources, tg, OPT.pads[t].e);
-      if (!ch) return null;
+      if (!ch) { if (gr) continue; return null; }
+      np0 = res.pistes.length; nv0 = res.vias.length; ns0 = sources.length;
+      [ch.dep, ch.arr].forEach(function (q) {
+        if (q.bille && !res.vias.some(function (v2) { return optEg(v2, pt(q.k)); })) res.vias.push({ x: pt(q.k).x, y: pt(q.k).y, perc: B.via.perc, diam: vd, net: net });
+      });
       /* le chemin devient une piste par couche traversée, une via à chaque changement de couche */
       p = (ch.dep.lead || []).slice(); o = Math.floor(ch.noeuds[0] / N);
       for (j = 0; j < ch.noeuds.length; j++) {
@@ -11305,10 +11573,21 @@ function traduire(s) {
         }
         p.push(pt(k)); sources.push({ k: k, li: i, c: 0 });
       }
-      p = optNettoyer(p.concat(ch.arr.lead.slice().reverse()));
+      p = optNettoyer(p.concat((ch.arr.lead || []).slice().reverse()));
       if (p.length > 1) res.pistes.push({ couche: L[o], w: w, net: net, pts: p });
+      if (gr) {
+        /* contrôle exact de cette liaison : retirée si elle ne tient pas l'isolement ; sinon tout son groupe est relié */
+        okc = true;
+        for (i = np0; i < res.pistes.length && okc; i++) for (j = 0; j + 1 < res.pistes[i].pts.length && okc; j++)
+          okc = optLibre(res.pistes[i].pts[j], res.pistes[i].pts[j + 1], h, res.pistes[i].couche, net);
+        for (i = nv0; i < res.vias.length && okc; i++) okc = optJeu(res.vias[i], res.vias[i], vd / 2, 0, net, iso) >= iso - 1e-6;
+        if (!okc) { res.pistes.length = np0; res.vias.length = nv0; sources.length = ns0; continue; }
+        d = gr(t);
+        reste = reste.filter(function (q) { if (gr(q) !== d) return true; relies.push(q); sources = sources.concat(portails(q)); return false; });
+      }
       relies.push(t); sources = sources.concat(tg);
     }
+    if (gr) { vus2 = {}; pi.forEach(function (q) { if (relies.indexOf(q) < 0 && !vus2[gr(q)]) { vus2[gr(q)] = true; res.manque++; } }); }
     /* contrôle exact du résultat */
     for (i = 0; i < res.pistes.length; i++) for (j = 0; j + 1 < res.pistes[i].pts.length; j++)
       if (!optLibre(res.pistes[i].pts[j], res.pistes[i].pts[j + 1], h, res.pistes[i].couche, net)) return null;
@@ -11357,9 +11636,10 @@ function traduire(s) {
         n0 = B.pistes.length;
         B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
         for (i = n0; i < B.pistes.length; i++) optTendre(i);
-        /* gardé s'il supprime des passages entre pattes à frein thermique, ou, à passages égaux, s'il est plus court */
+        /* gardé s'il supprime des passages entre pattes à frein thermique, ou, à passages égaux, s'il n'est pas plus
+           long (égal compris : une piste mal dessinée est redessinée même sans gain de longueur) */
         v1 = optViolations(net);
-        if ((v1 < v0 || (v1 === v0 && optCoutNet(net) < c0 - 0.1)) && optSignature() === sig) return Math.max(c0 - optCoutNet(net), 0.001);
+        if ((v1 < v0 || (v1 === v0 && optCoutNet(net) <= c0 + 1e-6)) && optSignature() === sig) return Math.max(c0 - optCoutNet(net), 0.001);
       }
     } catch (e) { /* tracé abandonné : l'ancien est remis */ }
     B.pistes = etat.pistes; B.vias = etat.vias;
@@ -11397,11 +11677,153 @@ function traduire(s) {
     suite();
   }
 
+  /* --- Router le chevelu : chaque liaison non routée est tracée automatiquement (même recherche que le
+         re-routage), dans l'ordre de la spirale horaire autour de l'IC le plus dense (optSpirale), ou des
+         équipotentielles les plus courtes aux plus longues s'il n'y a pas d'IC ; les pistes et vias déjà posées ne
+         sont pas modifiées (elles servent d'obstacles ou de points de départ par leurs pastilles) ; une liaison
+         impossible reste en chevelu ; hors 50 Ω, hors équipotentielles de plan ou de face remplie (via vers le
+         plan à poser à la main), hors patchs ; un seul Ctrl+Z annule tout --- */
+  var LARGE_HALO = 2.0, LARGE_POIDS = 4, LARGE_VIA = 1.5, LARGE_VIA_HALO = 6, LARGE_VIA_BILLE = 1.0, LARGE_HEUR = 5, PASSE_FACE = 0.5, PASSE_INTERNE = 1.0, PASSE1_STRICTE = true;
+  function optGroupes() {
+    var f = connexite(OPT.pads);
+    return function (q) { var p = OPT.pads[q]; return f('P:' + p.ref + ':' + p.nom); };
+  }
+  function optNbGroupes(net, gr) {
+    var g = {}, n = 0, i;
+    for (i = 0; i < OPT.pads.length; i++) if (OPT.cuPads[i].net === net && !g[gr(i)]) { g[gr(i)] = true; n++; }
+    return n;
+  }
+  /* Ordre de routage en spirale horaire : on part du centre de l'IC le plus dense (le plus de pastilles par mm²,
+     8 pastilles au moins), ses pastilles sont prises couronne par couronne en s'éloignant du centre, chaque
+     couronne dans le sens horaire à partir de midi ; puis les autres équipotentielles, de la plus proche à la
+     plus lointaine (par bandes de la demi-taille de l'IC), toujours dans le sens horaire */
+  function optSpirale() {
+    var par = {}, best = null, pas;
+    OPT.pads.forEach(function (p) {
+      var o = par[p.ref] = par[p.ref] || { ref: p.ref, n: 0, x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+      o.n++; o.x0 = Math.min(o.x0, p.e.x); o.x1 = Math.max(o.x1, p.e.x); o.y0 = Math.min(o.y0, p.e.y); o.y1 = Math.max(o.y1, p.e.y);
+    });
+    Object.keys(par).forEach(function (k) {
+      var o = par[k], c = compParRef(k), g = c ? gab(c) : null;
+      if (o.n < 8 || !g || (c.type === 'PATCH' || c.type === 'PONT')) return;
+      o.pas = pasGabarit(g); o.dens = o.n / ((o.x1 - o.x0 + o.pas) * (o.y1 - o.y0 + o.pas));
+      if (!best || o.dens > best.dens + 1e-9 || (Math.abs(o.dens - best.dens) <= 1e-9 && o.n > best.n)) best = o;
+    });
+    if (!best) return null;
+    pas = best.pas;
+    return { ref: best.ref, cx: (best.x0 + best.x1) / 2, cy: (best.y0 + best.y1) / 2, pas: pas, bande: Math.max(pas, Math.max(best.x1 - best.x0, best.y1 - best.y0) / 2),
+      angle: function (x, y) { var a = Math.atan2(x - this.cx, y - this.cy); return a < -1e-9 ? a + 2 * Math.PI : Math.max(a, 0); },
+      couronne: function (x, y) { return Math.round(Math.max(Math.abs(x - this.cx), Math.abs(y - this.cy)) / this.pas * 2); } };
+  }
+  function optNetsChevelu(seul, hors, sens) {
+    var l = [], gr = optGroupes(), masse = remplit(1) || remplit(bas()), sp = optSpirale();
+    /* sens : 1 = horaire (défaut), -1 = anti-horaire */
+    function ang(x, y) { var a = sp.angle(x, y); return sens === -1 && a > 1e-9 ? 2 * Math.PI - a : a; }
+    B.nets.forEach(function (n) {
+      var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, nb = 0, exclu = false, i, p, c, cle = null, k;
+      if (seul !== null && seul !== n.nom) return;
+      for (i = 0; i < OPT.pads.length; i++) {
+        if (OPT.cuPads[i].net !== n.nom) continue;
+        p = OPT.pads[i]; c = compParRef(p.ref); nb++;
+        if (p.e.via || (c && (c.type === 'PATCH' || c.type === 'PONT')) || couchePlan(n.nom, p.e.x, p.e.y) || (masse && relieMasse(n.nom, p.e.x, p.e.y))) exclu = true;
+        x0 = Math.min(x0, p.e.x); x1 = Math.max(x1, p.e.x); y0 = Math.min(y0, p.e.y); y1 = Math.max(y1, p.e.y);
+        if (sp) {
+          /* rang : [0, couronne, angle] pour une pastille de l'IC le plus dense, [1, bande de distance, angle] sinon ; le plus petit rang compte */
+          k = p.ref === sp.ref ? [0, sp.couronne(p.e.x, p.e.y), ang(p.e.x, p.e.y)]
+                               : [1, Math.floor(Math.sqrt((p.e.x - sp.cx) * (p.e.x - sp.cx) + (p.e.y - sp.cy) * (p.e.y - sp.cy)) / sp.bande), ang(p.e.x, p.e.y)];
+          if (!cle || k[0] < cle[0] || (k[0] === cle[0] && (k[1] < cle[1] || (k[1] === cle[1] && k[2] < cle[2])))) cle = k;
+        }
+      }
+      if (nb < 2 || optNbGroupes(n.nom, gr) < 2) return;
+      if (exclu || optRf(n.nom)) { hors.n += optNbGroupes(n.nom, gr) - 1; return; }
+      l.push({ net: n.nom, d: (x1 - x0) + (y1 - y0), cle: cle || [0, 0, 0] });
+    });
+    return l.sort(function (a, b) { return a.cle[0] - b.cle[0] || a.cle[1] - b.cle[1] || a.cle[2] - b.cle[2] || a.d - b.d; }).map(function (x) { return x.net; });
+  }
+  /* Billes d'alimentation et de masse : une via dans la bille la relie à son plan */
+  function optViasBillesPlan(seul) {
+    var n = 0, f;
+    if (B.nc <= 2) return 0;
+    optDebut(); f = connexite(OPT.pads);
+    OPT.pads.forEach(function (p, i) {
+      var net = OPT.cuPads[i].net, cp;
+      if (!net || (seul !== null && seul !== net) || !estBille(p)) return;
+      cp = clePlan(net, p.e.x, p.e.y);
+      if (!cp || f('P:' + p.ref + ':' + p.nom) === f(cp)) return;
+      if (B.vias.some(function (v) { return optEg(v, p.e); })) return;
+      if (optJeu(p.e, p.e, B.via.diam / 2, 0, net, B.isolement) < B.isolement - 1e-6) return;
+      B.vias.push({ x: arr(p.e.x), y: arr(p.e.y), perc: B.via.perc, diam: B.via.diam, net: net });
+      OPT.obs = {}; n++;
+    });
+    return n;
+  }
+  function optRouterChevelu(selNet) {
+    var avant = instantane(), hors = { n: 0 }, nets, i = 0, faites = 0, restent = 0, t0 = Date.now(), tDessin = Date.now(), nvp, np = 1, passe, f1 = 0;
+    B.selP = null; B.selV = null;
+    nvp = optViasBillesPlan(selNet);
+    /* Deux passes : 1 = spirale horaire, face du dessus seule (aucune via) ; 2 = ce qui reste, spirale
+       anti-horaire, dessous prioritaire, les autres couches en second choix. Rien de posé n'est retiré */
+    passe = { couche: 1, stricte: PASSE1_STRICTE };
+    optDebut(); nets = optNetsChevelu(selNet, hors, 1);
+    function fin() {
+      cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
+      OPT = null;
+      if (faites || nvp) empiler(avant); else { B.pistes = avant.pistes; B.vias = avant.vias; }
+      message('Routage du chevelu : ' + faites + ' liaison(s) routée(s) (' + f1 + ' sur le dessus) · ' + restent + ' restante(s)' + (nvp ? ' · ' + nvp + ' via(s) de plan dans les billes' : '') +
+        (hors.n ? ' · ' + hors.n + ' liaison(s) de plan, de masse ou 50 Ω non traitée(s)' : '') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s', !faites && !nvp);
+      toutRafraichir();
+    }
+    function un(net) {
+      var etat = { pistes: B.pistes, vias: B.vias }, lg = {}, w = 0, m = 0, gr, c0, c1, res;
+      /* équipotentielle sans cuivre : chaque pastille est son propre groupe, pas de calcul de connexité */
+      OPT.obs = {};
+      gr = B.pistes.some(function (t) { return t.net === net; }) || B.vias.some(function (v) { return v.net === net; }) ? optGroupes() : function (q) { return q; };
+      c0 = optNbGroupes(net, gr);
+      B.pistes.forEach(function (t) { if (t.net === net) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
+      Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
+      if (!w) w = largeurNet(net);
+      try {
+        res = optRouterNet(net, w, gr, passe);
+        if ((!res || !res.pistes.length) && B.largeur < w - 1e-6) res = optRouterNet(net, B.largeur, gr, passe);
+        if (res && res.pistes.length) {
+          B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
+          /* pas de tension des pistes ici : le tracé reste large, Optimiser resserre ensuite */
+          c1 = 1 + res.manque;
+          if (c1 < c0) { faites += c0 - c1; restent += c1 - 1; return true; }
+        }
+      } catch (e) { /* tracé abandonné : l'état d'avant est remis */ }
+      B.pistes = etat.pistes; B.vias = etat.vias; restent += c0 - 1;
+      return false;
+    }
+    function suite() {
+      if (i >= nets.length) {
+        if (np === 1) {
+          np = 2; f1 = faites; restent = 0; i = 0; passe = { couche: bas(), stricte: false };
+          OPT.obs = {}; nets = optNetsChevelu(selNet, { n: 0 }, -1);
+          if (nets.length) { suite(); return; }
+        }
+        fin(); return;
+      }
+      message('Routage du chevelu : passe ' + np + '/2 · ' + (i + 1) + '/' + nets.length + ' · ' + nets[i] + ' · ' + faites + ' liaison(s) routée(s)');
+      requestAnimationFrame(function () { setTimeout(function () {
+        if (un(nets[i]) && Date.now() - tDessin > 700) { dessiner(); tDessin = Date.now(); }
+        i++; suite();
+      }, 0); });
+    }
+    if (!nets.length) { fin(); return; }
+    suite();
+  }
+
   /* --- Lancement : « quoi » = rerouter, tout, vias, coudes, ecarter, centrer, grille ; sélection en cours = seule cible --- */
   var OPT_ETAPES = ['vias', 'centrer', 'grille', 'ecarter', 'coudes'];
   /* Le calcul peut durer quelques secondes : le message est affiché avant de le lancer */
   function optimiser(quoi) {
     if (B.route) terminerRoute();
+    if (quoi === 'chevelu') {
+      message('Routage du chevelu…'); cv.style.cursor = 'progress';
+      optRouterChevelu(B.selP ? B.pistes[B.selP.i].net : (B.selV !== null ? B.vias[B.selV].net : null));
+      return;
+    }
     if (!B.pistes.length) { message('Aucune piste à optimiser.', true); return; }
     message('Optimisation en cours…'); cv.style.cursor = 'progress';
     if (quoi === 'rerouter') { optRerouter(B.selP ? B.pistes[B.selP.i].net : (B.selV !== null ? B.vias[B.selV].net : null)); return; }
@@ -11410,24 +11832,25 @@ function traduire(s) {
     }, 0); });
   }
   function optLancer(quoi, avantExt, entete, sansModif) {
-    var avant, r, selV, selP, l = [], i, e, sig, etat, annulees = 0, x, tour, encore;
+    var avant, r, selV, selP, l = [], i, e, sig, etat, annulees = 0, x, tour, encore, etapes;
     selV = B.selV; selP = B.selP ? B.selP.i : null;
     avant = avantExt || instantane();
     B.selP = null; B.selV = null;
     optDebut();
     if (selV === null && selP === null) optFusionner();
     sig = optSignature();
-    r = { vias: { dep: 0, sup: 0 }, centrer: 0, grille: 0, ecarter: 0, coudes: 0 };
+    r = { vias: { dep: 0, sup: 0 }, centrer: 0, grille: 0, ecarter: 0, coudes: 0, milieu: 0 };
+    etapes = quoi === 'milieu' ? ['milieu'] : OPT_ETAPES;
     /* « tout » : la suite des étapes est reprise tant qu'elle modifie quelque chose (3 tours au plus) */
     for (tour = 0, encore = true; tour < (quoi === 'tout' && selV === null && selP === null ? 3 : 1) && encore; tour++) {
       encore = false;
-      for (i = 0; i < OPT_ETAPES.length; i++) {
-        e = OPT_ETAPES[i];
+      for (i = 0; i < etapes.length; i++) {
+        e = etapes[i];
         if (quoi !== 'tout' && quoi !== e) continue;
         if (e === 'vias' ? selP !== null : selV !== null) continue;
         etat = { pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj) };
         optDebut();
-        x = e === 'vias' ? optVias(selV) : e === 'centrer' ? optCentrer(selP) : e === 'grille' ? optGrille(selP) : e === 'ecarter' ? optEcarter(selP) : optCoudes(selP);
+        x = e === 'milieu' ? optMilieu(selP) : e === 'vias' ? optVias(selV) : e === 'centrer' ? optCentrer(selP) : e === 'grille' ? optGrille(selP) : e === 'ecarter' ? optEcarter(selP) : optCoudes(selP);
         B.pistes.forEach(function (t) { t.pts = optNettoyer(t.pts); });
         if (optSignature() !== sig) { B.pistes = etat.pistes; B.vias = etat.vias; annulees++; continue; }
         if (e === 'vias') { r.vias.dep += x.dep; r.vias.sup += x.sup; if (x.dep || x.sup) encore = true; }
@@ -11440,6 +11863,7 @@ function traduire(s) {
     if (r.vias && (r.vias.dep || r.vias.sup)) l.push(r.vias.dep + ' via(s) déplacée(s), ' + r.vias.sup + ' supprimée(s)');
     if (r.coudes) l.push(r.coudes + ' coude(s) à 45°');
     if (r.ecarter) l.push(r.ecarter + ' segment(s) écarté(s)');
+    if (r.milieu) l.push(r.milieu + ' segment(s) centré(s) entre les voisines');
     if (r.centrer) l.push(r.centrer + ' arrivée(s) centrée(s)');
     if (r.grille) l.push(r.grille + ' segment(s) aligné(s) sur la grille');
     if (x) l.push(x + ' sortie(s) de pastille hors axe restante(s) (Re-router)');
@@ -11452,8 +11876,8 @@ function traduire(s) {
     var m = $('menu'), r = $('btOptimiser').getBoundingClientRect(), cible = B.selV !== null ? 'via sélectionnée' : (B.selP ? 'piste sélectionnée' : 'tout le circuit');
     m.textContent = '';
     m.appendChild(E('div', 'titre', 'Optimiser · ' + cible));
-    [['rerouter', 'Re-router au plus court, ligne par ligne, puis tout'], ['tout', 'Tout, dans cet ordre de priorité'], ['vias', '1 · Vias : au plus court, inutiles supprimées'], ['coudes', '2 · Coudes à 45° au lieu de 90°'],
-     ['ecarter', '3 · Écarter les pistes qui se longent'], ['centrer', '4 · Arrivées centrées, dans l\'axe des pastilles'], ['grille', '5 · Aligner sur la grille']].forEach(function (x) {
+    [['chevelu', 'Router le chevelu (liaisons non routées)'], ['rerouter', 'Re-router au plus court, ligne par ligne, puis tout'], ['tout', 'Tout, dans cet ordre de priorité'], ['vias', '1 · Vias : au plus court, inutiles supprimées'], ['coudes', '2 · Coudes à 45° au lieu de 90°'],
+     ['ecarter', '3 · Écarter les pistes qui se longent'], ['centrer', '4 · Arrivées centrées, dans l\'axe des pastilles'], ['grille', '5 · Aligner sur la grille'], ['milieu', 'Centrer entre les voisines (hors « Tout »)']].forEach(function (x) {
       var o = E('div', 'option', x[1]);
       o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); optimiser(x[0]); });
       m.appendChild(o);
@@ -11865,7 +12289,7 @@ function traduire(s) {
      Un BLOCK par composant (géométrie locale, miroir déjà appliqué s'il est dessous),
      INSERT avec position et rotation ; XDATA AZSCAD : composants, équipotentielles, en-tête
      ====================================================================== */
-  var CALQUES = [['CUIVRE_1', 1], ['CUIVRE_2', 6], ['CUIVRE_3', 4], ['CUIVRE_4', 5], ['CUIVRE_5', 3], ['CUIVRE_6', 30], ['VERNIS_DESSUS', 8], ['VERNIS_DESSOUS', 9],
+  var CALQUES = [['CUIVRE_1', 1], ['CUIVRE_2', 6], ['CUIVRE_3', 4], ['CUIVRE_4', 5], ['CUIVRE_5', 3], ['CUIVRE_6', 30], ['CUIVRE_7', 40], ['CUIVRE_8', 60], ['VERNIS_DESSUS', 8], ['VERNIS_DESSOUS', 9],
                  ['TEXTE_DESSUS', 7], ['TEXTE_DESSOUS', 150], ['PERCAGE', 2], ['CHEVELU', 51], ['AZSCAD', 8]];
   var MARGE_VERNIS = 0.1;
   function nb(v) { return String(arr(v)); }
@@ -11958,7 +12382,7 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'COUCHES=' + B.nc, 'PLANVCC=' + B.planVcc, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'COUCHES=' + B.nc, 'PLANVCC=' + B.planVcc, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
@@ -12023,7 +12447,8 @@ function traduire(s) {
         if (k.VIA && k.VIA.indexOf('/') > 0) r.via = { perc: lireNb(k.VIA.split('/')[0]) || 0.8, diam: lireNb(k.VIA.split('/')[1]) || 1.6 };
         if (lireNb(k.SUBSTRAT)) r.substrat = lireNb(k.SUBSTRAT);
         if (lireNb(k.ISOLEMENT)) r.isolement = lireNb(k.ISOLEMENT);
-        if ([2, 4, 6].indexOf(parseInt(k.COUCHES, 10)) >= 0) r.nc = parseInt(k.COUCHES, 10);
+        r.reglesAuto = k.REGLESAUTO === '1';
+        if ([2, 4, 6, 8].indexOf(parseInt(k.COUCHES, 10)) >= 0) r.nc = parseInt(k.COUCHES, 10);
         r.planVcc = k.PLANVCC || '';
         if (lireNb(k.DEGPLAN)) r.degPlan = lireNb(k.DEGPLAN);
         if (lireNb(k.HDIEL)) r.hDiel = lireNb(k.HDIEL);
@@ -12060,7 +12485,7 @@ function traduire(s) {
     var r = lireBrd(texte);
     if (!r.ok) { message('Aucun circuit azs-cad dans ' + nom, true); return; }
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
-    B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement;
+    B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement; B.reglesAuto = !!r.reglesAuto;
     B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour;
     B.planVcc = r.planVcc; B.degPlan = r.degPlan; B.hDiel = r.hDiel; B.coupe = r.coupe || null; B.outilCoupe = null; B.remp = r.remp || '';
     if (r.nc) B.nc = r.nc;
@@ -12139,7 +12564,7 @@ function traduire(s) {
   /* Dans azs-cad.html : un clic dans le module lui donne le clavier (raccourcis) */
   window.addEventListener('pointerdown', function () { if (!document.hasFocus()) window.focus(); }, true);
   window.AZS_MODULE = {
-    chargerLib: function (texte, nom) { LIB = lireLib(texte).lib; B.libNom = nom; PAS_GAB = {}; sources(); toutRafraichir(); },
+    chargerLib: function (texte, nom) { LIB = lireLib(texte).lib; B.libNom = nom; PAS_GAB = {}; MAT_GAB = {}; sources(); toutRafraichir(); },
     ouvrirBrd: ouvrirBrd,
     recevoirSchema: recevoirSchema,
     nommer: function (n) { $('nomBrd').value = n; },
