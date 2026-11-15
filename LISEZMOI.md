@@ -1,85 +1,54 @@
-# azs-cad — CAO de circuits imprimés dans le navigateur
+# azs-cad
 
-**🇫🇷 Français** · [🇬🇧 English](README.md)
+Une CAO de circuits imprimés qui tourne dans un navigateur : **une seule page HTML, `azs-cad.html`**, en HTML, CSS et JavaScript natifs, sans librairie ni dépendance, utilisable hors ligne. Dans l'esprit d'Eagle 4.01 (bibliothèque, schéma, circuit), sans en être un clone. L'interface est en français ou en anglais selon le navigateur. Version actuelle : **1.50.1**.
 
-Une seule page HTML, `azs-cad.html` : bibliothèque, schéma et circuit imprimé d'un même projet, en onglets. HTML/CSS/JavaScript natif, aucune dépendance, fonctionne hors ligne. Esprit Eagle 4.01, sans en être un clone. Interface en français ou en anglais selon le navigateur.
+![Schéma](azs-schema.png)
 
-![Circuit](capture-circuit.png)
+![Circuit](azs-circuit.png)
 
-## Fonctions
+![Aperçu Gerber](azs-gerber.png)
 
-- **Bibliothèque** : gabarits normalisés DIL/CMS (DIP, SOIC, QFN, TQFP, 0402–2512…), nom des pattes, import de gabarits fournisseur `.zip` / `.lbr`.
-- **Schéma** : R, C, D, L, PAD, circuits du projet, bus, VCC+/GND, lignes 50 Ω, bouton **Optimiser** (voir plus bas).
-- **Circuit** : 2, 4 ou 6 couches, plans GND et VCC, routage manuel 45°, vias automatiques, contrôle d'isolement, sérigraphie au vrai, bouton **Optimiser** (voir plus bas).
-- **Patchs RF 50 Ω** (400 à 3000 MHz), cuivre calculé : diviseur Wilkinson, diviseur en T 2/4/8 sorties, coupleur directionnel, filtres passe-bas et passe-bande, antenne patch, monopôle λ/4.
-- **Sorties** : Gerber RS-274X + Excellon en zip avec aperçu, nomenclature `.bom.xls` et `.bom.csv` (colonnes de `BOMsample.xls`).
-- **Fichiers** : projet `<projet>.azs.zip` qui contient `<projet>.lib`, `<projet>.sch.dxf` et `<projet>.brd.dxf` (AutoCAD R12). Ctrl+S enregistre le projet.
-- **Ouverture rapide** des projets `.azs.zip`, avec barre de progression.
+## Modules
 
-![Schéma](capture-schema.png)
+Un seul projet est ouvert à la fois, partagé en mémoire par les trois modules (rien n'est stocké dans le navigateur).
 
-![Patch](capture-patch.png)
+- **Bibliothèque** : gabarits THT et CMS courants, noms de pattes, gabarits normalisés IPC-7351 (SSOP, TSSOP, MSOP, TQFP jusqu'à 208 pattes, QFN jusqu'à 64 pattes, DFN/SON, BGA, FBGA, uBGA/CSP, WLCSP, SOT, D2PAK, quartz, CMS 0201 à 1812, tantale A à D ; `internal.lib` les charge tous), import de gabarits fabricants (`.zip` ou `.lbr`).
+- **Schéma** : passifs, circuits intégrés (symbole logique), connecteurs, bus, alimentations, lignes 50 Ω, choix de la fonction des pattes multifonction. Optimiser : placement, fils à 45°, fils espacés, étiquettes d'équipotentielle à la place des fils trop longs, rangement des alimentations, **revue des découplages**.
+- **Circuit** : 2 à 8 couches, plans de masse et d'alimentation, routage manuel à 45°, vias automatiques, via dans la pastille des boîtiers à billes, contrôle des espacements, sérigraphie, optimisation et routage automatique.
 
-## Optimiser le schéma
+## Circuit
 
-Le schéma est chargé tel qu'il a été enregistré. Le bouton **Optimiser ▾** de l'onglet Schéma range l'ensemble ; Ctrl+Z revient à l'état d'avant.
+- **Empilage** : une masse unique au dessous, un plan par alimentation secondaire (tensions identiques regroupées sur une même couche), signaux partout. Panneau *Plans d'alimentation* : réseau par réseau, auto / sans plan / couche interne choisie.
+- **Minimums de fabrication** PCBCart + 33 % ; seuls la largeur de piste et le perçage des vias se règlent, le Ø de cuivre en découle.
+- **Router le chevelu** : routage automatique par priorité (lignes 50 Ω, signaux, alimentations, masses), en spirale horaire depuis l'IC le plus dense, passe dessus puis dessous.
+- **Re-router** : un tracé n'est remplacé que s'il n'est pas plus long ; patte par patte, tronçon par tronçon, pas à pas (Espace, flèches, Échap), décision et raison affichées.
+- **Optimiser** : vias, coudes à 45°, pistes qui se longent espacées, pistes centrées entre voisines, LED, résistances et condensateurs de liaison rapprochés de leurs pattes.
+- **Pont d'irrigation** : un plan d'alimentation coupé en îlots est ré-alimenté par une ligne de 1 mm × 5 mm sur les couches internes de signal, quatre vias façon DIL et une sérigraphie (IRRIGATION réseau).
+- **Découplages** : la *Revue* propose, par patte d'alimentation d'IC, un 100 nF et un condensateur de réservoir, et supprime les redondants (appliqué aussi au schéma). *Placer* pose chaque condensateur dans la place libre la plus proche de la patte servie, en spirale.
 
-- **Symboles lisibles** : circuits intégrés et connecteurs redessinés en symboles logiques (entrées à gauche, sorties à droite), sans chercher à ressembler au boîtier réel.
-- **Placement automatique** de gauche à droite, passifs placés dans l'axe de leur patte, GND / VCC réduits.
-- **Fils à 45°**, écartés les uns des autres, croisements à angle droit seulement.
-- **Étiquettes de réseau** à la place des fils longs, noms de réseaux uniques, aucun texte sur un fil.
-- **Clic** sur un fil ou une étiquette : tout le réseau (pattes et fils) s'allume. **Clic droit** : renomme le réseau.
-- **Wire instead of labels** : remplace une étiquette par un fil, un par un.
+## RF 50 Ω
 
-| Avant | Après |
-|---|---|
-| ![Avant](optimiser-schema-avant.png) | ![Après](optimiser-schema-apres.png) |
+- La largeur de ligne suit l'épaisseur du substrat.
+- Clic droit sur une ligne 50 Ω : longueur, **Arrondir** (un seul arc sur toute la ligne pleine largeur).
+- Le routeur ne laisse passer un autre signal sous une ligne 50 Ω épaisse qu'en dernier recours : couche interne, à 90°, droit, longueur fixe, compté dans le bilan.
+- Motifs de 400 à 3000 MHz : diviseur Wilkinson 2 voies, diviseur en T 2/4/8 sorties, coupleur directionnel 15/20/30 dB, filtres passe-bas et passe-bande, antenne patch rectangulaire, monopôle λ/4.
 
-## Optimiser le circuit
+## Sorties
 
-Pour un circuit routé entièrement à la main. Menu **Optimiser ▾** de l'onglet Circuit, sur tout le circuit ou sur la piste / via sélectionnée. Ctrl+Z annule.
+- Gerber RS-274X et Excellon dans une archive avec aperçu (zones non irriguées visibles). L'export est refusé tant qu'un texte de sérigraphie est sur une pastille.
+- Nomenclature `.xls` et `.csv` aux colonnes de la BOM de référence.
+- Projet : `<projet>.azs.zip` contenant `<projet>.lib`, `<projet>.sch.dxf` et `<projet>.brd.dxf` (DXF R12). Ctrl+S l'enregistre. Le circuit n'est jamais modifié tout seul : « Mettre à jour le circuit » est proposé quand le schéma diffère.
 
-![Menu Optimiser du circuit](optimiser-circuit-menu.png)
+## Utilisation
 
-Par ordre de priorité :
+1. Onglet Bibliothèque : créer un projet, ouvrir une bibliothèque de gabarits, cocher les composants.
+2. Onglet Schéma : poser, câbler, optimiser.
+3. Onglet Circuit : mettre à jour depuis le schéma, router, optimiser, exporter.
 
-1. **Vias** : déplacés au plus court dans le respect de l'isolement, vias inutiles supprimées.
-2. **Coudes à 45°** au lieu de 90°.
-3. **Pistes qui se longent** : écartées.
-4. **Arrivées centrées** : en mode automatique la grille est alignée sur la pastille et la piste part dans son axe ; en manuel elle reste sur la grille la plus proche.
-5. **Grille** : alignement sur la grille adaptée aux gabarits (par exemple 0,8 mm pour un BGA, incompatible avec 2,54 ou 1,27 mm).
+Ouvrir un projet existant : choisir son `.azs.zip` (ancien projet : `.lib` avec ses `.sch.dxf` et `.brd.dxf`).
 
-**Re-router au plus court, ligne par ligne** : chaque réseau est libéré puis refait en automatique, deux passes, puis les étapes de finition. Règle : on ne passe pas une piste entre deux pattes dont l'une est un frein thermique (si le frein apparaît après le routage, la piste est refaite).
-
-| Avant (routé à la main) | Après (re-routé) |
-|---|---|
-| ![Avant](optimiser-circuit-avant.png) | ![Après](optimiser-circuit-apres.png) |
-
-Sur `tvp5150_essai` : 1707 → 1156 mm de piste, 41 → 13 vias, plus aucune sortie de pastille hors axe, plus aucun îlot de cuivre dans les plans (contrôlé sur les Gerber).
-
-## Gerber et nomenclature (format fabricant)
-
-Sorties prêtes à envoyer à un fabricant de circuits imprimés / assembleur (« maker ») :
-
-- **Gerber RS-274X + Excellon** en un seul zip, avec aperçu avant export : cuivre de chaque couche, plans avec frein thermique et îlots supprimés, masque, sérigraphie, perçages.
-- **Nomenclature** `.bom.xls` et `.bom.csv` (séparateur `;`, UTF-8) aux colonnes de `BOMsample.xls` : Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. Une ligne par type + valeur + gabarit + face, repères regroupés.
-
-Menu Fichier de l'onglet Circuit :
-
-![Menu Fichier](sorties-menu-fichier.png)
-
-Aperçu Gerber avant téléchargement : une miniature par fichier produit (cuivre des 6 couches, vernis, sérigraphie…), puis vue détaillée d'une couche, avec cases à cocher pour superposer les couches.
-
-![Aperçu Gerber, miniatures](sorties-gerber-miniatures.png)
-
-![Aperçu Gerber, cuivre 1](sorties-gerber-couche.png)
-
-Nomenclature `.bom.csv` produite pour `tvp5150_essai` :
-
-![Nomenclature](sorties-bom-tableau.png)
+Exemple d'optimisation du circuit sur `tvp5150_essai` : longueur des pistes de 1707 à 1156 mm, vias de 41 à 13.
 
 ## Licence
 
-[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.fr) : usage non commercial libre, avec mention « azs-cad — Eric PERRET — https://github.com/ericperret/pcb-cad ». Usage commercial sur autorisation écrite : eperret@azs.fr. Voir `LICENSE`.
-
-© Eric PERRET 2026 · eperret@azs.fr · www.azs.fr
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.fr) : usage non commercial libre avec mention de l'auteur, Eric PERRET. Tout usage commercial nécessite l'autorisation écrite de l'auteur (eperret@azs.fr).

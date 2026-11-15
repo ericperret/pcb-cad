@@ -1,85 +1,54 @@
-# azs-cad — PCB design in the browser
+# azs-cad
 
-[🇫🇷 Français](LISEZMOI.md) · **🇬🇧 English**
+A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-cad.html`**, plain HTML, CSS and JavaScript, no library, no dependency, works offline. Inspired by the spirit of Eagle 4.01 (library, schematic, board), not a clone. The interface is French or English depending on the browser. Current version: **1.50.1**.
 
-A single HTML page, `azs-cad.html`: library, schematic and board of one project, in tabs. Plain HTML/CSS/JavaScript, no dependency, works offline. In the spirit of Eagle 4.01 without cloning it. The interface is in French or English depending on the browser.
+![Schematic](azs-schematic.png)
 
-![Board](screenshot-board.png)
+![Board](azs-board.png)
 
-## Features
+![Gerber preview](azs-gerber.png)
 
-- **Library**: standard THT/SMD footprints (DIP, SOIC, QFN, TQFP, 0402–2512…), pin names, vendor footprint import (`.zip` / `.lbr`).
-- **Schematic**: R, C, D, L, PAD, project ICs, buses, VCC+/GND, 50 Ω lines, **Optimize** button (see below).
-- **Board**: 2, 4 or 6 layers, GND and VCC planes, manual 45° routing, automatic vias, clearance check, true-size silkscreen, **Optimize** button (see below).
-- **50 Ω RF patches** (400 to 3000 MHz), computed copper: Wilkinson splitter, T splitter with 2/4/8 outputs, directional coupler, low-pass and band-pass filters, patch antenna, λ/4 monopole.
-- **Outputs**: Gerber RS-274X + Excellon as a zip with preview, bill of materials as `.bom.xls` and `.bom.csv` (columns of `BOMsample.xls`).
-- **Files**: project `<project>.azs.zip` containing `<project>.lib`, `<project>.sch.dxf` and `<project>.brd.dxf` (AutoCAD R12). Ctrl+S saves the project.
-- **Fast opening** of `.azs.zip` projects, with a progress bar.
+## Modules
 
-![Schematic](screenshot-schematic.png)
+One project is open at a time and shared in memory by the three modules (nothing is stored in the browser).
 
-![Patch](screenshot-patch.png)
+- **Library**: common THT and SMD footprints, pin names, standard footprints after IPC-7351 (SSOP, TSSOP, MSOP, TQFP up to 208 pins, QFN up to 64 pins, DFN/SON, BGA, FBGA, uBGA/CSP, WLCSP, SOT, D2PAK, crystals, SMD 0201 to 1812, tantalum A to D; `internal.lib` loads them all), import of manufacturer footprints (`.zip` or `.lbr`).
+- **Schematic**: passives, integrated circuits (logic symbol), connectors, buses, supplies, 50 ohm lines, multifunction pin choice. Optimize: placement, 45 degree wires, spaced wires, net labels instead of overlong wires, supply ranking, **decoupling review**.
+- **Board**: 2 to 8 layers, ground and supply planes, manual routing at 45 degrees, automatic vias, via in pad for ball grid packages, clearance checks, silkscreen, optimization and automatic routing.
 
-## Optimizing the schematic
+## Board
 
-The schematic loads as it was saved. The **Optimize ▾** button of the Schematic tab tidies everything; Ctrl+Z goes back.
+- **Stack-up**: one ground plane below, one plane per secondary supply (same voltages grouped on one layer), signals everywhere. Panel *Supply planes*: per net, auto / no plane / chosen inner layer.
+- **Fabrication minimums** from PCBCart + 33 %; only track width and via drill are set, the copper diameter follows.
+- **Route the ratsnest**: automatic routing by priority (50 ohm lines, signals, supplies, grounds), clockwise spiral from the densest IC, top then bottom pass.
+- **Re-route**: shortest path kept only if not longer; pin by pin, segment by segment, step by step (Space, arrows, Esc) with the decision and its reason displayed.
+- **Optimize**: vias, 45 degree corners, parallel tracks spaced, tracks centered between neighbours, LEDs / resistors / coupling capacitors moved close to their pins.
+- **Irrigation bridge**: a supply plane cut in two islands is fed again by a 1 mm x 5 mm line on the inner signal layers with four DIL-like vias and a silkscreen text (IRRIGATION net).
+- **Decoupling**: *Review* proposes, per IC supply pin, one 100 nF and one bulk capacitor, and deletes the redundant ones (applied to the schematic too). *Place* puts each capacitor in the nearest free spot around the pin it serves, in a spiral.
 
-- **Readable symbols**: ICs and connectors redrawn as logical symbols (inputs left, outputs right), not trying to look like the real package.
-- **Automatic placement** from left to right, passives placed in the axis of their pin, GND / VCC reduced.
-- **45° wires**, kept apart, crossings at right angles only.
-- **Net labels** instead of long wires, unique net names, no text on a wire.
-- **Click** a wire or a label: the whole net (pins and wires) lights up. **Right-click**: renames the net.
-- **Wire instead of labels**: replaces a label by a wire, one at a time.
+## 50 ohm RF
 
-| Before | After |
-|---|---|
-| ![Before](optimiser-schema-avant.png) | ![After](optimiser-schema-apres.png) |
+- Line width follows the substrate thickness.
+- Right click on a 50 ohm line: length, **Round** (one single arc over the whole full-width line).
+- The router lets other signals cross under a thick 50 ohm line only as a last resort: inner layer, at 90 degrees, straight, fixed length, counted in the report.
+- Patterns from 400 to 3000 MHz: Wilkinson 2-way divider, T divider 2/4/8 outputs, directional coupler 15/20/30 dB, low-pass and band-pass filters, rectangular patch antenna, quarter-wave monopole.
 
-## Optimizing the board
+## Outputs
 
-For a board routed entirely by hand. **Optimize ▾** menu of the Board tab, on the whole board or on the selected trace / via. Ctrl+Z undoes.
+- Gerber RS-274X and Excellon in a zip with preview (unfed zones shown). The export is refused while a silkscreen text lies on a pad.
+- Bill of materials `.xls` and `.csv` with the columns of the sample BOM.
+- Project: `<project>.azs.zip` containing `<project>.lib`, `<project>.sch.dxf` and `<project>.brd.dxf` (DXF R12). Ctrl+S saves it. The board is never changed by itself: *Update the board* is offered when the schematic differs.
 
-![Board Optimize menu](optimiser-circuit-menu.png)
+## Use
 
-In order of priority:
+1. Library tab: create a project, open a footprint library, tick the components.
+2. Schematic tab: place, wire, optimize.
+3. Board tab: update from the schematic, route, optimize, export.
 
-1. **Vias**: moved to the shortest path while keeping clearance, useless ones removed.
-2. **45° corners** instead of 90°.
-3. **Traces running side by side**: spread apart.
-4. **Centred ends**: in automatic mode the grid is aligned on the pad and the trace leaves along its axis; in manual mode it stays on the nearest grid.
-5. **Grid**: alignment on the grid suited to the footprints (for example 0.8 mm for a BGA, incompatible with 2.54 or 1.27 mm).
+Open an existing project by choosing its `.azs.zip` (an old project: `.lib` with its `.sch.dxf` and `.brd.dxf`).
 
-**Re-route at shortest, line by line**: each net is released then redone automatically, two passes, then the finishing steps. Rule: no trace between two pins when at least one is a thermal relief (if the relief appears after routing, the trace is redone).
-
-| Before (hand-routed) | After (re-routed) |
-|---|---|
-| ![Before](optimiser-circuit-avant.png) | ![After](optimiser-circuit-apres.png) |
-
-On `tvp5150_essai`: 1707 → 1156 mm of trace, 41 → 13 vias, no pad exit off-axis left, no copper island left in the planes (checked on the Gerbers).
-
-## Gerber and bill of materials (maker format)
-
-Outputs ready to send to a PCB manufacturer / assembler (a "maker"):
-
-- **Gerber RS-274X + Excellon** in a single zip, with a preview before export: copper of each layer, planes with thermal reliefs and islands removed, solder mask, silkscreen, drills.
-- **Bill of materials** `.bom.xls` and `.bom.csv` (`;` separator, UTF-8) with the columns of `BOMsample.xls`: Manufacturer, Manufacturer Part Number, Designator, Qty, Description, Case, SMD/BGA/LCC/TH, Top/Bottom, points, Total points, Comment. One line per type + value + footprint + side, designators grouped.
-
-File menu of the Board tab:
-
-![File menu](sorties-menu-fichier.png)
-
-Gerber preview before download: one thumbnail per produced file (copper of the 6 layers, solder mask, silkscreen…), then a detailed view of one layer, with check boxes to overlay layers.
-
-![Gerber preview, thumbnails](sorties-gerber-miniatures.png)
-
-![Gerber preview, copper 1](sorties-gerber-couche.png)
-
-`.bom.csv` produced for `tvp5150_essai`:
-
-![Bill of materials](sorties-bom-tableau.png)
+Example of board optimization on `tvp5150_essai`: track length from 1707 to 1156 mm, vias from 41 to 13.
 
 ## License
 
-[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.en): free for non-commercial use, with credit "azs-cad — Eric PERRET — https://github.com/ericperret/pcb-cad". Commercial use requires written permission: eperret@azs.fr. See `LICENSE`.
-
-© Eric PERRET 2026 · eperret@azs.fr · www.azs.fr
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/): free non commercial use with attribution to Eric PERRET. Any commercial use requires the written authorization of the author (eperret@azs.fr).
