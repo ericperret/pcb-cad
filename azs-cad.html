@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-14
- Version    : 1.50.1
+ Date       : 2026-11-16
+ Version    : 1.54.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.2.1, Schéma 1.13.0, Circuit 1.41.1 (cartouche et
+ Modules    : Bibliothèque 1.2.1, Schéma 1.13.0, Circuit 1.45.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -244,6 +244,19 @@
                       revenaient) ; à l'ouverture d'un projet, circuit comparé au
                       schéma : s'ils diffèrent, « Mettre à jour le circuit »
                       est proposé
+   1.51.0 2026-11-15  Circuit 1.42.0 : ponts d'irrigation gérés à la main (menu
+                      Irrigation : Placer, Reset, Déplacer) ; Router le chevelu
+                      ne pose plus de pont (doublons)
+   1.52.0 2026-11-15  Circuit 1.43.0 : sérigraphie « pro » (menu Texte : format,
+                      replacer tout, contrôle ; trait de rappel ; sérigraphie
+                      coupée sur les pastilles dans le Gerber, export jamais
+                      refusé)
+   1.53.0 2026-11-15  Circuit 1.44.0 : marge du contour réglable (1 mm au moins),
+                      coins droits, arrondis convexes ou rognés concaves ; mires
+                      et « AZS » comprises dans la carte
+   1.54.0 2026-11-16  Circuit 1.45.0 : re-routage en deux passages sur couches
+                      signal hiérarchisées (GND interdit, VCC en dernier espoir) ;
+                      via permise dans une pastille CMS de son réseau
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -322,7 +335,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.50.1</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.54.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -6789,8 +6802,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-14
- Version    : 1.41.1
+ Date       : 2026-11-16
+ Version    : 1.45.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -7330,6 +7343,58 @@ function traduire(s) {
                       le schéma n'arrive que par « Mettre à jour le circuit » ;
                       differeDuSchema(texte) : composants (repère, type, valeur)
                       ou équipotentielles différents du schéma
+   1.42.0 2026-11-15  Ponts d'irrigation gérés à la main, menu Irrigation ▾ :
+                      Placer (zones de plan d'alimentation non reliées ; chaque
+                      pont traverse à 90° une ligne 50 Ω, centré, longueur fixe
+                      et minimale (vias juste hors de la zone d'exclusion), la
+                      moins servie en ponts d'abord, à l'endroit le plus
+                      dégagé ; sans place :
+                      avertissement, pose à la main), Reset (tous les ponts
+                      supprimés, sans confirmation, Ctrl+Z annule), Déplacer
+                      (clic sur la ligne, une via ou le texte IRRIGATION : le
+                      pont entier est sélectionné et glissé d'un bloc, le long
+                      de la ligne 50 Ω qu'il traverse (courbure suivie),
+                      isolement contrôlé au lâcher ; Suppr le supprime).
+                      Router le chevelu ne pose plus de pont (doublons à chaque
+                      routage) : avertissement seulement. Pont marqué PONT=n
+                      dans le DXF ; ponts des anciens fichiers reconnus à leur
+                      forme. Optimiser, Re-router, dé-routage : ponts intouchés
+   1.43.0 2026-11-15  Sérigraphie : menu Texte ▾ (texte libre T, Format…, Replacer
+                      tout automatiquement, Contrôle). Format du circuit (DXF
+                      SERIG=) : contenu Référence (R1, par défaut), Référence.
+                      valeur (R1.100K) ou Valeur (100K) ; hauteur 0,8 à 1,5 mm ;
+                      orientation horizontale ou verticale (dessous : en miroir).
+                      Placement automatique autour de la boîte des pastilles
+                      (jamais du boîtier dessiné) : collé à 0,3 / 0,8 / 1,3 mm
+                      sur les 4 côtés puis aux coins, sinon à distance (12 mm
+                      au plus) relié par un trait de rappel de 0,15 mm (sans
+                      croisement, hors pastilles et textes) ; circuits d'abord ;
+                      vias et contour comptés. Trait de rappel dès que le texte
+                      est à plus de 1,5 mm de ses pastilles, à la main aussi.
+                      Texte sur une pastille : ne bloque que lui-même, encadré
+                      de rouge, coupé dans le Gerber (polarité claire sur
+                      pastilles et vias) ; export Gerber jamais refusé.
+                      Contrôle : textes sur pastille et chevauchements
+   1.44.0 2026-11-15  Contour : Marge (mm) réglable, 5 par défaut, 1 au moins ;
+                      Coins : droits, arrondis convexes (arc de rayon R ≥ 2 mm
+                      centré sur la mire) ou rognés concaves (quart de cercle
+                      rentrant de rayon R ≥ 1 mm centré sur le coin, rayon de la
+                      fraise PCBCart ; l'arc est le repère, aucune mire). Mires
+                      et « AZS » comprises dans la carte : en Auto, le contour
+                      grandit (pas de 1 mm) tant qu'un élément empiète sur un
+                      coin ou sur « AZS » ; format imposé : « dépasse ce
+                      format ». Forme réelle partout : contour Gerber, retrait
+                      des plans, routage, vias de couture, aperçu. DXF : BORD=
+   1.45.0 2026-11-16  Re-routage (Re-router, tronçons, liaisons, Rapprocher) en
+                      deux passages : 1) couches signal seules, coût de pas
+                      ×1 (dessus), ×2, ×4… en profondeur, GND et plans VCC
+                      interdits ; 2) dernier espoir : plans VCC ouverts à ×20,
+                      GND toujours interdit (routage à la main seulement).
+                      Couche interdite : abords des pastilles CMS du réseau
+                      posées sur elle seuls ouverts. Tracé gardé selon la
+                      longueur pondérée par couche (même facteurs). Router le
+                      chevelu inchangé. Via dans une pastille CMS de son propre
+                      réseau permise (routeur, Optimiser ▸ vias)
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4, 6 ou 8
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -7460,7 +7525,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.41.1</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.45.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -7469,9 +7534,10 @@ function traduire(s) {
   <span id="modif"></span>
   <span id="infoSources">Pas de bibliothèque</span>
   <span class="espace"></span>
-  <button id="btTexte" title="Texte de sérigraphie (T)">Texte</button>
+  <button id="btTexte" title="Sérigraphie : texte libre (T), format, replacer tout, contrôle">Texte ▾</button>
   <button id="btPlacer" class="principal">Placer</button>
   <button id="btRouter">Router</button>
+  <button id="btIrrigation" title="Ponts d'irrigation des plans d'alimentation coupés : placer, reset, déplacer">Irrigation ▾</button>
   <button id="btOptimiser" title="Pistes routées à la main : vias, coudes à 45°, pistes qui se longent, arrivées centrées, grille">Optimiser ▾</button>
   <span class="couches" id="couches"></span>
   <label for="selGrille">Grille</label>
@@ -7593,8 +7659,8 @@ var TRAD_EN = [
   ['Dessous : cuivre GND plein · couches internes vides dans la zone', 'Bottom: solid GND copper · inner layers empty in the zone'],
   ['Un patch reste sur le dessus (masse au dessous).', 'A patch stays on top (ground underneath).'], ['masse GND remplie · signaux à coût élevé (dessous)', 'filled GND ground · signals at high cost (bottom)'],
   ['(dessous · masse)', '(bottom · ground)'], [' · plan de masse rempli · signaux en dernier recours (dessous)', ' · filled ground plane · signals as a last resort (bottom)'], [' · plan rempli · signaux en dernier recours', ' · filled plane · signals as a last resort'], [' en chevelu', ' left as ratsnest'], [' (plan)', ' (plane)'], [' (aucune)', ' (none)'], ['Pistes sur les couches internes ', 'Traces on inner layers '], [' : en supprimer d\'abord.', ': delete some first.'], [' rempli · signaux admis', ' filled · signals allowed'], [' en chevelu (dessus)', ' left as ratsnest (top)'], ['référence le dessous', 'referenced to bottom'], ['internes dégagées sur', 'inner layers cleared'], ['de chaque côté', 'each side'],
-  ['via(s) thermique(s)', 'thermal via(s)'], ['Étape 1/4 · sorties de masse et d\'alimentation', 'Step 1/4 · ground and supply fan-outs'], ['Étape 2/4 · passe 1/2 · sens horaire, dessus seul, sans via', 'Step 2/4 · pass 1/2 · clockwise, top only, no via'],
-  ['Étape 3/4 · passe 2/2 · sens anti-horaire, couches internes', 'Step 3/4 · pass 2/2 · counter-clockwise, inner layers'], ['Étape 4/4 · ré-irrigation des plans d\'alimentation', 'Step 4/4 · feeding supply planes'], ['Terminé, avec alerte', 'Done, with a warning'], ['Terminé', 'Done'], ['Re-routage', 'Re-routing'], ['Passe ', 'Pass '], [' re-routée(s)', ' re-routed'], ['Via déplacée', 'Via moved'], ['Zone(s) non irriguée(s) en rouge : relier par une piste de 2 mm entre deux vias', 'Unfed zone(s) in red: join with a 2 mm trace between two vias'], ['Saisie…', 'Entry…'], ['Pas de grille (mm)', 'Grid pitch (mm)'], ['Auto : moitié du pas le plus fin des IC du circuit', 'Auto: half the finest IC pitch on the board'], ['Déplacement refusé : ', 'Move refused: '], ['via trop près du cuivre voisin', 'via too close to nearby copper'], ['piste trop près du cuivre voisin', 'trace too close to nearby copper'], ['isolement', 'clearance'], [' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ', ' · WARNING supply plane split, vias not fed: '], [' — relier par une piste de 2 mm entre deux vias (Router le chevelu le tente)', ' — join with a 2 mm trace between two vias (Route ratsnest tries it)'],
+  ['via(s) thermique(s)', 'thermal via(s)'], ['Étape 1/3 · sorties de masse et d\'alimentation', 'Step 1/3 · ground and supply fan-outs'], ['Étape 2/3 · passe 1/2 · sens horaire, dessus seul, sans via', 'Step 2/3 · pass 1/2 · clockwise, top only, no via'],
+  ['Étape 3/3 · passe 2/2 · sens anti-horaire, couches internes', 'Step 3/3 · pass 2/2 · counter-clockwise, inner layers'], ['Étape 4/4 · ré-irrigation des plans d\'alimentation', 'Step 4/4 · feeding supply planes'], ['Terminé, avec alerte', 'Done, with a warning'], ['Terminé', 'Done'], ['Re-routage', 'Re-routing'], ['Passe ', 'Pass '], [' re-routée(s)', ' re-routed'], ['Via déplacée', 'Via moved'], ['Zone(s) non irriguée(s) en rouge : relier par une piste de 2 mm entre deux vias', 'Unfed zone(s) in red: join with a 2 mm trace between two vias'], ['Saisie…', 'Entry…'], ['Pas de grille (mm)', 'Grid pitch (mm)'], ['Auto : moitié du pas le plus fin des IC du circuit', 'Auto: half the finest IC pitch on the board'], ['Déplacement refusé : ', 'Move refused: '], ['via trop près du cuivre voisin', 'via too close to nearby copper'], ['piste trop près du cuivre voisin', 'trace too close to nearby copper'], ['isolement', 'clearance'], [' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ', ' · WARNING supply plane split, vias not fed: '], [' — relier par une piste de 2 mm entre deux vias (Router le chevelu le tente)', ' — join with a 2 mm trace between two vias (Route ratsnest tries it)'],
   ['jumper(s) de ré-irrigation 2 mm', '2 mm feed jumper(s)'], [' zones non reliées', ' unconnected zones'], [' · ATTENTION plan d\'alimentation coupé, vias non irriguées, aucun jumper possible : ', ' · WARNING supply plane split, vias not fed, no jumper possible: '], [' — relier à la main par une piste de 2 mm entre deux vias', ' — join by hand with a 2 mm trace between two vias'], [' zones', ' zones'], ['plan ', 'plane '], ['patte(s) de masse au carré central', 'ground pin(s) to the center pad'], ['sortie(s) vers plan', 'fan-out(s) to plane'], ['Alimentation principale (dessus)', 'Main supply (top)'], ['Sans plan, routées en pistes : ', 'No plane, routed as traces: '],
   [' (plus de couches pour leur donner un plan)', ' (more layers to give them a plane)'], ['Lignes 50 Ω sans plan de référence en couche 2 (aucune alimentation secondaire)', '50 Ω lines without a reference plane on layer 2 (no secondary supply)'],
   [' piste(s) sur une couche devenue plan : à re-router', ' trace(s) on a layer that became a plane: re-route them'], ['Dessous', 'Bottom'], ['Couches', 'Layers'], ['Nombre', 'Count'], ['couches', 'layers'], ['Plan VCC', 'VCC plane'],
@@ -7724,6 +7790,23 @@ var TRAD_EN = [
   ['Placé automatiquement', 'Placed automatically'], ['Placer automatiquement', 'Place automatically'],
   ['Appliquer à tous', 'Apply to all'], ['Texte libre', 'Free text'],
   ['Dessus / dessous (F)', 'Top / bottom (F)'],
+  ['Irrigation ▾', 'Feed ▾'], ['Ponts d\'irrigation des plans d\'alimentation coupés : placer, reset, déplacer', 'Feed bridges for split supply planes: place, reset, move'],
+  ['Ponts d\'irrigation', 'Feed bridges'], ['Placer les ponts (plans d\'alimentation coupés)', 'Place the bridges (split supply planes)'], ['Reset : supprimer tous les ponts', 'Reset: delete all bridges'],
+  ['Déplacer : clic sur un pont (ligne, via ou texte) puis glisser', 'Move: click a bridge (line, via or text) then drag'], ['Pose des ponts d\'irrigation…', 'Placing feed bridges…'],
+  ['pont(s) d\'irrigation posé(s)', 'feed bridge(s) placed'], ['pont(s) d\'irrigation supprimé(s)', 'feed bridge(s) deleted'], ['Aucun pont d\'irrigation', 'No feed bridge'],
+  ['aucun pont à poser, les plans sont irrigués', 'no bridge to place, the planes are fed'], ['aucune place libre, à poser à la main', 'no free room, place by hand'],
+  ['Pont d\'irrigation déplacé', 'Feed bridge moved'], ['Pont d\'irrigation', 'Feed bridge'], ['pont trop près du cuivre voisin', 'bridge too close to nearby copper'],
+  ['Glisser : déplacer le pont d\'un bloc (isolement contrôlé au lâcher)', 'Drag: move the whole bridge (clearance checked on release)'],
+  ['Clic sur un pont (ligne, via ou texte) puis glisser · Suppr : supprimer · Échap : désélectionner', 'Click a bridge (line, via or text) then drag · Del: delete · Esc: deselect'],
+  ['Couches', 'Layers'], ['traverse ', 'crosses '], ['plan d\'alimentation coupé', 'supply plane split'], ['Irrigation ▸ Placer', 'Feed ▸ Place'], ['Étape 0/3 · lignes 50 Ω', 'Step 0/3 · 50 Ω lines'],
+  ['Zone(s) non irriguée(s) en rouge', 'Unfed zone(s) in red'], ['Contrôle des plans d\'alimentation', 'Checking supply planes'], ['vias non irriguées', 'vias not fed'], ['zones non reliées', 'unconnected zones'], ['ATTENTION', 'WARNING'], ['pont(s) sur le circuit', 'bridge(s) on the board'], ['Longueur', 'Length'], ['Supprimer (Suppr)', 'Delete (Del)'],
+  ['mm comprise, coins compris) dépasse ce format.', 'mm included, corners included) exceeds this format.'], ['Marge (mm)', 'Margin (mm)'], ['Coins', 'Corners'], ['Droits', 'Square'], ['Arrondis convexes', 'Rounded (convex)'], ['Rognés concaves (quart de cible)', 'Notched (concave, quarter target)'], ['Rayon (mm)', 'Radius (mm)'],
+  ['Distance minimale entre le projet et le bord ; mires et « AZS » comprises dans la carte', 'Minimum distance between the project and the edge; fiducials and "AZS" inside the board'], ['Arc centré sur la mire, 2 mm au moins', 'Arc centred on the fiducial, 2 mm minimum'], ['Quart de cercle centré sur le coin, 1 mm au moins (rayon de la fraise)', 'Quarter circle centred on the corner, 1 mm minimum (router bit radius)'],
+  ['Sérigraphie · format', 'Silkscreen · format'], ['Sérigraphie · contrôle', 'Silkscreen · check'], ['Contenu', 'Content'], ['Référence.valeur (R1.100K)', 'Reference.value (R1.100K)'], ['Référence (R1)', 'Reference (R1)'], ['Valeur (100K)', 'Value (100K)'],
+  ['Horizontale', 'Horizontal'], ['Verticale', 'Vertical'], ['Orientation', 'Orientation'], ['Replacer tout automatiquement', 'Re-place all automatically'], ['Poser un texte libre (T)', 'Place a free text (T)'], ['Format…', 'Format…'], ['Contrôle', 'Check'],
+  ['Sérigraphie : texte libre (T), format, replacer tout, contrôle', 'Silkscreen: free text (T), format, re-place all, check'], ['Texte ▾', 'Text ▾'], ['Aucun texte sur une pastille ni chevauchement', 'No text on a pad and no overlap'],
+  ['texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber', 'text(s) on a pad: framed in red, clipped on the pads in the Gerber'], ['texte(s) qui se chevauchent', 'overlapping text(s)'],
+  ['texte(s) sur une pastille, coupé(s) dans le Gerber', 'text(s) on a pad, clipped in the Gerber'], ['Sérigraphie : textes replacés automatiquement', 'Silkscreen: texts re-placed automatically'], ['chevauchement(s)', 'overlap(s)'], ['rappel', 'leader'], ['au-delà de', 'beyond'], ['des pastilles', 'from the pads'], ['Trait', 'Stroke'],
   ['Tous les passifs en 0805', 'All passives to 0805'],
   ['Auto (format supérieur)', 'Auto (next size up)'],
   ['Auto : moitié du pas le plus fin des gabarits du circuit', 'Auto: half of the finest pitch among the board footprints'],
@@ -7880,7 +7963,7 @@ function traduire(s) {
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 1.0, via: { perc: 0.8, diam: 1.6 },
     substrat: 0.8, isolement: 0.2, nc: 6, reglesAuto: false, planVcc: '', plansAl: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
-    textes: [], selT: -1, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }
+    textes: [], selT: -1, selPont: 0, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }, serig: { h: 1.0, contenu: 'ref', orient: 0 }
   };
   var $ = function (id) { return document.getElementById(id); };
   var cv = $('cv'), ctx = cv.getContext('2d');
@@ -8918,9 +9001,9 @@ function traduire(s) {
      ====================================================================== */
   var MARGE_SERIG = 0.15, CONFLITS_SERIG = { comps: [], libres: [] };
   function posTexte(c) { var k = centre(c); return { x: k.x + (c.tx || 0), y: k.y + (c.ty || 0) }; }
-  function hTexte(c) { return c.th || 1.0; }
-  function rotTexte(c) { return c.trot || 0; }
-  function traitsComp(c) { var p = posTexte(c); return traitsTexte(libelle(c), p.x, p.y, hTexte(c), rotTexte(c), c.dessous); }
+  function hTexte(c) { return c.th || B.serig.h; }
+  function rotTexte(c) { return typeof c.trot === 'number' ? c.trot : B.serig.orient; }
+  function traitsComp(c) { var p = posTexte(c); return traitsTexte(texteSerig(c), p.x, p.y, hTexte(c), rotTexte(c), c.dessous); }
   function traitsLibre(t) { return traitsTexte(t.txt, t.x, t.y, t.h, t.rot, t.dessous); }
   /* Rectangle monde [x0, y0, x1, y1] d'un texte au trait centré en (x, y), épaisseur du trait comprise */
   function boiteTexte(txt, x, y, h, rot) {
@@ -8929,7 +9012,7 @@ function traduire(s) {
     /* hd : le « µ » descend sous la ligne de base, la boîte est agrandie d'autant de chaque côté */
     return [x - hw, y - hh, x + hw, y + hh];
   }
-  function boiteComp(c) { var p = posTexte(c); return boiteTexte(libelle(c), p.x, p.y, hTexte(c), rotTexte(c)); }
+  function boiteComp(c) { var p = posTexte(c); return boiteTexte(texteSerig(c), p.x, p.y, hTexte(c), rotTexte(c)); }
   function boiteLibre(t) { return boiteTexte(t.txt, t.x, t.y, t.h, t.rot); }
   function rectEcran(bx) { var p = versEcran(bx[0], bx[3]), q = versEcran(bx[2], bx[1]); return [p.x, p.y, q.x, q.y]; }
   function rectTexte(c) { return rectEcran(boiteComp(c)); }
@@ -8951,9 +9034,55 @@ function traduire(s) {
     ctx.strokeRect(r[0] - 3, r[1] - 3, r[2] - r[0] + 6, r[3] - r[1] + 6); ctx.setLineDash([]);
   }
   function dessinerTexte(c) {
-    tracerTraits(traitsComp(c), epTexte(hTexte(c)), c.dessous ? COUL.serigDessous : COUL.serigDessus);
+    var coul = c.dessous ? COUL.serigDessous : COUL.serigDessus, r = rappel(c);
+    tracerTraits(traitsComp(c), epTexte(hTexte(c)), coul);
+    if (r) tracerTraits([[r.a, r.b]], EP_RAPPEL, coul);
     if (CONFLITS_SERIG.comps.indexOf(c) >= 0) cadreConflit(boiteComp(c));
   }
+  /* Texte de sérigraphie d'un composant selon le format : référence (R1), référence.valeur (R1.100K) ou valeur (100K) */
+  function texteSerig(c) {
+    if (B.serig.contenu === 'refval') return libelle(c);
+    if (B.serig.contenu === 'val' && c.val) return c.val;
+    return c.ref;
+  }
+  /* Boîte des pastilles du composant (le texte se place autour des pastilles, jamais du boîtier dessiné) */
+  function bboxPads(c) {
+    var p = gab(c), b = [Infinity, Infinity, -Infinity, -Infinity], j, f, w;
+    function pt(x, y) { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+    for (j = 0; p && j < p.el.length; j++) {
+      if (!estPad(p.el[j])) continue;
+      w = elMonde(c, p.el[j]); if (!w) continue;
+      f = formePad(w);
+      if (f.disque) { pt(f.disque.x - f.disque.r, f.disque.y - f.disque.r); pt(f.disque.x + f.disque.r, f.disque.y + f.disque.r); }
+      else f.pts.forEach(function (q) { pt(q[0], q[1]); });
+    }
+    return b[0] <= b[2] ? b : bboxMonde(c);
+  }
+  /* Trait de rappel : texte posé à plus de SEUIL_RAPPEL de ses pastilles, trait fin du bord du texte au bord des pastilles */
+  var SEUIL_RAPPEL = 1.5, EP_RAPPEL = 0.15, RAPPEL_MAX = 12;
+  function ecartBoites(p, q) { var dx = Math.max(0, q[0] - p[2], p[0] - q[2]), dy = Math.max(0, q[1] - p[3], p[1] - q[3]); return Math.sqrt(dx * dx + dy * dy); }
+  function rappelSeg(pb, bx) {
+    var pc = { x: (pb[0] + pb[2]) / 2, y: (pb[1] + pb[3]) / 2 }, a, b, m = 0.2;
+    a = { x: Math.max(bx[0], Math.min(bx[2], pc.x)), y: Math.max(bx[1], Math.min(bx[3], pc.y)) };
+    b = { x: Math.max(pb[0] - m, Math.min(pb[2] + m, a.x)), y: Math.max(pb[1] - m, Math.min(pb[3] + m, a.y)) };
+    return { a: { x: arr(a.x), y: arr(a.y) }, b: { x: arr(b.x), y: arr(b.y) } };
+  }
+  function rappel(c) {
+    var pb, bx;
+    if (!gab(c)) return null;
+    pb = bboxPads(c); bx = boiteComp(c);
+    return ecartBoites(pb, bx) > SEUIL_RAPPEL ? rappelSeg(pb, bx) : null;
+  }
+  /* Segment a-b dans le rectangle r (élargi de m) */
+  function segDansRect(a, b, r, m) {
+    var z = [r[0] - m, r[1] - m, r[2] + m, r[3] + m], c = [{ x: z[0], y: z[1] }, { x: z[2], y: z[1] }, { x: z[2], y: z[3] }, { x: z[0], y: z[3] }], i;
+    function dans(q) { return q.x >= z[0] && q.x <= z[2] && q.y >= z[1] && q.y <= z[3]; }
+    if (dans(a) || dans(b)) return true;
+    for (i = 0; i < 4; i++) if (distSegSeg(a, b, c[i], c[(i + 1) % 4]).d < 1e-9) return true;
+    return false;
+  }
+  /* Vias : la sérigraphie ne s'y pose pas (coupée au Gerber comme sur les pastilles) */
+  function viasSerig() { return B.vias.map(function (v) { return { f: { disque: { x: v.x, y: v.y, r: v.diam / 2 } }, bx: [v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2] }; }); }
 
   /* --- Sérigraphie sur pastille : contrôle et placement automatique --- */
   function padsFace(dessous) {
@@ -8990,39 +9119,66 @@ function traduire(s) {
     return false;
   }
   function calculerConflits() {
-    var pf = { 0: padsFace(false), 1: padsFace(true) };
+    var v = viasSerig(), pf = { 0: padsFace(false).concat(v), 1: padsFace(true).concat(v) }, bx = [], i, j;
     CONFLITS_SERIG = {
       comps: B.comps.filter(function (c) { return gab(c) && texteSurPastille(traitsComp(c), hTexte(c), boiteComp(c), pf[c.dessous ? 1 : 0]); }),
-      libres: B.textes.filter(function (t) { return texteSurPastille(traitsLibre(t), t.h, boiteLibre(t), pf[t.dessous ? 1 : 0]); })
+      libres: B.textes.filter(function (t) { return texteSurPastille(traitsLibre(t), t.h, boiteLibre(t), pf[t.dessous ? 1 : 0]); }),
+      chev: []
     };
+    /* textes qui se chevauchent (même face) */
+    B.comps.forEach(function (c) { if (gab(c)) bx.push({ o: c, f: !!c.dessous, b: boiteComp(c), nom: libelle(c) }); });
+    B.textes.forEach(function (t) { bx.push({ o: t, f: !!t.dessous, b: boiteLibre(t), nom: 'Texte libre « ' + t.txt + ' »' }); });
+    for (i = 0; i < bx.length; i++) for (j = i + 1; j < bx.length; j++)
+      if (bx[i].f === bx[j].f && croise(bx[i].b, bx[j].b)) { if (CONFLITS_SERIG.chev.indexOf(bx[i]) < 0) CONFLITS_SERIG.chev.push(bx[i]); if (CONFLITS_SERIG.chev.indexOf(bx[j]) < 0) CONFLITS_SERIG.chev.push(bx[j]); }
   }
   function nbConflits() { return CONFLITS_SERIG.comps.length + CONFLITS_SERIG.libres.length; }
-  /* Place un texte automatique : au-dessus, en dessous, à droite puis à gauche du composant,
-     de plus en plus loin ; première place libre de pastille et des textes déjà posés */
-  function placerTexte(c, pads, obst) {
-    var k = centre(c), bm = bboxMonde(c), h = hTexte(c), b0 = boiteTexte(libelle(c), 0, 0, h, rotTexte(c)),
-        hw = (b0[2] - b0[0]) / 2, hh = (b0[3] - b0[1]) / 2, g = 0.3, cands = [], d, e, i, bx;
-    for (d = 0; d < 4; d++) {
-      e = g + d * (2 * Math.min(hw, hh) + g);
-      cands.push([k.x, bm[3] + e + hh], [k.x, bm[1] - e - hh], [bm[2] + e + hw, k.y], [bm[0] - e - hw, k.y]);
+  /* Place un texte automatique autour de la boîte de ses pastilles : collé (0,3 / 0,8 / 1,3 mm) au-dessus, en dessous,
+     à droite, à gauche, puis aux coins ; sinon à distance, au plus près, relié par un trait de rappel ; place libre :
+     dans le contour, hors pastilles et vias, hors des autres textes et traits de rappel, trait de rappel sans croisement.
+     Sans place libre : première position (texte encadré de rouge, coupé sur les pastilles dans le Gerber) */
+  function placerTexte(c, pads, obst, rappels, ct) {
+    var k = centre(c), pb = bboxPads(c), h = hTexte(c), b0 = boiteTexte(texteSerig(c), 0, 0, h, rotTexte(c)),
+        hw = (b0[2] - b0[0]) / 2, hh = (b0[3] - b0[1]) / 2, cx = (pb[0] + pb[2]) / 2, cy = (pb[1] + pb[3]) / 2, pw = (pb[2] - pb[0]) / 2, ph = (pb[3] - pb[1]) / 2,
+        R = RAPPEL_MAX + 2 * Math.max(hw, hh) + 2, zl = [pb[0] - R, pb[1] - R, pb[2] + R, pb[3] + R], cands = [], i, r, n, a, bx, seg;
+    pads = pads.filter(function (p) { return croise(p.bx, zl); });
+    obst = obst.filter(function (o) { return croise(o, zl); });
+    function poser(x, y) { c.tx = arr(x - k.x); c.ty = arr(y - k.y); }
+    function libre(b, s) {
+      if (ct && (b[0] < ct.x0 + 0.3 || b[2] > ct.x1 - 0.3 || b[1] < ct.y0 + 0.3 || b[3] > ct.y1 - 0.3)) return false;
+      if (obst.some(function (o) { return croise(o, b); })) return false;
+      if (rappels.some(function (q) { return segDansRect(q.a, q.b, b, MARGE_SERIG); })) return false;
+      if (texteSurPastille(traitsComp(c), h, b, pads)) return false;
+      if (!s) return true;
+      if (rappels.some(function (q) { return segCoupe(s.a, s.b, q.a, q.b); })) return false;
+      if (obst.some(function (o) { return segDansRect(s.a, s.b, o, MARGE_SERIG); })) return false;
+      return !pads.some(function (p) { return segForme(s.a, s.b, p.f, EP_RAPPEL / 2 + MARGE_SERIG); });
     }
-    for (i = 0; i < cands.length; i++) {
-      c.tx = arr(cands[i][0] - k.x); c.ty = arr(cands[i][1] - k.y);
-      bx = boiteComp(c);
-      if (obst.some(function (o) { return croise(o, bx); })) continue;
-      if (!texteSurPastille(traitsComp(c), h, bx, pads)) return;
+    [0.3, 0.8, 1.3].forEach(function (g) { cands.push([cx, pb[3] + g + hh], [cx, pb[1] - g - hh], [pb[2] + g + hw, cy], [pb[0] - g - hw, cy]); });
+    [0.3, 0.8].forEach(function (g) { cands.push([pb[2] + g + hw, pb[3] + g + hh], [pb[0] - g - hw, pb[3] + g + hh], [pb[2] + g + hw, pb[1] - g - hh], [pb[0] - g - hw, pb[1] - g - hh]); });
+    for (i = 0; i < cands.length; i++) { poser(cands[i][0], cands[i][1]); if (libre(boiteComp(c), null)) return; }
+    for (r = SEUIL_RAPPEL + 0.5; r <= RAPPEL_MAX + 1e-9; r += 0.5) {
+      n = Math.max(8, Math.ceil(2 * Math.PI * r / 0.6));
+      for (i = 0; i < n; i++) {
+        a = i * 2 * Math.PI / n;
+        poser(cx + Math.cos(a) * (pw + hw + r), cy + Math.sin(a) * (ph + hh + r));
+        bx = boiteComp(c);
+        seg = ecartBoites(pb, bx) > SEUIL_RAPPEL ? rappelSeg(pb, bx) : null;
+        if (libre(bx, seg)) { if (seg) rappels.push(seg); return; }
+      }
     }
-    c.tx = arr(cands[0][0] - k.x); c.ty = arr(cands[0][1] - k.y);
+    poser(cands[0][0], cands[0][1]);
   }
-  /* Replace tous les textes automatiques ; les textes placés à la main servent d'obstacles */
+  /* Replace tous les textes automatiques (circuits d'abord) ; les textes placés à la main et leurs traits de rappel
+     servent d'obstacles */
   function ajusterTextes() {
-    var pf = { 0: padsFace(false), 1: padsFace(true) }, obst = { 0: [], 1: [] };
+    var v = viasSerig(), pf = { 0: padsFace(false).concat(v), 1: padsFace(true).concat(v) }, obst = { 0: [], 1: [] }, rap = { 0: [], 1: [] }, ct = calculerContour(), l;
     B.textes.forEach(function (t) { obst[t.dessous ? 1 : 0].push(boiteLibre(t)); });
-    B.comps.forEach(function (c) { if (gab(c) && c.ta === false) obst[c.dessous ? 1 : 0].push(boiteComp(c)); });
-    B.comps.forEach(function (c) {
+    B.comps.forEach(function (c) { var r; if (gab(c) && c.ta === false) { obst[c.dessous ? 1 : 0].push(boiteComp(c)); if ((r = rappel(c))) rap[c.dessous ? 1 : 0].push(r); } });
+    l = B.comps.filter(function (c) { return gab(c) && c.ta !== false; });
+    l.sort(function (x, y) { return (x.type === 'IC' ? 0 : 1) - (y.type === 'IC' ? 0 : 1); });
+    l.forEach(function (c) {
       var f = c.dessous ? 1 : 0;
-      if (!gab(c) || c.ta === false) return;
-      placerTexte(c, pf[f], obst[f]);
+      placerTexte(c, pf[f], obst[f], rap[f], ct);
       obst[f].push(boiteComp(c));
     });
   }
@@ -9032,11 +9188,27 @@ function traduire(s) {
     B.ox = B.W / 2 - (bx[0] + bx[2]) / 2 * B.z; B.oy = B.H / 2 + (bx[1] + bx[3]) / 2 * B.z;
   }
   function blocSerigraphie(f) {
-    var b = E('div', 'bloc'), n = nbConflits();
+    var b = E('div', 'bloc'), n = nbConflits(), sel;
+    b.id = 'blocSerig';
     f.appendChild(b);
-    b.appendChild(E('h4', '', 'Sérigraphie'));
-    if (!n) { b.appendChild(E('div', 'stat', 'Aucun texte sur une pastille')); return; }
-    b.appendChild(E('div', 'avert', n + ' texte(s) sur une pastille : export Gerber refusé'));
+    b.appendChild(E('h4', '', 'Sérigraphie · format'));
+    function choix(lib, l, val, fn) {
+      var s = champ(b, lib, E('select'));
+      l.forEach(function (x) { var o = E('option', '', x[1]); o.value = x[0]; s.appendChild(o); });
+      s.value = String(val);
+      s.addEventListener('change', function () { empiler(); fn(this.value); ajusterTextes(); toutRafraichir(); });
+      return s;
+    }
+    choix('Contenu', [['ref', 'Référence (R1)'], ['refval', 'Référence.valeur (R1.100K)'], ['val', 'Valeur (100K)']], B.serig.contenu, function (v) { B.serig.contenu = v; });
+    choix('Hauteur', [['0.8', '0,8 mm'], ['1', '1,0 mm'], ['1.2', '1,2 mm'], ['1.5', '1,5 mm']], B.serig.h, function (v) { B.serig.h = parseFloat(v); B.comps.forEach(function (c) { c.th = B.serig.h; }); });
+    choix('Orientation', [['0', 'Horizontale'], ['90', 'Verticale']], B.serig.orient, function (v) { B.serig.orient = parseInt(v, 10); B.comps.forEach(function (c) { c.trot = B.serig.orient; }); });
+    b.appendChild(E('div', 'stat', 'Trait ' + String(epTexte(B.serig.h)).replace('.', ',') + ' mm · rappel ' + String(EP_RAPPEL).replace('.', ',') + ' mm au-delà de ' + String(SEUIL_RAPPEL).replace('.', ',') + ' mm des pastilles'));
+    sel = E('div', 'boutons'); b.appendChild(sel);
+    (function () { var bt = E('button', '', 'Replacer tout automatiquement'); bt.addEventListener('click', replacerTextes); sel.appendChild(bt); })();
+    b = E('div', 'bloc'); f.appendChild(b);
+    b.appendChild(E('h4', '', 'Sérigraphie · contrôle'));
+    if (!n && !CONFLITS_SERIG.chev.length) { b.appendChild(E('div', 'stat', 'Aucun texte sur une pastille ni chevauchement')); return; }
+    if (n) b.appendChild(E('div', 'avert', n + ' texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber'));
     CONFLITS_SERIG.comps.forEach(function (c) {
       var l = E('div', 'lien', libelle(c));
       l.addEventListener('click', function () { B.sel = c; B.selT = -1; zoomTexte(boiteComp(c)); toutRafraichir(); });
@@ -9047,6 +9219,38 @@ function traduire(s) {
       l.addEventListener('click', function () { B.sel = null; B.selT = B.textes.indexOf(t); zoomTexte(boiteLibre(t)); toutRafraichir(); });
       b.appendChild(l);
     });
+    if (CONFLITS_SERIG.chev.length) {
+      b.appendChild(E('div', 'avert', CONFLITS_SERIG.chev.length + ' texte(s) qui se chevauchent'));
+      CONFLITS_SERIG.chev.forEach(function (x) {
+        var l = E('div', 'lien', x.nom);
+        l.addEventListener('click', function () { if (x.o.ref) { B.sel = x.o; B.selT = -1; } else { B.sel = null; B.selT = B.textes.indexOf(x.o); } zoomTexte(x.b); toutRafraichir(); });
+        b.appendChild(l);
+      });
+    }
+  }
+  function replacerTextes() { empiler(); B.comps.forEach(function (c) { c.ta = true; }); ajusterTextes(); toutRafraichir(); message('Sérigraphie : textes replacés automatiquement · Ctrl+Z annule'); }
+  /* Menu Texte : texte libre, format, replacer tout, contrôle */
+  function ouvrirMenuTexte() {
+    var m = $('menu'), r = $('btTexte').getBoundingClientRect();
+    m.textContent = '';
+    m.appendChild(E('div', 'titre', 'Sérigraphie'));
+    [['libre', 'Poser un texte libre (T)'], ['format', 'Format…'], ['replacer', 'Replacer tout automatiquement'], ['controle', 'Contrôle']].forEach(function (x) {
+      var o = E('div', 'option', x[1]);
+      o.addEventListener('mousedown', function (e2) {
+        e2.preventDefault(); e2.stopPropagation(); fermerMenu();
+        if (x[0] === 'libre') { outilTexte(); return; }
+        if (x[0] === 'replacer') { replacerTextes(); return; }
+        if (B.route) terminerRoute();
+        if (B.mode !== 'placer') choisirMode('placer');
+        B.sel = null; B.selT = -1; B.selPont = 0; toutRafraichir();
+        (function () { var bl = $('blocSerig'); if (!bl) return; if (x[0] === 'controle' && bl.nextSibling) bl.nextSibling.scrollIntoView(); else bl.scrollIntoView(); })();
+        if (x[0] === 'controle') message('Sérigraphie : ' + nbConflits() + ' texte(s) sur une pastille · ' + CONFLITS_SERIG.chev.length + ' chevauchement(s)', nbConflits() > 0);
+      });
+      m.appendChild(o);
+    });
+    m.style.display = 'block';
+    m.style.left = Math.min(r.left, window.innerWidth - m.offsetWidth - 8) + 'px';
+    m.style.top = (r.bottom + 4) + 'px';
   }
   function dessiner() {
     var i, l, a, b, s1, s2, bm;
@@ -9070,6 +9274,7 @@ function traduire(s) {
     dessinerConflits();
     for (i = 0; i < B.comps.length; i++) dessinerTexte(B.comps[i]);
     for (i = 0; i < B.textes.length; i++) dessinerTexteLibre(B.textes[i], i === B.selT);
+    dessinerSelPont();
     if (B.sel) {
       bm = bboxMonde(B.sel); s1 = versEcran(bm[0], bm[3]); s2 = versEcran(bm[2], bm[1]);
       ecran(); ctx.strokeStyle = COUL.sel; ctx.lineWidth = 1; ctx.setLineDash([5, 3]);
@@ -9091,7 +9296,7 @@ function traduire(s) {
   /* ======================================================================
      Annuler / rétablir
      ====================================================================== */
-  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour), nc: B.nc, planVcc: B.planVcc, plansAl: B.plansAl, remp: B.remp, coupe: B.coupe ? { pts: B.coupe.pts.map(copieObj), agndG: B.coupe.agndG } : null }; }
+  function instantane() { return { comps: B.comps.map(copieObj), memo: copieObj(B.memoGab), serig: copieObj(B.serig), sel: B.sel ? B.comps.indexOf(B.sel) : -1, pistes: B.pistes.map(copiePiste), vias: B.vias.map(copieObj), textes: B.textes.map(copieObj), contour: copieObj(B.contour), nc: B.nc, planVcc: B.planVcc, plansAl: B.plansAl, remp: B.remp, coupe: B.coupe ? { pts: B.coupe.pts.map(copieObj), agndG: B.coupe.agndG } : null }; }
   function empiler(i) { B.annul.push(i || instantane()); if (B.annul.length > 300) B.annul.shift(); B.retab = []; marquer(); }
   function restaurer(de, vers) {
     var i;
@@ -9100,7 +9305,7 @@ function traduire(s) {
     if (!i) return;
     vers.push(instantane());
     B.comps = i.comps; B.memoGab = i.memo; B.sel = i.sel >= 0 ? B.comps[i.sel] || null : null;
-    B.pistes = i.pistes; B.vias = i.vias; B.selP = null; B.selV = null; B.textes = i.textes; B.selT = -1; B.contour = i.contour;
+    B.pistes = i.pistes; B.vias = i.vias; B.selP = null; B.selV = null; B.textes = i.textes; B.selT = -1; B.contour = i.contour; if (i.serig) B.serig = i.serig;
     B.nc = i.nc; B.planVcc = i.planVcc; B.plansAl = i.plansAl || ''; B.coupe = i.coupe; B.remp = i.remp || ''; if (B.couche > B.nc || estPlan(B.couche)) B.couche = 1;
     marquer(); toutRafraichir();
   }
@@ -9119,7 +9324,7 @@ function traduire(s) {
     for (i = 0; i < r.comps.length; i++) {
       c = r.comps[i];
       if (c.type === 'PWR') continue;
-      c = { id: n + 1, sid: c.id, type: c.type, ref: c.ref, val: c.val, pol: c.pol, gab: '', x: c.x, y: c.y, rot: normAng(c.rot), dessous: false, tx: 0, ty: 0, th: 1.0, trot: 0, ta: true };
+      c = { id: n + 1, sid: c.id, type: c.type, ref: c.ref, val: c.val, pol: c.pol, gab: '', x: c.x, y: c.y, rot: normAng(c.rot), dessous: false, tx: 0, ty: 0, th: B.serig.h, trot: B.serig.orient, ta: true };
       c.gab = gabaritParDefaut(c);
       B.comps.push(c); n++;
     }
@@ -9178,6 +9383,7 @@ function traduire(s) {
   function fiche() {
     var f = $('fiche'), b, c = B.sel, sel, l, i, o, bs, bt, rf = 0, gl, gn;
     f.textContent = '';
+    if (B.selPont && fichePont(f)) return;
     if (B.mode === 'router') { ficheRoutage(f); return; }
     if (B.selT >= 0) { ficheTexteLibre(f, B.textes[B.selT]); return; }
     b = E('div', 'bloc'); f.appendChild(b);
@@ -9370,8 +9576,8 @@ function traduire(s) {
     hs.sort(function (x, y) { return x - y; }).forEach(function (v) { var o = E('option', '', String(v).replace('.', ',') + ' mm'); o.value = v; sel.appendChild(o); });
     sel.value = hTexte(c);
     sel.addEventListener('change', function () { empiler(); c.th = parseFloat(this.value); ajusterTextes(); toutRafraichir(); });
-    sel = champ(b, 'Rotation', E('select'));
-    [0, 90, 180, 270].forEach(function (v) { var o = E('option', '', v + '°'); o.value = v; sel.appendChild(o); });
+    sel = champ(b, 'Orientation', E('select'));
+    [0, 90].concat([0, 90].indexOf(rotTexte(c)) < 0 ? [rotTexte(c)] : []).forEach(function (v) { var o = E('option', '', v === 0 ? 'Horizontale' : v === 90 ? 'Verticale' : v + '°'); o.value = v; sel.appendChild(o); });
     sel.value = rotTexte(c);
     sel.addEventListener('change', function () { empiler(); c.trot = parseInt(this.value, 10); ajusterTextes(); toutRafraichir(); });
     b.appendChild(E('div', 'stat', c.ta === false ? 'Placé à la main (Maj + glisser)' : 'Placé automatiquement'));
@@ -9485,6 +9691,7 @@ function traduire(s) {
     ev.preventDefault();
     B.tDown2 = B.tDown1 || 0; B.tDown1 = Date.now();
     if (B.outilCoupe) { if (ev.button === 2) finirCoupe(); else if (ev.button === 0) pointCoupe(w); return; }
+    if (ev.button === 0 && !B.route && B.selPont) { B.selPont = 0; fiche(); dessiner(); }
     if (ev.button === 2 && !B.route) {
       if (ouvrirMenuRaccord(ev, w)) { dessiner(); return; }
       s = segmentSous(w); if (s) { ouvrirMenuLargeur(ev, s.i); dessiner(); return; }
@@ -9492,6 +9699,8 @@ function traduire(s) {
     if (B.mode === 'router') { if (sourisRouter(ev, w)) return; }
     else if (ev.button === 0) {
       if (B.outilTexte) { poserTexteLibre(w); return; }
+      s = pontSous(w);
+      if (s) { debutGlisserPont(s, w); toutRafraichir(); return; }
       s = texteLibreSous(m);
       if (s >= 0) { B.sel = null; B.selT = s; B.drag = { tl: B.textes[s], mx: w.x, my: w.y, x: B.textes[s].x, y: B.textes[s].y, avant: instantane(), bouge: false }; toutRafraichir(); return; }
       B.selT = -1;
@@ -9512,6 +9721,8 @@ function traduire(s) {
     if (ev.button !== 0) return false;
     pads = tousPads();
     if (padSous(pads, w.x, w.y, 0)) { B.selP = null; B.selV = null; departRoute(w); toutRafraichir(); return true; }
+    v = pontSous(w);
+    if (v) { debutGlisserPont(v, w); toutRafraichir(); return true; }
     v = viaSous(w.x, w.y);
     if (v >= 0) {
       /* via : clic = sélection (second clic sans bouger = départ d'un tracé) ; glisser = déplacement à la main,
@@ -9599,6 +9810,7 @@ function traduire(s) {
   window.addEventListener('mousemove', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), d = B.drag, p, n, bl = $('bulle');
     if (B.pan) { B.ox = B.pan.ox + m.x - B.pan.x; B.oy = B.pan.oy + m.y - B.pan.y; dessiner(); return; }
+    if (d && d.pont) { glisserPont(d, w); dessiner(); return; }
     if (d && d.seg) { glisserSegment(d, w); dessiner(); return; }
     if (d && d.via !== undefined) { glisserVia(d, w); dessiner(); return; }
     if (d && d.tl) { d.tl.x = arr(d.x + w.x - d.mx); d.tl.y = arr(d.y + w.y - d.my); d.bouge = true; dessiner(); return; }
@@ -9624,6 +9836,7 @@ function traduire(s) {
   });
   window.addEventListener('mouseup', function () {
     if (B.pan) { B.pan = null; cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default'; return; }
+    if (B.drag && B.drag.pont) { finirGlisserPont(B.drag); B.drag = null; toutRafraichir(); return; }
     if (B.drag && B.drag.via !== undefined) { finirGlisserVia(B.drag); B.drag = null; toutRafraichir(); return; }
     if (B.drag) {
       if (B.drag.bouge) { empiler(B.drag.avant); if (B.drag.c && !B.drag.texte) ajusterTextes(); }
@@ -9636,6 +9849,8 @@ function traduire(s) {
     if (t === 'INPUT' || t === 'SELECT') return;
     if ((ev.ctrlKey || ev.metaKey) && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) restaurer(B.retab, B.annul); else restaurer(B.annul, B.retab); return; }
     if ((ev.ctrlKey || ev.metaKey) && (k === 'y' || k === 'Y')) { ev.preventDefault(); restaurer(B.retab, B.annul); return; }
+    if (B.selPont && !B.route && (k === 'Delete' || k === 'Backspace')) { ev.preventDefault(); supprimerPont(B.selPont); return; }
+    if (B.selPont && !B.route && k === 'Escape') { B.selPont = 0; message(''); toutRafraichir(); return; }
     if (B.mode === 'router') {
       if (k.length === 1 && k >= '1' && k <= String(B.nc) && !ev.ctrlKey && !ev.metaKey) choisirCouche(parseInt(k, 10));
       else if ((k === 'v' || k === 'V') && B.route && !ev.ctrlKey && !ev.metaKey) viaVersPlan(0);
@@ -9858,6 +10073,7 @@ function traduire(s) {
         x = arr(a[k][0] + (b2[0] - a[k][0]) * j / nn); y = arr(a[k][1] + (b2[1] - a[k][1]) * j / nn);
         net = nomMasse(x, y); if (!net) continue;
         if (m.some(function (q) { return Math.sqrt((q.x - x) * (q.x - x) + (q.y - y) * (q.y - y)) < MIRE.anneau / 2 + rv + 0.5; })) continue;
+        if (!dansContour(ct, { x: x, y: y }, rv + 0.5) || empieteCoin(ct, [x - rv, y - rv, x + rv, y + rv])) continue;
         if (x > az[0][0] - rv - 0.3 && x < az[1][0] + rv + 0.3 && y > az[0][1] - rv - 0.3 && y < az[2][1] + rv + 0.3) continue;
         if (pz.some(function (q) { return x > q[0] - rv && x < q[2] + rv && y > q[1] - rv && y < q[3] + rv; })) continue;
         if (B.coupe && coupeEtendue().some(function (q, i, t) { return i > 0 && distSeg(x, y, t[i - 1], q) < rv + B.degPlan + 0.2; })) continue;
@@ -9960,7 +10176,7 @@ function traduire(s) {
   }
   function largeurNet(net) { var n = netParNom(net); return n && n.type === 'rf' && !rfCourt(net) ? largeur50() : B.largeur; }
   function netParNom(nom) { var i; for (i = 0; i < B.nets.length; i++) if (B.nets[i].nom === nom) return B.nets[i]; return null; }
-  function copiePiste(p) { var r = { couche: p.couche, w: p.w, net: p.net, pts: p.pts.map(copieObj) }; if (p.arc) r.arc = copieObj(p.arc); return r; }
+  function copiePiste(p) { var r = { couche: p.couche, w: p.w, net: p.net, pts: p.pts.map(copieObj) }; if (p.arc) r.arc = copieObj(p.arc); if (p.pont) r.pont = p.pont; return r; }
 
   /* Pastilles en coordonnées monde avec leurs couches de cuivre */
   function tousPads() {
@@ -10290,7 +10506,7 @@ function traduire(s) {
   function choisirMode(m) {
     if (B.route) terminerRoute();
     B.outilCoupe = null;
-    B.mode = m; B.selP = null; B.selV = null; B.selT = -1; B.outilTexte = false;
+    B.mode = m; B.selP = null; B.selV = null; B.selT = -1; B.selPont = 0; B.outilTexte = false;
     if (m === 'router') B.sel = null;
     cv.style.cursor = m === 'router' ? 'crosshair' : 'default';
     $('btPlacer').className = m === 'placer' ? 'principal' : '';
@@ -10596,8 +10812,8 @@ function traduire(s) {
   /* Retire les groupes dont la racine est dans « racines » ; renvoie le nombre d'éléments retirés */
   function retirerGroupes(f, racines) {
     var gp = [], gv = [], i, n = 0;
-    for (i = 0; i < B.pistes.length; i++) if (!racines[f('T' + i)]) gp.push(B.pistes[i]); else n++;
-    for (i = 0; i < B.vias.length; i++) if (!racines[f('V' + i)]) gv.push(B.vias[i]); else n++;
+    for (i = 0; i < B.pistes.length; i++) if (!racines[f('T' + i)] || estPont(B.pistes[i])) gp.push(B.pistes[i]); else n++;
+    for (i = 0; i < B.vias.length; i++) if (!racines[f('V' + i)] || estPont(B.vias[i])) gv.push(B.vias[i]); else n++;
     B.pistes = gp; B.vias = gv; B.selP = null; B.selV = null;
     return n;
   }
@@ -10777,7 +10993,7 @@ function traduire(s) {
     f = groupesCuivre();
     B.pistes.forEach(function (t, i) {
       var k, j, q, x;
-      if (t.net === net || t.couche <= 1 || estMasseNom(t.net)) return;
+      if (t.net === net || t.couche <= 1 || estMasseNom(t.net) || estPont(t)) return;
       for (k = 0; k + 1 < t.pts.length; k++) for (q = 0; q < ligne.length; q++) for (j = 0; j + 1 < ligne[q].pts.length; j++) {
         x = distSegSeg(t.pts[k], t.pts[k + 1], ligne[q].pts[j], ligne[q].pts[j + 1]).d;
         if (x < t.w / 2 + ligne[q].w / 2 + couloir50() + B.isolement - 1e-6) { rac[f('T' + i)] = true; noms[t.net] = true; return; }
@@ -10850,7 +11066,7 @@ function traduire(s) {
       if (sc.type === 'PWR') continue;
       c = parSid[sc.id]; vus[sc.id] = true;
       if (!c) {
-        c = { id: 0, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: '', x: 0, y: 0, rot: normAng(sc.rot), dessous: false, tx: 0, ty: 0, th: 1.0, trot: 0, ta: true };
+        c = { id: 0, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: '', x: 0, y: 0, rot: normAng(sc.rot), dessous: false, tx: 0, ty: 0, th: B.serig.h, trot: B.serig.orient, ta: true };
         B.nets = nouv; c.gab = gabaritParDefaut(c);
         l = bboxLocale(c); c.x = accroche(x - l[0]); c.y = accroche((b[3] > b[1] ? b[3] : 0) - l[3]); x += l[2] - l[0] + 5;
         B.comps.push(c); nb.a++;
@@ -11031,42 +11247,118 @@ function traduire(s) {
     for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; aj(t.x - m, t.y - m, t.x + m, t.y + m); }
     return b[0] > b[2] ? null : b;
   }
+  /* --- Bord de carte : marge (B.contour.marge, 1 mm au moins), coins droits, arrondis convexes (arc de rayon R
+         centré sur la mire, la mire reste entière dans l'arrondi) ou rognés concaves (quart de cercle rentrant de
+         rayon R centré sur le coin : l'arc est le repère, quart de cible par coin, aucune mire). Les mires et « AZS »
+         sont comprises dans la carte : le contour ne grandit que si un élément les touche --- */
+  function margeContour() { return Math.max(1, B.contour.marge || MARGE_CONTOUR); }
+  function coinsContour() { return B.contour.coins || 'droits'; }
+  function rayonCoin() { var k = coinsContour(), r = B.contour.rayon || COIN_MIRE; return k === 'convexes' ? Math.max(2, r) : Math.max(1, r); }
+  /* Coins dans l'ordre du contour : bas-gauche, bas-droit, haut-droit, haut-gauche ; s : sens vers l'intérieur, q : quadrant intérieur */
+  function coinsCarte(ct) {
+    return [{ x: ct.x0, y: ct.y0, sx: 1, sy: 1, q: 0 }, { x: ct.x1, y: ct.y0, sx: -1, sy: 1, q: 90 }, { x: ct.x1, y: ct.y1, sx: -1, sy: -1, q: 180 }, { x: ct.x0, y: ct.y1, sx: 1, sy: -1, q: 270 }];
+  }
+  /* Contour en polygone (arcs en segments de 5°), retrait r vers l'intérieur ; points [x, y] */
+  function contourPts(ct, r) {
+    var k = coinsContour(), R = rayonCoin(), l = [], n = 18;
+    coinsCarte(ct).forEach(function (c) {
+      var i, a, cx, cy, rho, d;
+      if (k === 'convexes') {
+        cx = c.x + c.sx * R; cy = c.y + c.sy * R; rho = Math.max(R - r, 0.01);
+        for (i = 0; i <= n; i++) { a = (c.q + 180 + 90 * i / n) * Math.PI / 180; l.push([arr(cx + rho * Math.cos(a)), arr(cy + rho * Math.sin(a))]); }
+      } else if (k === 'concaves') {
+        rho = R + r; d = Math.asin(Math.min(1, r / rho)) * 180 / Math.PI;
+        for (i = 0; i <= n; i++) { a = (c.q + 90 - d - (90 - 2 * d) * i / n) * Math.PI / 180; l.push([arr(c.x + rho * Math.cos(a)), arr(c.y + rho * Math.sin(a))]); }
+      } else l.push([arr(c.x + c.sx * r), arr(c.y + c.sy * r)]);
+    });
+    return l;
+  }
+  /* Point q dans la carte, à m au moins du bord (coins compris) */
+  function dansContour(ct, q, m) {
+    var k = coinsContour(), R = rayonCoin();
+    if (q.x < ct.x0 + m || q.x > ct.x1 - m || q.y < ct.y0 + m || q.y > ct.y1 - m) return false;
+    if (k === 'droits') return true;
+    return coinsCarte(ct).every(function (c) {
+      var cx, cy;
+      if (k === 'concaves') return Math.sqrt((q.x - c.x) * (q.x - c.x) + (q.y - c.y) * (q.y - c.y)) >= R + m;
+      cx = c.x + c.sx * R; cy = c.y + c.sy * R;
+      if ((q.x - cx) * c.sx >= 0 || (q.y - cy) * c.sy >= 0) return true;
+      return Math.sqrt((q.x - cx) * (q.x - cx) + (q.y - cy) * (q.y - cy)) <= R - m;
+    });
+  }
+  /* Rectangles du projet (composants, pistes, vias, textes) */
+  function rectsProjet() {
+    var l = [], i, j, t, v, m;
+    for (i = 0; i < B.comps.length; i++) l.push(bboxMonde(B.comps[i]));
+    for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; for (j = 0; j < t.pts.length; j++) l.push([t.pts[j].x - t.w / 2, t.pts[j].y - t.w / 2, t.pts[j].x + t.w / 2, t.pts[j].y + t.w / 2]); }
+    for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!v.couture) l.push([v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2]); }
+    for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; l.push([t.x - m, t.y - m, t.x + m, t.y + m]); }
+    return l;
+  }
+  function distRect(b, x, y) { var dx = Math.max(b[0] - x, 0, x - b[2]), dy = Math.max(b[1] - y, 0, y - b[3]); return Math.sqrt(dx * dx + dy * dy); }
+  /* Un rectangle empiète-t-il sur un coin (mire, arrondi, encoche) ou sur « AZS » ? */
+  function empieteCoin(ct, b) {
+    var k = coinsContour(), R = rayonCoin(), g = 0.5, az = boiteAzs(ct);
+    if (b[2] > az[0][0] - g && b[0] < az[1][0] + g && b[3] > az[0][1] - g && b[1] < az[2][1] + g) return true;
+    return coinsCarte(ct).some(function (c) {
+      var cx, cy, px, py;
+      if (k === 'concaves') return distRect(b, c.x, c.y) < R + g;
+      cx = c.x + c.sx * (k === 'convexes' ? R : COIN_MIRE); cy = c.y + c.sy * (k === 'convexes' ? R : COIN_MIRE);
+      if (distRect(b, cx, cy) < MIRE.anneau / 2 + g) return true;
+      if (k !== 'convexes') return false;
+      /* point du rectangle le plus proche du coin : hors de l'arrondi ? */
+      px = Math.max(b[0], Math.min(b[2], c.x)); py = Math.max(b[1], Math.min(b[3], c.y));
+      if ((px - cx) * c.sx >= 0 || (py - cy) * c.sy >= 0) return false;
+      return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) > R - g;
+    });
+  }
   /* Renvoie { x0, y0, x1, y1, nom, tient } ou null si le circuit est vide.
      Auto : toujours centré sur la boîte englobante des composants, taille étendue
-     symétriquement à tout le cuivre et aux textes. Formats imposés et Personnalisé :
-     figé (B.contour.x0, y0 : coin bas-gauche), sinon (premier calcul, Recentrer) centré */
+     symétriquement à tout le cuivre et aux textes, puis agrandie (pas de 0,5 mm) tant qu'un élément empiète
+     sur un coin (mire, arrondi, encoche) ou sur « AZS ». Formats imposés et Personnalisé : figé (B.contour.x0,
+     y0 : coin bas-gauche), sinon (premier calcul, Recentrer) centré ; empiètement = ne tient pas */
   function calculerContour() {
-    var b = bboxProjet(), bc, w, h, cx, cy, l = 0, ht = 0, nom = '', tient = true, k, f, cands, i, fige = B.contour.type !== 'auto' && typeof B.contour.x0 === 'number', dehors = false;
+    var b = bboxProjet(), bc, w, h, cx, cy, l = 0, ht = 0, nom = '', tient = true, k, f, cands, i, fige = B.contour.type !== 'auto' && typeof B.contour.x0 === 'number', dehors = false,
+        mg = margeContour(), rects, ct, essai;
     if (!b) return null;
     bc = bboxComposants() || b;
     cx = (bc[0] + bc[2]) / 2; cy = (bc[1] + bc[3]) / 2;
     if (fige) {
-      w = b[2] + MARGE_CONTOUR - B.contour.x0; h = b[3] + MARGE_CONTOUR - B.contour.y0;
-      dehors = b[0] - MARGE_CONTOUR < B.contour.x0 - 1e-6 || b[1] - MARGE_CONTOUR < B.contour.y0 - 1e-6;
+      w = b[2] + mg - B.contour.x0; h = b[3] + mg - B.contour.y0;
+      dehors = b[0] - mg < B.contour.x0 - 1e-6 || b[1] - mg < B.contour.y0 - 1e-6;
     } else {
-      w = 2 * (Math.max(cx - b[0], b[2] - cx) + MARGE_CONTOUR); h = 2 * (Math.max(cy - b[1], b[3] - cy) + MARGE_CONTOUR);
+      w = 2 * (Math.max(cx - b[0], b[2] - cx) + mg); h = 2 * (Math.max(cy - b[1], b[3] - cy) + mg);
     }
     function essayer(fl, fh) {
       if (w <= fl && h <= fh) { l = fl; ht = fh; return true; }
       if (w <= fh && h <= fl) { l = fh; ht = fl; return true; }
       return false;
     }
-    k = B.contour.type;
-    if (k === 'perso') {
-      l = B.contour.l; ht = B.contour.h; nom = 'Personnalisé';
-      tient = w <= l && h <= ht;
-    } else if (k === 'carte' || k === 'europe') {
-      f = FORMATS[k]; nom = f.nom;
-      if (!essayer(f.l, f.h)) { tient = false; l = w > h ? f.l : f.h; ht = w > h ? f.h : f.l; }
-    } else {
-      cands = ['carte', 'europe'];
-      for (i = 0; i < cands.length && !nom; i++) if (essayer(FORMATS[cands[i]].l, FORMATS[cands[i]].h)) nom = FORMATS[cands[i]].nom + ' (auto)';
-      if (!nom) { l = Math.ceil(w); ht = Math.ceil(h); nom = 'Hors format (auto)'; }
+    function dimensions() {
+      l = 0; ht = 0; nom = ''; tient = true;
+      k = B.contour.type;
+      if (k === 'perso') {
+        l = B.contour.l; ht = B.contour.h; nom = 'Personnalisé';
+        tient = w <= l && h <= ht;
+      } else if (k === 'carte' || k === 'europe') {
+        f = FORMATS[k]; nom = f.nom;
+        if (!essayer(f.l, f.h)) { tient = false; l = w > h ? f.l : f.h; ht = w > h ? f.h : f.l; }
+      } else {
+        cands = ['carte', 'europe'];
+        for (i = 0; i < cands.length && !nom; i++) if (essayer(FORMATS[cands[i]].l, FORMATS[cands[i]].h)) nom = FORMATS[cands[i]].nom + ' (auto)';
+        if (!nom) { l = Math.ceil(w); ht = Math.ceil(h); nom = 'Hors format (auto)'; }
+      }
+      if (fige) return { x0: B.contour.x0, y0: B.contour.y0, x1: arr(B.contour.x0 + l), y1: arr(B.contour.y0 + ht), nom: nom, tient: tient && !dehors, l: l, h: ht };
+      return { x0: arr(cx - l / 2), y0: arr(cy - ht / 2), x1: arr(cx + l / 2), y1: arr(cy + ht / 2), nom: nom, tient: tient, l: l, h: ht };
     }
-    if (fige) {
-      return { x0: B.contour.x0, y0: B.contour.y0, x1: arr(B.contour.x0 + l), y1: arr(B.contour.y0 + ht), nom: nom, tient: tient && !dehors, l: l, h: ht };
+    rects = rectsProjet();
+    for (essai = 0; essai < 60; essai++) {
+      ct = dimensions();
+      if (!rects.some(function (r) { return empieteCoin(ct, r); })) return ct;
+      if (B.contour.type !== 'auto') { ct.tient = false; return ct; }
+      w += 1; h += 1;
     }
-    return { x0: arr(cx - l / 2), y0: arr(cy - ht / 2), x1: arr(cx + l / 2), y1: arr(cy + ht / 2), nom: nom, tient: tient, l: l, h: ht };
+    return ct;
   }
   /* Fige le contour à sa position centrée actuelle (premier calcul ou Recentrer) ; Auto : jamais figé */
   function figerContour(force) {
@@ -11076,21 +11368,26 @@ function traduire(s) {
     ct = calculerContour();
     if (ct) { B.contour.x0 = ct.x0; B.contour.y0 = ct.y0; }
   }
-  /* 4 mires d'alignement à 3 mm des coins, à l'intérieur */
+  /* Mires d'alignement à l'intérieur des coins : à 3 mm des bords (coins droits), au centre de l'arrondi (coins
+     convexes) ; aucune en coins concaves (l'encoche est le repère) */
   function mires(ct) {
-    return [{ x: ct.x0 + COIN_MIRE, y: ct.y0 + COIN_MIRE }, { x: ct.x1 - COIN_MIRE, y: ct.y0 + COIN_MIRE },
-            { x: ct.x1 - COIN_MIRE, y: ct.y1 - COIN_MIRE }, { x: ct.x0 + COIN_MIRE, y: ct.y1 - COIN_MIRE }];
+    var k = coinsContour(), d = k === 'convexes' ? rayonCoin() : COIN_MIRE;
+    if (k === 'concaves') return [];
+    return coinsCarte(ct).map(function (c) { return { x: arr(c.x + c.sx * d), y: arr(c.y + c.sy * d) }; });
   }
   var MIRE = { cuivre: 2.0, trou: 1.0, vernis: 2.4, anneau: 3.0 };
   function dessinerContour() {
-    var ct = calculerContour(), a, b, i, m, s;
+    var ct = calculerContour(), a, i, m, s, l;
     if (!ct) return;
     ecran();
-    a = versEcran(ct.x0, ct.y1); b = versEcran(ct.x1, ct.y0);
+    a = versEcran(ct.x0, ct.y1);
     ctx.strokeStyle = ct.tient ? '#9a9a9a' : '#ff6b6b'; ctx.lineWidth = 1; ctx.setLineDash([]);
-    ctx.strokeRect(Math.round(a.x) + 0.5, Math.round(a.y) + 0.5, Math.round(b.x - a.x), Math.round(b.y - a.y));
+    l = contourPts(ct, 0);
+    ctx.beginPath();
+    l.forEach(function (q, j) { var p = versEcran(q[0], q[1]); if (j) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+    ctx.closePath(); ctx.stroke();
     m = mires(ct);
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < m.length; i++) {
       s = versEcran(m[i].x, m[i].y);
       ctx.beginPath(); ctx.arc(s.x, s.y, MIRE.anneau / 2 * B.z, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = '#9a9a9a'; ctx.beginPath(); ctx.arc(s.x, s.y, MIRE.cuivre / 2 * B.z, 0, Math.PI * 2); ctx.fill();
@@ -11113,10 +11410,22 @@ function traduire(s) {
       inp = champ(b, 'Hauteur (mm)', E('input')); inp.value = B.contour.h;
       inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v >= 6) { empiler(); B.contour.h = arr(v); figerContour(true); toutRafraichir(); } else this.value = B.contour.h; });
     }
+    inp = champ(b, 'Marge (mm)', E('input')); inp.value = margeContour();
+    inp.title = 'Distance minimale entre le projet et le bord ; mires et « AZS » comprises dans la carte';
+    inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v >= 1) { empiler(); B.contour.marge = arr(v); figerContour(true); toutRafraichir(); } else this.value = margeContour(); });
+    sel = champ(b, 'Coins', E('select'));
+    [['droits', 'Droits'], ['convexes', 'Arrondis convexes'], ['concaves', 'Rognés concaves (quart de cible)']].forEach(function (v) { var o = E('option', '', v[1]); o.value = v[0]; sel.appendChild(o); });
+    sel.value = coinsContour();
+    sel.addEventListener('change', function () { empiler(); B.contour.coins = this.value; figerContour(true); toutRafraichir(); });
+    if (coinsContour() !== 'droits') {
+      inp = champ(b, 'Rayon (mm)', E('input')); inp.value = rayonCoin();
+      inp.title = coinsContour() === 'convexes' ? 'Arc centré sur la mire, 2 mm au moins' : 'Quart de cercle centré sur le coin, 1 mm au moins (rayon de la fraise)';
+      inp.addEventListener('change', function () { var v = lireNb(this.value), mini = coinsContour() === 'convexes' ? 2 : 1; if (v && v >= mini) { empiler(); B.contour.rayon = arr(v); figerContour(true); toutRafraichir(); } else this.value = rayonCoin(); });
+    }
     if (ct) {
       b.appendChild(E('div', 'stat', ct.nom + ' : ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm'));
       b.appendChild(E('div', 'stat', 'Coin bas-gauche : X ' + ct.x0.toFixed(2) + ' · Y ' + ct.y0.toFixed(2) + ' mm ' + (B.contour.type === 'auto' ? '(centré sur les composants)' : '(fixe)')));
-      if (!ct.tient) b.appendChild(E('div', 'avert', 'Le projet (marge ' + MARGE_CONTOUR + ' mm comprise) dépasse ce format.'));
+      if (!ct.tient) b.appendChild(E('div', 'avert', 'Le projet (marge ' + String(margeContour()).replace('.', ',') + ' mm comprise, coins compris) dépasse ce format.'));
       if (B.contour.type === 'auto') return;
       sel = E('div', 'boutons'); b.appendChild(sel);
       inp = E('button', '', 'Recentrer le contour');
@@ -11233,9 +11542,18 @@ function traduire(s) {
     for (i = 0; i <= n; i++) { a = (a1 + (a2 - a1) * i / n) * Math.PI / 180; l.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }); }
     return l;
   }
+  /* Position de « AZS » : à droite de la mire bas-gauche (coins droits ou convexes), au-delà de l'encoche (concaves) */
+  function posAzs(ct) {
+    var k = coinsContour(), R = rayonCoin();
+    if (k === 'concaves') return { x: ct.x0 + R + 1.0 + 1.4, y: ct.y0 + 1.5 };
+    if (k === 'convexes') return { x: ct.x0 + R + MIRE.anneau / 2 + 0.8 + 1.4, y: ct.y0 + R };
+    return { x: ct.x0 + COIN_MIRE + MIRE.anneau / 2 + 0.8 + 1.4, y: ct.y0 + COIN_MIRE };
+  }
+  /* Contour tracé dans un contexte 2D en coordonnées monde (aperçu Gerber) */
+  function traceContour(c, ct) { c.beginPath(); contourPts(ct, 0).forEach(function (q, j) { if (j) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.closePath(); c.stroke(); }
   /* « AZS » en bas à gauche, à droite de la mire, lisible depuis la face de la couche */
   function marquerAzs(G, ct, dessous) {
-    var h = 1.0, x = ct.x0 + COIN_MIRE + MIRE.anneau / 2 + 0.8 + 1.4 * h, y = ct.y0 + COIN_MIRE;
+    var h = 1.0, p = posAzs(ct), x = p.x, y = p.y;
     G.texte('AZS', x, y, h, 0, dessous);
   }
   function couchesExistantes() {
@@ -11266,14 +11584,14 @@ function traduire(s) {
     if (!nb) { RAYONS_NULS[n] = (RAYONS_NULS[n] || 0) + 1; return null; }
     return { x: cx, y: cy, rayons: faits };
   }
-  function boiteAzs(ct) { var x = ct.x0 + COIN_MIRE + MIRE.anneau / 2 + 0.8 + 1.4, y = ct.y0 + COIN_MIRE; return [[x - 1.4, y - 0.8], [x + 1.4, y - 0.8], [x + 1.4, y + 0.8], [x - 1.4, y + 0.8]]; }
+  function boiteAzs(ct) { var p = posAzs(ct), x = p.x, y = p.y; return [[x - 1.4, y - 0.8], [x + 1.4, y - 0.8], [x + 1.4, y + 0.8], [x - 1.4, y + 0.8]]; }
   /* Cuivre de masse d'une couche (plan ou face remplie) : région moins le retrait, dégagements en polarité
      claire (autres équipotentielles, zones des patchs, saignée de la coupe, mires, « AZS »), rayons
      thermiques en polarité sombre ; renvoie les points d'ancrage (cuivre de l'équipotentielle) */
   function phaseMasse(G, n, ct, plan) {
     var pads = tousPads(), m = mires(ct), dg = B.degPlan, zb = zonesBga(), r = RETRAIT_PLAN, ancres = [], i, p, t, v, nt, meme, obsNet = {}, a, saignee = B.coupe && netRemp(n) === 'GND' ? coupeEtendue() : null;
     function relie(net, x, y) { return relieRemp(n, net, x, y); }
-    G.region([[ct.x0 + r, ct.y0 + r], [ct.x1 - r, ct.y0 + r], [ct.x1 - r, ct.y1 - r], [ct.x0 + r, ct.y1 - r]]);
+    G.region(contourPts(ct, r));
     G.polarite(false);
     patchs().forEach(function (c) { var z = cuivrePatch(c).zone; if (z) G.region(z); });
     /* plan d'alimentation évidé sous le carré central de masse d'un boîtier */
@@ -11281,7 +11599,7 @@ function traduire(s) {
     if (B.coupe && netRemp(n) === 'GND') G.trait(coupeEtendue(), 2 * dg);
     /* couches internes évidées sous les lignes 50 Ω (référence : le dessous) */
     if (n > 1 && n < bas()) B.pistes.forEach(function (t2) { if (optRfNet(t2.net)) G.trait(t2.pts, t2.w + 2 * couloir50() + 2 * dg); });
-    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
+    for (i = 0; i < m.length; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
     for (i = 0; i < pads.length; i++) {
       p = pads[i];
       if (plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) continue;
@@ -11406,7 +11724,7 @@ function traduire(s) {
   var ZONES = {}, ZONES_VUE = {};
   function zonesCoupees() {
     var l = Object.keys(ZONES).filter(function (k) { return ZONES[k] > 1 && netRemp(+k) && netRemp(+k) !== 'GND'; }).map(function (k) { return netRemp(+k) + ' (couche ' + k + ') : ' + ZONES[k] + ' zones non reliées'; });
-    return l.length ? ' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ' + l.join(', ') + ' — relier par une piste de 2 mm entre deux vias (Router le chevelu le tente)' : '';
+    return l.length ? ' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ' + l.join(', ') + ' — Irrigation ▸ Placer' : '';
   }
   function rayonsNuls() {
     var l = Object.keys(RAYONS_NULS).map(function (k) { return 'couche ' + k + ' : ' + RAYONS_NULS[k]; });
@@ -11476,7 +11794,7 @@ function traduire(s) {
       if (n === 1) { k.polys.forEach(function (l) { G.region(l); }); k.traits.forEach(function (t2) { G.trait(t2.pts, t2.w); }); }
       else if (n === bas() && k.bande) G.region(k.bande);
     });
-    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
+    for (i = 0; i < m.length; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
     marquerAzs(G, ct, n === bas());
     return G.sortie();
   }
@@ -11485,7 +11803,7 @@ function traduire(s) {
   function gerberPlan(n, ct) {
     var net = netPlan(n), G = new Gerber('Cuivre ' + n + ' (plan ' + (net || typeCouche(n)) + ')'), pads = tousPads(), m = mires(ct), i, v;
     retirerIlots(G, n, ct, true);
-    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
+    for (i = 0; i < m.length; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre);
     for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!planRelie(n, v.net, v.x, v.y)) G.flash(v.x, v.y, v.diam); }
     for (i = 0; i < pads.length; i++) if (pads[i].e.t === 'pad') gPastille(G, pads[i].e, 0);
     marquerAzs(G, ct, false);
@@ -11494,7 +11812,7 @@ function traduire(s) {
   function gerberVernis(dessous, ct) {
     var G = new Gerber('Vernis épargne ' + (dessous ? 'dessous' : 'dessus') + ' (ouvertures)'), pads = tousPads(), n = dessous ? bas() : 1, i, m = mires(ct);
     for (i = 0; i < pads.length; i++) if (pads[i].couches.indexOf(n) >= 0 && !pads[i].e.via) gPastille(G, pads[i].e, MARGE_VERNIS);
-    for (i = 0; i < 4; i++) G.flash(m[i].x, m[i].y, MIRE.vernis);
+    for (i = 0; i < m.length; i++) G.flash(m[i].x, m[i].y, MIRE.vernis);
     marquerAzs(G, ct, dessous);
     return G.sortie();
   }
@@ -11519,16 +11837,19 @@ function traduire(s) {
         }
       }
       tp = posTexte(c);
-      G.texte(libelle(c), tp.x, tp.y, hTexte(c), rotTexte(c), dessous);
+      G.texte(texteSerig(c), tp.x, tp.y, hTexte(c), rotTexte(c), dessous);
+      (function () { var r = rappel(c); if (r) G.trait([r.a, r.b], EP_RAPPEL); })();
     }
     for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; if (!!t.dessous === dessous) G.texte(t.txt, t.x, t.y, t.h, t.rot, dessous); }
-    for (i = 0; i < 4; i++) G.trait(ptsArc(m[i].x, m[i].y, MIRE.anneau / 2, 0, 360), 0.15);
+    for (i = 0; i < m.length; i++) G.trait(ptsArc(m[i].x, m[i].y, MIRE.anneau / 2, 0, 360), 0.15);
     marquerAzs(G, ct, dessous);
+    /* sérigraphie coupée sur les pastilles et les vias (polarité claire) */
+    (function () { var n = dessous ? bas() : 1, pads = tousPads(); G.polarite(false); pads.forEach(function (p) { if (p.couches.indexOf(n) >= 0) gPastille(G, p.e, MARGE_SERIG); }); B.vias.forEach(function (v) { G.flash(v.x, v.y, v.diam + 2 * MARGE_SERIG); }); G.polarite(true); })();
     return G.sortie();
   }
   function gerberContour(ct) {
     var G = new Gerber('Contour ' + ct.nom);
-    G.trait([{ x: ct.x0, y: ct.y0 }, { x: ct.x1, y: ct.y0 }, { x: ct.x1, y: ct.y1 }, { x: ct.x0, y: ct.y1 }, { x: ct.x0, y: ct.y0 }], 0.1);
+    G.trait(contourPts(ct, 0).concat([contourPts(ct, 0)[0]]).map(function (q) { return { x: q[0], y: q[1] }; }), 0.1);
     return G.sortie();
   }
   function excellon(ct) {
@@ -11539,7 +11860,7 @@ function traduire(s) {
       for (j = 0; p && j < p.el.length; j++) { e = p.el[j]; if (e.t !== 'pad') continue; w = elMonde(c, e); aj(e.perc, w.x, w.y); }
     }
     for (i = 0; i < B.vias.length; i++) aj(B.vias[i].perc, B.vias[i].x, B.vias[i].y);
-    for (i = 0; i < 4; i++) aj(MIRE.trou, m[i].x, m[i].y);
+    for (i = 0; i < m.length; i++) aj(MIRE.trou, m[i].x, m[i].y);
     liste.sort(function (a, b) { return parseFloat(a) - parseFloat(b); });
     for (i = 0; i < liste.length; i++) l.push('T' + (i + 1) + 'C' + liste[i]);
     l.push('%', 'G90', 'G05');
@@ -11556,13 +11877,6 @@ function traduire(s) {
     if (!ct) { message('Circuit vide : rien à exporter.', true); return; }
     if (B.route) terminerRoute();
     calculerConflits();
-    if (nbConflits()) {
-      message('Export refusé : sérigraphie sur pastille (' + CONFLITS_SERIG.comps.map(libelle).concat(CONFLITS_SERIG.libres.map(function (t) { return t.txt; })).join(', ') + ')', true);
-      if (CONFLITS_SERIG.comps.length) { B.sel = CONFLITS_SERIG.comps[0]; B.selT = -1; zoomTexte(boiteComp(B.sel)); }
-      else { B.sel = null; B.selT = B.textes.indexOf(CONFLITS_SERIG.libres[0]); zoomTexte(boiteLibre(CONFLITS_SERIG.libres[0])); }
-      toutRafraichir();
-      return;
-    }
     ex = couchesExistantes(); ILOTS = {}; ZONES = {}; ZONES_VUE = {}; RAYONS_NULS = {};
     base = ascii($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_');
     toutesCouches().forEach(function (n) {
@@ -11577,7 +11891,7 @@ function traduire(s) {
     f.push([base + '-percage.drl', excellon(ct)]);
     apercuGerber(f, ct);
     i = Object.keys(ILOTS).reduce(function (t, k) { return t + ILOTS[k]; }, 0);
-    message('Aperçu : ' + f.length + ' fichier(s)' + (i ? ' · ' + i + ' îlot(s) de masse isolé(s) supprimé(s)' : '') + rayonsNuls() + zonesCoupees() + (function () { var v = passagesThermiques(); return v ? ' · ' + v + ' passage(s) de piste entre deux pattes dont une à frein thermique : Optimiser ▸ Re-router' : ''; })() + ' · ' + ct.nom + ' ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm' + (ct.tient ? '' : ' · le projet dépasse le format'), !ct.tient || !!zonesCoupees());
+    message('Aperçu : ' + f.length + ' fichier(s)' + (nbConflits() ? ' · ' + nbConflits() + ' texte(s) sur une pastille, coupé(s) dans le Gerber' : '') + (i ? ' · ' + i + ' îlot(s) de masse isolé(s) supprimé(s)' : '') + rayonsNuls() + zonesCoupees() + (function () { var v = passagesThermiques(); return v ? ' · ' + v + ' passage(s) de piste entre deux pattes dont une à frein thermique : Optimiser ▸ Re-router' : ''; })() + ' · ' + ct.nom + ' ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm' + (ct.tient ? '' : ' · le projet dépasse le format'), !ct.tient || !!zonesCoupees());
   }
 
   /* ======================================================================
@@ -11755,7 +12069,7 @@ function traduire(s) {
   }
   function optDansCarte(q, h) {
     var m = RETRAIT_PLAN + h, ct = OPT.ct;
-    return !ct || (q.x >= ct.x0 + m && q.x <= ct.x1 - m && q.y >= ct.y0 + m && q.y <= ct.y1 - m);
+    return !ct || dansContour(ct, q, m);
   }
   /* Passage d'un signal sous une ligne 50 Ω (dernier recours, Router le chevelu) : couche interne seulement, segment
      perpendiculaire à la ligne, extrémités de part et d'autre, hors du couloir à l'isolement (traversée droite) */
@@ -11953,6 +12267,8 @@ function traduire(s) {
   /* --- 1. Vias --- */
   function optViaLiee(v) { return !!clePlan(v.net, v.x, v.y) || ((remplit(1) || remplit(bas())) && relieMasse(v.net, v.x, v.y)); }
   function optViaSurPastille(v, marge) { var i; for (i = 0; i < OPT.pads.length; i++) if (optDansPad(i, v.x, v.y, marge)) return true; return false; }
+  /* via dans une pastille : permise dans une pastille CMS de son propre réseau (via dans la pastille) */
+  function optViaSurAutrePastille(v, marge, net) { var i; for (i = 0; i < OPT.pads.length; i++) if (!(OPT.cuPads[i].net === net && OPT.pads[i].e.t === 'smd') && optDansPad(i, v.x, v.y, marge)) return true; return false; }
   /* Pistes d'une via : bouts posés au centre ; « floue » si une piste la touche autrement (milieu, bout décentré) */
   function optBoutsVia(j) {
     var v = B.vias[j], r = { bouts: [], floue: false, couches: {} }, i, t, n, b0, b1;
@@ -11971,7 +12287,7 @@ function traduire(s) {
     /* vias inutiles : doublons, ou pistes d'une seule couche sans plan ni face remplie ni pastille */
     for (j = B.vias.length - 1; j >= 0; j--) {
       v = B.vias[j];
-      if (v.couture || (seule !== null && seule !== j)) continue;
+      if (v.couture || estPont(v) || (seule !== null && seule !== j)) continue;
       for (k = 0; k < j; k++) if (B.vias[k].net === v.net && dist(B.vias[k], v) < 1e-3) break;
       if (k < j || (!optViaLiee(v) && !optViaSurPastille(v, 0) && Object.keys(optBoutsVia(j).couches).length === 1)) { B.vias.splice(j, 1); n.sup++; if (seule !== null) return n; }
     }
@@ -11979,7 +12295,7 @@ function traduire(s) {
       change = false;
       for (j = 0; j < B.vias.length; j++) {
         v = B.vias[j];
-        if (v.couture || (seule !== null && seule !== j) || optRf(v.net) || optViaSurPastille(v, 0)) continue;
+        if (v.couture || estPont(v) || (seule !== null && seule !== j) || optRf(v.net) || optViaSurPastille(v, 0)) continue;
         if (OPT.pz.some(function (q) { return v.x > q[0] && v.x < q[2] && v.y > q[1] && v.y < q[3]; })) continue;
         bv = optBoutsVia(j);
         if (bv.floue || bv.bouts.length < 2) continue;
@@ -12027,7 +12343,7 @@ function traduire(s) {
           if (!optDansCarte(P, v.diam / 2) || clePlan(v.net, P.x, P.y) !== cle) continue;
           if (B.coupe && coteCoupe(P.x, P.y) !== coteCoupe(v.x, v.y)) continue;
           if (OPT.pz.some(function (q) { return P.x > q[0] - v.diam / 2 && P.x < q[2] + v.diam / 2 && P.y > q[1] - v.diam / 2 && P.y < q[3] + v.diam / 2; })) continue;
-          if (optViaSurPastille(P, v.diam / 2 + B.isolement)) continue;
+          if (optViaSurAutrePastille(P, v.diam / 2 + B.isolement, v.net)) continue;
           if (B.vias.some(function (w, jj) { return jj !== j && dist(w, P) < (w.diam + v.diam) / 2 + (w.net === v.net ? 0 : B.isolement); })) continue;
           if (optJeu(P, P, v.diam / 2, 0, v.net, B.isolement) < B.isolement - 1e-6) continue;
           /* la via est essayée à sa nouvelle place : les bouts la suivent par un trajet à 45° */
@@ -12071,7 +12387,7 @@ function traduire(s) {
       fait = false;
       for (i = 0; i < B.pistes.length && !fait; i++) for (j = i + 1; j < B.pistes.length && !fait; j++) {
         a = B.pistes[i]; b = B.pistes[j];
-        if (a.couche !== b.couche || a.net !== b.net || Math.abs(a.w - b.w) > 1e-6 || optRf(a.net)) continue;
+        if (a.couche !== b.couche || a.net !== b.net || Math.abs(a.w - b.w) > 1e-6 || optRf(a.net) || estPont(a) || estPont(b)) continue;
         ok = null;
         if (optEg(a.pts[a.pts.length - 1], b.pts[0])) ok = a.pts.concat(b.pts.slice(1));
         else if (optEg(a.pts[a.pts.length - 1], b.pts[b.pts.length - 1])) ok = a.pts.concat(b.pts.slice(0, -1).reverse());
@@ -12093,7 +12409,7 @@ function traduire(s) {
       change = false;
       for (i = 0; i < B.pistes.length; i++) {
         t = B.pistes[i];
-        if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+        if ((seule !== null && seule !== i) || optRf(t.net) || estPont(t)) continue;
         att = null;
         for (k = 1; k + 1 < t.pts.length; k++) {
           a = t.pts[k - 1]; p = t.pts[k]; b = t.pts[k + 1]; la = dist(a, p); lb = dist(p, b);
@@ -12138,7 +12454,7 @@ function traduire(s) {
       change = false;
       for (i = 0; i < B.pistes.length; i++) {
         t = B.pistes[i];
-        if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+        if ((seule !== null && seule !== i) || optRf(t.net) || estPont(t)) continue;
         h = t.w / 2; G = Math.min(2 * t.w, 1.27); M = Math.min(8, Math.ceil(G / g) + 1); att = null;
         for (k = 1; k + 2 < t.pts.length; k++) {
           a = t.pts[k]; b = t.pts[k + 1]; l = dist(a, b);
@@ -12177,7 +12493,7 @@ function traduire(s) {
       change = false;
       for (i = 0; i < B.pistes.length; i++) {
         t = B.pistes[i];
-        if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+        if ((seule !== null && seule !== i) || optRf(t.net) || estPont(t)) continue;
         h = t.w / 2; att = null;
         for (k = 1; k + 2 < t.pts.length; k++) {
           a = t.pts[k]; b = t.pts[k + 1]; l = dist(a, b);
@@ -12217,7 +12533,7 @@ function traduire(s) {
     var n = 0, i, t, fin, pts, E0, C, j, v, cands, N, av, I, x, np, att, jp;
     for (i = 0; i < B.pistes.length; i++) {
       t = B.pistes[i];
-      if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+      if ((seule !== null && seule !== i) || optRf(t.net) || estPont(t)) continue;
       for (fin = 0; fin < 2; fin++) {
         pts = fin ? t.pts.slice() : t.pts.slice().reverse();              /* dernier point = bout traité */
         E0 = pts[pts.length - 1]; C = null;
@@ -12269,7 +12585,7 @@ function traduire(s) {
       change = false;
       for (i = 0; i < B.pistes.length; i++) {
         t = B.pistes[i];
-        if ((seule !== null && seule !== i) || optRf(t.net)) continue;
+        if ((seule !== null && seule !== i) || optRf(t.net) || estPont(t)) continue;
         att = null;
         for (k = 1; k + 2 < t.pts.length; k++) {
           a = t.pts[k]; b = t.pts[k + 1]; dx = b.x - a.x; dy = b.y - a.y;
@@ -12347,7 +12663,7 @@ function traduire(s) {
   }
   function optRouterNet0(net, w, gr, passe, seuls) {
     var L = couchesSignal(), nl = L.length, h = w / 2, iso = B.isolement, vd = B.via.diam, ct = OPT.ct, pi = [], i, j, k, p, r, X0, Y0, X1, Y1, nx, ny, N,
-        mt, mv, mm, blk = [], cher = [], larg = [], kl = 0, lv = null, hk = gr && !optRf(net) ? LARGE_HEUR : 1, clr = null, strict = !!(passe && passe.stricte), vb, gs, par, res = { pistes: [], vias: [], manque: 0 }, sources, reste, t, tg, ch, d, best, relies, mg, o, np0, nv0, ns0, okc, vus2,
+        mt, mv, mm, blk = [], cher = [], larg = [], kl = 0, lv = null, hk = gr && !optRf(net) ? LARGE_HEUR : 1, clr = null, fcl = null, strict = !!(passe && passe.stricte), vb, gs, par, res = { pistes: [], vias: [], manque: 0 }, sources, reste, t, tg, ch, d, best, relies, mg, o, np0, nv0, ns0, okc, vus2,
         neck = false, wn = w, hn = 0, piN = [], piL = [], dmN = {}, mtn = 0, blkN = [], zn = null, RZ = 0,
         DX = [1, 1, 0, -1, -1, -1, 0, 1], DY = [0, 1, 1, 1, 0, -1, -1, -1], PEN = optRf(net) ? [0, 3, 0] : [0, 0.3, 0.8], nbp, oc;
     if (seuls) pi = seuls.slice(); else for (i = 0; i < OPT.pads.length; i++) if (OPT.cuPads[i].net === net) pi.push(i);
@@ -12409,7 +12725,7 @@ function traduire(s) {
       for (d3 = 0; d3 < 8; d3++) if (Math.abs(DX[d3] * vx + DY[d3] * vy) / (lv * Math.sqrt(DX[d3] * DX[d3] + DY[d3] * DY[d3])) < 1e-3) m2 |= 1 << d3;
       return m2;
     }
-    function marquer(ob, propre) {
+    function marquer(ob, propre, viaOk) {
       var ix0 = Math.max(0, Math.ceil((ob.bx[0] - mm - X0) / r)), ix1 = Math.min(nx - 1, Math.floor((ob.bx[2] + mm - X0) / r)),
           iy0 = Math.max(0, Math.ceil((ob.bx[1] - mm - Y0) / r)), iy1 = Math.min(ny - 1, Math.floor((ob.bx[3] + mm - Y0) / r)), ix, iy, q, dd, e, c2, li = [], z;
       var lc = [], mq = 0, kq;
@@ -12430,11 +12746,11 @@ function traduire(s) {
         if (dd < mt - 1e-9) for (z = 0; z < li.length; z++) blk[li[z]][iy * nx + ix] = 1;
         if (dd < mt - 1e-9 && lc.length) { kq = iy * nx + ix; if (ob.arc) mq = masqueRadial(q, ob.arc); for (z = 0; z < lc.length; z++) { cm[lc[z]][kq] = cz[lc[z]][kq] ? cm[lc[z]][kq] & mq : mq; cz[lc[z]][kq] = 1; } }
         if (neck && dd < mtn - 1e-9) for (z = 0; z < li.length; z++) blkN[li[z]][iy * nx + ix] = 1;
-        if (dd < mv - 1e-9) vb[iy * nx + ix] = 1;
+        if (dd < mv - 1e-9 && !viaOk) vb[iy * nx + ix] = 1;
       }
     }
     optObs(net).forEach(function (ob) { marquer(ob, false); });
-    OPT.cuPads.forEach(function (ob) { if (ob.net === net) marquer(ob, true); });
+    OPT.cuPads.forEach(function (ob, q) { if (ob.net === net) marquer(ob, true, OPT.pads[q].e.t === 'smd'); });
     /* sous un arc de ligne 50 Ω : saut droit dans l'axe du rayon, d'un bord du couloir à l'autre (longueur fixe),
        depuis chaque nœud libre au bord du couloir, dans les deux sens ; utilisé seulement en dernier recours */
     var sauts = null, sautsFaits = false;
@@ -12626,6 +12942,27 @@ function traduire(s) {
         for (i = 0; i < nl; i++) clr.push(r * (L[i] === bas() ? PASSE_BAS : netRemp(L[i]) ? PASSE_PLAN : L[i] === passe.couche ? 0 : L[i] === 1 ? PASSE_FACE : PASSE_INTERNE));
       }
     }
+    /* Re-routage (hors passes du routeur) : coût de pas multiplié par la profondeur de la couche signal (dessus ×1,
+       couche signal suivante ×2, puis ×4…) ; passage 1 : GND (dessous) et couches de plan interdits ; passage 2
+       (dernier espoir) : plans VCC ouverts à coût ×RR_PLAN, GND toujours interdit (routage à la main seulement).
+       Couche interdite : seuls restent ouverts les abords des pastilles CMS du réseau posées sur elle (sortie par via) */
+    if (!passe && RR_COUCHES) {
+      fcl = [];
+      for (i = 0; i < nl; i++) {
+        fcl.push(facteurCouche(L[i]));
+        if (L[i] === bas() || (RR_COUCHES === 1 && L[i] !== 1 && netRemp(L[i]))) (function (z) {
+          var garde = new Uint8Array(N), ix, iy, k2;
+          pi.forEach(function (q) {
+            var ob = OPT.cuPads[q], m = 1.0 + h, ix0, ix1, iy0, iy1;
+            if (OPT.pads[q].e.t !== 'smd' || OPT.pads[q].couches.indexOf(L[z]) < 0) return;
+            ix0 = Math.max(0, Math.floor((ob.bx[0] - m - X0) / r)); ix1 = Math.min(nx - 1, Math.ceil((ob.bx[2] + m - X0) / r));
+            iy0 = Math.max(0, Math.floor((ob.bx[1] - m - Y0) / r)); iy1 = Math.min(ny - 1, Math.ceil((ob.bx[3] + m - Y0) / r));
+            for (iy = iy0; iy <= iy1; iy++) for (ix = ix0; ix <= ix1; ix++) garde[iy * nx + ix] = 1;
+          });
+          for (k2 = 0; k2 < N; k2++) if (!garde[k2]) blk[z][k2] = 1;
+        })(i);
+      }
+    }
     /* accès à une pastille : les nœuds voisins de son centre, joints au centre par un trajet à 45° libre */
     /* accès à une pastille : départ du centre, droit dans un axe de la pastille jusqu'au-delà de son bord plus une
        largeur de piste, puis (si le nœud n'est pas exactement dans l'axe) un pas à 45° jusqu'au nœud */
@@ -12711,11 +13048,11 @@ function traduire(s) {
             if (cz[li][nk] && (!crOk || !((cm[li][nk] >> nd) & 1))) continue;
             if (cz[li][k2] && dd !== 0) continue;
           }
-          c = g + (cz && cz[li] && cz[li][nk] && !cz[li][k2] ? CROISE_COUT * (gp && gp[nk] ? CROISE_GROUPE : 1) : 0) + (nd & 1 ? r * 1.41421356 : r) * lg + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0) + (kl ? larg[li][nk] : 0) + (clr ? clr[li] : 0); ns = (li * N + nk) * 8 + nd;
+          c = g + (cz && cz[li] && cz[li][nk] && !cz[li][k2] ? CROISE_COUT * (gp && gp[nk] ? CROISE_GROUPE : 1) : 0) + (nd & 1 ? r * 1.41421356 : r) * lg * (fcl ? fcl[li] : 1) + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0) + (kl ? larg[li][nk] : 0) + (clr ? clr[li] : 0); ns = (li * N + nk) * 8 + nd;
           if (!ferme[ns] && c < gs[ns] - 1e-6) { gs[ns] = c; par[ns] = s; tas.mettre(ns, c + heur(q, z)); }
         }
         if (crOk && sauts && sauts[node]) sauts[node].forEach(function (sj) {
-          var nk3 = li * N + sj.k, ns4 = nk3 * 8 + sj.d, c4 = g + sj.l * lg + CROISE_COUT * (gp && gp[sj.k] ? CROISE_GROUPE : 1);
+          var nk3 = li * N + sj.k, ns4 = nk3 * 8 + sj.d, c4 = g + sj.l * lg * (fcl ? fcl[li] : 1) + CROISE_COUT * (gp && gp[sj.k] ? CROISE_GROUPE : 1);
           if (!ferme[ns4] && c4 < gs[ns4] - 1e-6) { gs[ns4] = c4; par[ns4] = s; tas.mettre(ns4, c4 + heur(sj.k % nx, Math.floor(sj.k / nx))); }
         });
         if (!vb[k2] && !strict && !(cz && cz.some(function (a3) { return a3 && a3[k2]; }))) for (z = 0; z < nl; z++) {
@@ -12777,9 +13114,31 @@ function traduire(s) {
     return res;
   }
   var OPT_REDUITES = {}, OPT_RAISON = '';
+  /* --- Re-routage : couches hiérarchisées et deux passages --- */
+  var RR_COUCHES = 0, RR_PLAN = 20;
+  /* Facteur de coût d'une couche : signaux ×1, ×2, ×4… du dessus vers la profondeur ; plans VCC et GND ×RR_PLAN */
+  function facteurCouche(n) {
+    var rang = 0, k;
+    if (n === bas() || (n !== 1 && netRemp(n))) return RR_PLAN;
+    for (k = 1; k < n; k++) if (!(k !== 1 && netRemp(k))) rang++;
+    return Math.pow(2, rang);
+  }
+  /* Tracé de re-routage : passage 1 sur les couches signal seules ; s'il échoue, passage 2 (dernier espoir) avec les
+     plans VCC ouverts ; GND jamais */
+  function optRetrace(net, w, gr, seuls) {
+    var av = RR_COUCHES, r, rs, tr;
+    try {
+      RR_COUCHES = 1; r = optRouterNet(net, w, gr, null, seuls);
+      if (r && !r.manque && r.pistes.length) return r;
+      rs = OPT_RAISON; tr = OPT.trop;
+      RR_COUCHES = 2; r = optRouterNet(net, w, gr, null, seuls);
+      if (!r) { OPT_RAISON = rs || OPT_RAISON; OPT.trop = tr || OPT.trop; }
+      return r;
+    } finally { RR_COUCHES = av; }
+  }
   function optCoutNet(net) {
     var c = 0;
-    B.pistes.forEach(function (t) { if (t.net === net) c += optLong(t.pts); });
+    B.pistes.forEach(function (t) { if (t.net === net) c += optLong(t.pts) * facteurCouche(t.couche); });
     B.vias.forEach(function (v) { if (v.net === net && !v.couture) c += v.diam; });
     return c;
   }
@@ -12828,7 +13187,7 @@ function traduire(s) {
   function optRaisonRefus(det, sigOk) {
     if (!sigOk) return 'connexité modifiée par le nouveau tracé : annulé';
     if (det.v1 > det.v0) return 'passage entre pattes à frein thermique ou sortie de pastille hors axe en plus (' + det.v0 + ' → ' + det.v1 + ')';
-    return 'le plus court trouvé n\'est pas plus court : ' + mmTxt(det.l1) + ' mm et ' + det.nv1 + ' via(s) contre ' + mmTxt(det.l0) + ' mm et ' + det.nv0 + ' via(s) actuels';
+    return 'le tracé trouvé n\'est pas meilleur (longueur pondérée par couche : signaux ×1, ×2, ×4…, plans ×' + RR_PLAN + ') : ' + mmTxt(det.l1) + ' mm et ' + det.nv1 + ' via(s) contre ' + mmTxt(det.l0) + ' mm et ' + det.nv0 + ' via(s) actuels';
   }
   /* Une équipotentielle : libérée, retracée, tendue ; gardée si plus courte et si la connexité est intacte ;
      det (facultatif) reçoit longueurs, vias, passages avant/après, verdict et raison */
@@ -12837,15 +13196,15 @@ function traduire(s) {
     det = det || {};
     optDebut(); v0 = optViolations(net);
     det.l0 = optLongNet(net); det.nv0 = optNbVias(net); det.v0 = v0; det.garde = false; det.raison = '';
-    B.pistes.forEach(function (t) { if (t.net === net) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
+    B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
     Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
     try {
-      B.pistes = B.pistes.filter(function (t) { return t.net !== net; });
-      B.vias = B.vias.filter(function (v) { return v.net !== net || v.couture; });
+      B.pistes = B.pistes.filter(function (t) { return t.net !== net || estPont(t); });
+      B.vias = B.vias.filter(function (v) { return v.net !== net || v.couture || estPont(v); });
       optDebut();
-      res = optRouterNet(net, w); rs = OPT_RAISON;
+      res = optRetrace(net, w); rs = OPT_RAISON;
       /* tracé impossible à cette largeur (piste trop large pour passer là où il faut) : essai à la largeur courante du circuit */
-      if (!res && B.largeur < w - 1e-6) { res = optRouterNet(net, B.largeur); if (res) OPT_REDUITES[net] = B.largeur; else rs += ' (aussi à ' + mmTxt(B.largeur) + ' mm de large)'; }
+      if (!res && B.largeur < w - 1e-6) { res = optRetrace(net, B.largeur); if (res) OPT_REDUITES[net] = B.largeur; else rs += ' (aussi à ' + mmTxt(B.largeur) + ' mm de large)'; }
       if (res) {
         n0 = B.pistes.length;
         B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
@@ -13054,8 +13413,8 @@ function traduire(s) {
     }
     while (coupe && tours++ < 500) {
       coupe = false;
-      T = B.pistes.filter(function (t) { return t.net === net; });
-      V = B.vias.filter(function (v) { return v.net === net && !v.couture; });
+      T = B.pistes.filter(function (t) { return t.net === net && !estPont(t); });
+      V = B.vias.filter(function (v) { return v.net === net && !v.couture && !estPont(v); });
       T.some(function (t) {
         var n = t.pts.length;
         coupe = V.some(function (v) {
@@ -13074,7 +13433,7 @@ function traduire(s) {
   }
   /* Tronçons qui partent de la patte q (OPT à jour, pistes déjà coupées aux jonctions) */
   function optTroncons(net, q) {
-    var T = B.pistes.filter(function (t) { return t.net === net; }), V = B.vias.filter(function (v) { return v.net === net && !v.couture; }),
+    var T = B.pistes.filter(function (t) { return t.net === net && !estPont(t); }), V = B.vias.filter(function (v) { return v.net === net && !v.couture && !estPont(v); }),
         L = couchesSignal(), tol = 0.01, res = [], vus = {}, departs = [];
     function bouts(t) { return [t.pts[0], t.pts[t.pts.length - 1]]; }
     function viaEn(e) { var i; for (i = 0; i < V.length; i++) if (dist(e, V[i]) <= V[i].diam / 2 + tol) return V[i]; return null; }
@@ -13129,7 +13488,7 @@ function traduire(s) {
   function optLienCourt(net, w, a, b, couche, prof) {
     var r, m, q, r1, r2;
     OPT.trop = false;
-    r = optRouterNet(net, w, null, null, [a, b]);
+    r = optRetrace(net, w, null, [a, b]);
     if (r && r.pistes.length) return r;
     if (r) OPT_RAISON = 'tracé vide';
     if (!OPT.trop) return null;
@@ -13299,13 +13658,13 @@ function traduire(s) {
     nets.forEach(function (net) {
       var lg = {}, w = 0, m = 0;
       c0 += optCoutNet(net); nv0 += nbVias(net); v0 += optViolations(net);
-      B.pistes.forEach(function (t) { if (t.net === net) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
+      B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
       Object.keys(lg).forEach(function (q) { if (lg[q] > m) { m = lg[q]; w = parseFloat(q); } });
       larg[net] = w || B.largeur;
     });
     try {
-      B.pistes = B.pistes.filter(function (t) { return nets.indexOf(t.net) < 0; });
-      B.vias = B.vias.filter(function (v) { return nets.indexOf(v.net) < 0 || v.couture; });
+      B.pistes = B.pistes.filter(function (t) { return nets.indexOf(t.net) < 0 || estPont(t); });
+      B.vias = B.vias.filter(function (v) { return nets.indexOf(v.net) < 0 || v.couture || estPont(v); });
       optDebut();
       OPT.cuPads.forEach(function (o, q) { o.ref = OPT.pads[q].ref; });
       bary = optBary(c, nets);
@@ -13314,8 +13673,8 @@ function traduire(s) {
       c.x = pos.x; c.y = pos.y;
       for (k = 0; k < nets.length; k++) {
         optDebut();
-        res = optRouterNet(nets[k], larg[nets[k]]);
-        if (!res && B.largeur < larg[nets[k]] - 1e-6) res = optRouterNet(nets[k], B.largeur);
+        res = optRetrace(nets[k], larg[nets[k]]);
+        if (!res && B.largeur < larg[nets[k]] - 1e-6) res = optRetrace(nets[k], B.largeur);
         if (!res) throw new Error('retrace impossible');
         n0 = B.pistes.length;
         B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
@@ -13542,7 +13901,7 @@ function traduire(s) {
          chaque bout, un bout dans la zone isolée, l'autre dans la zone principale ; ligne droite dans toute direction
          (pas de 5°), passage sous une ligne 50 Ω permis (à 90°, mêmes règles que les signaux) ; sérigraphie
          « IRRIGATION <alimentation> » sur le dessus, côté zone principale. Sinon, avertissement --- */
-  var PONT = { w: 1, L: 5, Lmax: 30, perc: 0.8, diam: 1.3, h: 1, pas: 0.5, essais: 200 };
+  var PONT = { w: 1, L: 5, Lmax: 30, perc: 0.8, diam: 1.3, h: 1, pas: 0.5, jeuMax: 2, duree: 10000, apres: 20, pasLigne: 0.5, pasH: 0.25, hPlus: 3 };
   /* Zones d'un remplissage reliées entre elles par le cuivre de l'alimentation hors de cette couche (pistes, vias,
      pastilles traversantes) : renvoie la liste des groupes de zones [ [z1, z3], [z2] … ] */
   function zonesReliees(n, net, res) {
@@ -13576,16 +13935,17 @@ function traduire(s) {
     }
     return l;
   }
-  function optReIrriguer(seul) {
+  function optReIrriguer(seul, poser) {
     var ct = calculerContour(), rap = { ok: 0, ko: [] };
     if (!ct) return rap;
+    poser = poser !== false;
     toutesCouches().forEach(function (n) {
       var net = netRemp(n), res, tour, pts, gz, zp, zs, relie;
       if (!net || net === 'GND' || (seul !== null && seul !== undefined && seul !== net)) return;
       res = ilots(function (Gt) { return phaseMasse(Gt, n, ct, false); }, ct);
       if (res.zones <= 1) return;
       for (tour = 0; tour < 12; tour++) {
-        var grp = zonesReliees(n, net, res), gde;
+        var grp = zonesReliees(n, net, res);
         if (grp.length <= 1) return;
         pts = [];
         B.vias.forEach(function (v) { var z; if (dansPlan(n, v.net) && (z = res.zoneEn(v.x, v.y))) pts.push({ x: v.x, y: v.y, z: z, d: v.diam }); });
@@ -13594,6 +13954,7 @@ function traduire(s) {
         gz = {}; pts.forEach(function (q) { var g = 0; grp.forEach(function (l2, k2) { if (l2.indexOf(q.z) >= 0) g = k2; }); (gz[g] = gz[g] || []).push(q); });
         zs = Object.keys(gz);
         if (zs.length <= 1) return;
+        if (!poser) { rap.ko.push(net + ' (couche ' + n + ', ' + zs.length + ' zones non reliées)'); return; }
         zp = zs.slice().sort(function (a, b) { return gz[b].length - gz[a].length; })[0];
         relie = zs.some(function (z) { return z !== zp && poserPont(n, net, res, grp[+z], grp[+zp], ct); });
         if (relie) { rap.ok++; continue; }
@@ -13603,54 +13964,218 @@ function traduire(s) {
     });
     return rap;
   }
-  /* Pont d'irrigation entre la zone isolée (zones zi) et la zone principale (zones zm) du remplissage de la couche n */
+  /* --- Ponts d'irrigation : chaque pièce (lignes, barrettes, 4 vias, texte) porte le numéro du pont (pont: n) --- */
+  function estPont(o) { return !!o && typeof o.pont === 'number' && o.pont > 0; }
+  function nouvelIdPont() {
+    var m = 0;
+    [B.pistes, B.vias, B.textes].forEach(function (l) { l.forEach(function (o) { if (estPont(o) && o.pont > m) m = o.pont; }); });
+    return m + 1;
+  }
+  /* Ponts du circuit : { n: { pistes, vias, textes } } */
+  function pontsGroupes() {
+    var g = {};
+    function de(o) { return (g[o.pont] = g[o.pont] || { pistes: [], vias: [], textes: [] }); }
+    B.pistes.forEach(function (t) { if (estPont(t)) de(t).pistes.push(t); });
+    B.vias.forEach(function (v) { if (estPont(v)) de(v).vias.push(v); });
+    B.textes.forEach(function (t) { if (estPont(t)) de(t).textes.push(t); });
+    return g;
+  }
+  /* Ponts sans numéro (posés avant la version 1.42.0, ou fichier sans PONT=) reconnus à leur forme : 4 vias rondes
+     (trou PONT.perc, pastille PONT.diam), barrette de PONT.w entre deux vias à chaque bout, ligne de PONT.w entre les
+     milieux des deux barrettes, sur les couches internes ; texte « IRRIGATION <alimentation> » le plus proche (20 mm) */
+  function reconnaitrePonts() {
+    var V, bars = [], groupes = {}, n = 0, id = nouvelIdPont(), eps = 0.02;
+    function libre(o) { return !estPont(o); }
+    function interne(t) { return t.couche > 1 && t.couche < bas(); }
+    V = B.vias.filter(function (v) { return libre(v) && Math.abs(v.perc - PONT.perc) < 0.01 && Math.abs(v.diam - PONT.diam) < 0.01; });
+    function viaEn(q, net) { var k; for (k = 0; k < V.length; k++) if (V[k].net === net && dist(V[k], q) < eps) return k; return -1; }
+    if (V.length >= 4) {
+      B.pistes.forEach(function (t) {
+        var a, b;
+        if (!libre(t) || t.pts.length !== 2 || Math.abs(t.w - PONT.w) > 0.01 || !interne(t)) return;
+        a = viaEn(t.pts[0], t.net); b = viaEn(t.pts[1], t.net);
+        if (a >= 0 && b >= 0 && a !== b) bars.push({ t: t, v: [a, b], m: { x: (t.pts[0].x + t.pts[1].x) / 2, y: (t.pts[0].y + t.pts[1].y) / 2 } });
+      });
+      B.pistes.forEach(function (t) {
+        var ba, bb, cle;
+        if (!libre(t) || t.pts.length !== 2 || Math.abs(t.w - PONT.w) > 0.01 || !interne(t)) return;
+        ba = bars.filter(function (b) { return b.t.couche === t.couche && b.t.net === t.net && dist(b.m, t.pts[0]) < eps; })[0];
+        bb = bars.filter(function (b) { return b.t.couche === t.couche && b.t.net === t.net && dist(b.m, t.pts[1]) < eps; })[0];
+        if (!ba || !bb || ba === bb) return;
+        cle = ba.v.concat(bb.v).sort(function (x, y) { return x - y; }).join(',');
+        (groupes[cle] = groupes[cle] || { lignes: [], net: t.net, c: { x: (t.pts[0].x + t.pts[1].x) / 2, y: (t.pts[0].y + t.pts[1].y) / 2 } }).lignes.push(t);
+      });
+      Object.keys(groupes).forEach(function (cle) {
+        var gr = groupes[cle], iv = cle.split(',').map(Number), txt = 'IRRIGATION ' + gr.net, best = null, bd = 20;
+        gr.lignes.forEach(function (t) { t.pont = id; });
+        bars.forEach(function (b) { if (iv.indexOf(b.v[0]) >= 0 && iv.indexOf(b.v[1]) >= 0) b.t.pont = id; });
+        iv.forEach(function (k) { V[k].pont = id; });
+        B.textes.forEach(function (t) { var d; if (libre(t) && t.txt === txt && (d = dist(t, gr.c)) < bd) { bd = d; best = t; } });
+        if (best) best.pont = id;
+        id++; n++;
+      });
+    }
+    /* marque d'avant (pont: true) restée sur une pièce modifiée : pièce ordinaire */
+    [B.pistes, B.vias, B.textes].forEach(function (l) { l.forEach(function (o) { if (o.pont !== undefined && !estPont(o)) delete o.pont; }); });
+    return n;
+  }
+  /* Lignes 50 Ω : segments, et lignes coupées par le segment a-b */
+  function segments50() {
+    var l = [];
+    B.pistes.forEach(function (t) { var k; if (!optRf(t.net)) return; for (k = 0; k + 1 < t.pts.length; k++) l.push({ net: t.net, a: t.pts[k], b: t.pts[k + 1], w: t.w, t: t }); });
+    return l;
+  }
+  function segCoupe(a, b, c, d) {
+    function o(p, q, r) { return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x); }
+    var d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d);
+    return d1 * d2 < 0 && d3 * d4 < 0;
+  }
+  function lignes50Coupees(a, b, s50) { var r = []; s50.forEach(function (s) { if (r.indexOf(s.net) < 0 && segCoupe(a, b, s.a, s.b)) r.push(s.net); }); return r; }
+  /* Normale unitaire à la ligne 50 Ω au point P du segment s (arc : dans l'axe du rayon) */
+  function normale50(s, P) {
+    var A = s.t && s.t.arc, dx, dy, l;
+    if (A && dansArc(A, P)) { dx = P.x - A.x; dy = P.y - A.y; }
+    else { dx = -(s.b.y - s.a.y); dy = s.b.x - s.a.x; }
+    l = Math.sqrt(dx * dx + dy * dy) || 1;
+    return { x: dx / l, y: dy / l };
+  }
+  /* Point de la ligne 50 Ω « net » le plus proche de q : { P, n } (n : normale), null si aucune */
+  function projection50(net, q) {
+    var best = null, bd = Infinity;
+    segments50().forEach(function (s) {
+      var vx, vy, l2, t, P, d;
+      if (s.net !== net) return;
+      vx = s.b.x - s.a.x; vy = s.b.y - s.a.y; l2 = vx * vx + vy * vy;
+      if (l2 < 1e-12) return;
+      t = Math.max(0, Math.min(1, ((q.x - s.a.x) * vx + (q.y - s.a.y) * vy) / l2));
+      P = { x: s.a.x + vx * t, y: s.a.y + vy * t }; d = dist(P, q);
+      if (d < bd) { bd = d; best = { P: P, n: normale50(s, P) }; }
+    });
+    return best;
+  }
+  /* Guide d'un pont qui traverse une ligne 50 Ω : point de traversée, sens du pont, ligne suivie */
+  function guidePont(g) {
+    var m = null, s50, a, b, r = null;
+    g.pistes.forEach(function (t) { if (!m || optLong(t.pts) > optLong(m.pts)) m = t; });
+    if (!m) return null;
+    a = m.pts[0]; b = m.pts[m.pts.length - 1]; s50 = segments50();
+    s50.forEach(function (s) {
+      var d1, d2, k;
+      if (r || !segCoupe(a, b, s.a, s.b)) return;
+      d1 = (s.b.x - s.a.x) * (a.y - s.a.y) - (s.b.y - s.a.y) * (a.x - s.a.x);
+      d2 = (s.b.x - s.a.x) * (b.y - s.a.y) - (s.b.y - s.a.y) * (b.x - s.a.x);
+      k = d1 / (d1 - d2);
+      r = { net: s.net, P: { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }, ang: Math.atan2(b.y - a.y, b.x - a.x) };
+    });
+    return r;
+  }
+  /* Nombre de ponts qui traversent chaque ligne 50 Ω (ligne principale du pont = sa piste la plus longue) */
+  function pontsParLigne50(s50) {
+    var g = pontsGroupes(), c = {};
+    Object.keys(g).forEach(function (id) {
+      var m = null;
+      g[id].pistes.forEach(function (t) { if (!m || optLong(t.pts) > optLong(m.pts)) m = t; });
+      if (m) lignes50Coupees(m.pts[0], m.pts[m.pts.length - 1], s50).forEach(function (x) { c[x] = (c[x] || 0) + 1; });
+    });
+    return c;
+  }
+  /* Pont d'irrigation entre la zone isolée (zones zi) et la zone principale (zones zm) du remplissage de la couche n.
+     Choix : d'abord la ligne 50 Ω traversée qui a le moins de ponts (chacun sa part), puis la place la plus dégagée
+     (jeu au cuivre voisin, plafonné à PONT.jeuMax), puis le pont le plus court */
   var PONTS_SANS_TEXTE = 0;
   function poserPont(n, net, res, zi, zm, ct) {
-    var ci = couchesSignal().filter(function (c) { return c > 1 && c < bas() && !netRemp(c); }), iso = B.isolement, g = PONT.pas, nx, ny, d, i, j, k, q, cand = [], t0 = Date.now(), A, th, u, nr, L, Bp, ok, essais = 0;
+    var ci = couchesSignal().filter(function (c) { return c > 1 && c < bas() && !netRemp(c); }), iso = B.isolement, g = PONT.pas, nx, ny, d, i, j, k, q, cand = [], t0 = Date.now(),
+        A, th, u, nr, L, Bp, ok, da, db, s50 = segments50(), compte = pontsParLigne50(s50), best = null, kBest = 0, cle, jeu, id, pas;
     if (!ci.length) return false;
     function dans(q2, l) { var z2 = res.zoneEn(q2.x, q2.y); return !!z2 && l.indexOf(z2) >= 0; }
     function viaLibre(q2) { return optDansCarte(q2, PONT.diam / 2) && optJeu(q2, q2, PONT.diam / 2, 0, net, iso) >= iso - 1e-6; }
+    function jeuVia(q2) { return optJeu(q2, q2, PONT.diam / 2, 0, net, PONT.jeuMax); }
     function deux(q2, n2) { return [optPt(q2.x + n2.x * PONT.diam / 2, q2.y + n2.y * PONT.diam / 2), optPt(q2.x - n2.x * PONT.diam / 2, q2.y - n2.y * PONT.diam / 2)]; }
-    /* distance (chanfrein) de chaque nœud de la grille à la zone principale ; candidats : nœuds de la zone isolée, les plus proches d'abord */
+    /* distance (chanfrein) de chaque nœud de la grille à la zone principale */
     nx = Math.floor((ct.x1 - ct.x0) / g) + 1; ny = Math.floor((ct.y1 - ct.y0) / g) + 1; d = new Float32Array(nx * ny);
     for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) d[j * nx + i] = dans({ x: ct.x0 + i * g, y: ct.y0 + j * g }, zm) ? 0 : 1e9;
     for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) { k = j * nx + i; if (i) d[k] = Math.min(d[k], d[k - 1] + g); if (j) { d[k] = Math.min(d[k], d[k - nx] + g); if (i) d[k] = Math.min(d[k], d[k - nx - 1] + g * 1.4142); if (i < nx - 1) d[k] = Math.min(d[k], d[k - nx + 1] + g * 1.4142); } }
     for (j = ny - 1; j >= 0; j--) for (i = nx - 1; i >= 0; i--) { k = j * nx + i; if (i < nx - 1) d[k] = Math.min(d[k], d[k + 1] + g); if (j < ny - 1) { d[k] = Math.min(d[k], d[k + nx] + g); if (i < nx - 1) d[k] = Math.min(d[k], d[k + nx + 1] + g * 1.4142); if (i) d[k] = Math.min(d[k], d[k + nx - 1] + g * 1.4142); } }
-    for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) { q = { x: arr(ct.x0 + i * g), y: arr(ct.y0 + j * g) }; if (d[j * nx + i] < PONT.Lmax && dans(q, zi)) cand.push({ q: q, d: d[j * nx + i] }); }
-    cand.sort(function (a, b) { return a.d - b.d; });
+    /* départs : nœuds de la zone isolée à moins de PONT.Lmax de la zone principale, au pas de 1 mm (0,5 si la zone est étroite) */
+    for (pas = 2; pas >= 1 && !cand.length; pas--)
+      for (j = 0; j < ny; j += pas) for (i = 0; i < nx; i += pas) { q = { x: arr(ct.x0 + i * g), y: arr(ct.y0 + j * g) }; if (d[j * nx + i] < PONT.Lmax && dans(q, zi)) cand.push({ q: q, d: d[j * nx + i] }); }
     optDebut(); OPT.croise = net;
     try {
-      for (k = 0; k < cand.length && essais < PONT.essais && Date.now() - t0 < 8000; k++) {
-        A = cand[k].q;
-        if (!viaLibre(A)) continue;
-        essais++;
-        for (th = 0; th < 72; th++) {
-          u = { x: Math.cos(th * Math.PI / 36), y: Math.sin(th * Math.PI / 36) }; nr = { x: -u.y, y: u.x };
-          if (!deux(A, nr).every(viaLibre)) continue;
-          for (L = Math.max(PONT.L, Math.ceil(cand[k].d / g) * g); L <= PONT.Lmax + 1e-9; L += g) {
-            Bp = optPt(A.x + u.x * L, A.y + u.y * L);
-            if (!dans(Bp, zm) || !deux(Bp, nr).every(viaLibre)) continue;
-            ok = ci.every(function (c) { var da = deux(A, nr), db = deux(Bp, nr); return optJeu(A, Bp, PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(da[0], da[1], PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(db[0], db[1], PONT.w / 2, c, net, iso) >= iso - 1e-6; });
-            if (!ok) continue;
-            /* ligne et, à chaque bout, barrette entre les deux vias (cuivre continu, raccord exact aux vias) */
-            ci.forEach(function (c) {
-              var da = deux(A, nr), db = deux(Bp, nr);
-              B.pistes.push({ couche: c, w: PONT.w, net: net, pts: [optPt(A.x, A.y), Bp], pont: true });
-              B.pistes.push({ couche: c, w: PONT.w, net: net, pts: da, pont: true });
-              B.pistes.push({ couche: c, w: PONT.w, net: net, pts: db, pont: true });
-            });
-            deux(A, nr).concat(deux(Bp, nr)).forEach(function (v) { B.vias.push({ x: v.x, y: v.y, perc: PONT.perc, diam: PONT.diam, net: net }); });
-            texteIrrigation(net, A, Bp, u, nr);
-            return true;
+      /* d'abord en travers d'une ligne 50 Ω : pont perpendiculaire à la ligne (à l'arc : dans l'axe du rayon), centré
+         sur elle, longueur fixe et minimale (vias juste hors de la zone d'exclusion, chacune dans le plan de son côté) */
+      s50.forEach(function (s) {
+        var lg = dist(s.a, s.b), x, P, n, h, h0, A2, B2, u2, nr2, da2, db2, ok2, cle2, jeu2, tmp;
+        if (lg < 1e-6) return;
+        h0 = s.w / 2 + couloir50() + iso + PONT.diam / 2;
+        for (x = PONT.pasLigne / 2; x < lg; x += PONT.pasLigne) {
+          if (Date.now() - t0 > PONT.duree) return;
+          P = { x: s.a.x + (s.b.x - s.a.x) * x / lg, y: s.a.y + (s.b.y - s.a.y) * x / lg };
+          n = normale50(s, P);
+          for (h = h0; h <= h0 + PONT.hPlus + 1e-9; h += PONT.pasH) {
+            A2 = optPt(P.x - n.x * h, P.y - n.y * h); B2 = optPt(P.x + n.x * h, P.y + n.y * h);
+            if (dans(A2, zi) && dans(B2, zm)) u2 = { x: n.x, y: n.y };
+            else if (dans(B2, zi) && dans(A2, zm)) { tmp = A2; A2 = B2; B2 = tmp; u2 = { x: -n.x, y: -n.y }; }
+            else continue;
+            nr2 = { x: -u2.y, y: u2.x };
+            da2 = deux(A2, nr2); db2 = deux(B2, nr2);
+            if (!da2.every(viaLibre) || !db2.every(viaLibre)) continue;
+            ok2 = ci.every(function (c) { return optJeu(A2, B2, PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(da2[0], da2[1], PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(db2[0], db2[1], PONT.w / 2, c, net, iso) >= iso - 1e-6; });
+            if (!ok2) continue;
+            cle2 = lignes50Coupees(A2, B2, s50).reduce(function (sm, y) { return sm + (compte[y] || 0); }, 0);
+            jeu2 = Math.min(jeuVia(da2[0]), jeuVia(da2[1]), jeuVia(db2[0]), jeuVia(db2[1]));
+            ci.forEach(function (c) { jeu2 = Math.min(jeu2, optJeu(A2, B2, PONT.w / 2, c, net, PONT.jeuMax)); });
+            if (!best || cle2 < best.cle || (cle2 === best.cle && (jeu2 > best.jeu + 1e-6 || (Math.abs(jeu2 - best.jeu) <= 1e-6 && 2 * h < best.L - 1e-6))))
+              best = { A: A2, Bp: B2, u: u2, nr: nr2, L: 2 * h, cle: cle2, jeu: jeu2, da: da2, db: db2 };
+            break;
+          }
+        }
+      });
+      /* sinon (zone coupée par autre chose qu'une ligne 50 Ω) : recherche libre */
+      if (!best) {
+        /* les départs les plus dégagés d'abord, puis les plus proches de la zone principale */
+        cand = cand.filter(function (x) { if (!optDansCarte(x.q, PONT.diam / 2)) return false; x.j = jeuVia(x.q); return x.j >= iso - 1e-6; });
+        cand.sort(function (a, b) { return (b.j - a.j) || (a.d - b.d); });
+        for (k = 0; k < cand.length && Date.now() - t0 < PONT.duree; k++) {
+          if (best && best.cle === 0 && best.jeu >= PONT.jeuMax - 1e-6 && k > kBest + PONT.apres) break;
+          A = cand[k].q;
+          for (th = 0; th < 72; th++) {
+            u = { x: Math.cos(th * Math.PI / 36), y: Math.sin(th * Math.PI / 36) }; nr = { x: -u.y, y: u.x };
+            da = deux(A, nr);
+            if (!da.every(viaLibre)) continue;
+            for (L = Math.max(PONT.L, Math.ceil(cand[k].d / g) * g); L <= PONT.Lmax + 1e-9; L += g) {
+              Bp = optPt(A.x + u.x * L, A.y + u.y * L);
+              if (!dans(Bp, zm)) continue;
+              db = deux(Bp, nr);
+              if (!db.every(viaLibre)) continue;
+              ok = ci.every(function (c) { return optJeu(A, Bp, PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(da[0], da[1], PONT.w / 2, c, net, iso) >= iso - 1e-6 && optJeu(db[0], db[1], PONT.w / 2, c, net, iso) >= iso - 1e-6; });
+              if (!ok) continue;
+              cle = lignes50Coupees(A, Bp, s50).reduce(function (s, x) { return s + (compte[x] || 0); }, 0);
+              jeu = Math.min(jeuVia(da[0]), jeuVia(da[1]), jeuVia(db[0]), jeuVia(db[1]));
+              ci.forEach(function (c) { jeu = Math.min(jeu, optJeu(A, Bp, PONT.w / 2, c, net, PONT.jeuMax)); });
+              if (!best || cle < best.cle || (cle === best.cle && (jeu > best.jeu + 1e-6 || (Math.abs(jeu - best.jeu) <= 1e-6 && L < best.L - 1e-6)))) {
+                best = { A: optPt(A.x, A.y), Bp: Bp, u: u, nr: nr, L: L, cle: cle, jeu: jeu, da: da, db: db }; kBest = k;
+              }
+              break;
+            }
           }
         }
       }
     } finally { OPT = null; }
-    return false;
+    if (!best) return false;
+    id = nouvelIdPont();
+    /* ligne et, à chaque bout, barrette entre les deux vias (cuivre continu, raccord exact aux vias) */
+    ci.forEach(function (c) {
+      B.pistes.push({ couche: c, w: PONT.w, net: net, pts: [optPt(best.A.x, best.A.y), optPt(best.Bp.x, best.Bp.y)], pont: id });
+      B.pistes.push({ couche: c, w: PONT.w, net: net, pts: best.da.map(copieObj), pont: id });
+      B.pistes.push({ couche: c, w: PONT.w, net: net, pts: best.db.map(copieObj), pont: id });
+    });
+    best.da.concat(best.db).forEach(function (v) { B.vias.push({ x: v.x, y: v.y, perc: PONT.perc, diam: PONT.diam, net: net, pont: id }); });
+    texteIrrigation(net, best.A, best.Bp, best.u, best.nr, id);
+    return true;
   }
   /* « IRRIGATION <alimentation> » sur le dessus, côté zone principale (au-delà du bout B, sinon le long de la ligne),
      ni sur une pastille ni sur une via, dans le contour ; sinon pas de texte (compté) */
-  function texteIrrigation(net, A, Bp, u, nr) {
+  function texteIrrigation(net, A, Bp, u, nr, id) {
     var txt = 'IRRIGATION ' + net, h = PONT.h, w = (txt.length * 5 - 1) * h / 6, ang = Math.atan2(u.y, u.x) * 180 / Math.PI, rot, ct = calculerContour(), pf = padsFace(false), l = [], i, t, bx, ok;
     rot = ang > 90 ? ang - 180 : (ang <= -90 ? ang + 180 : ang); rot = Math.round(rot * 100) / 100;
     for (i = 0; i < 6; i++) {
@@ -13659,7 +14184,7 @@ function traduire(s) {
       l.push({ x: Bp.x, y: Bp.y + PONT.diam + 0.6 + h / 2 + i, rot: 0 }, { x: Bp.x, y: Bp.y - PONT.diam - 0.6 - h / 2 - i, rot: 0 });
     }
     for (i = 0; i < l.length; i++) {
-      t = { x: arr(l[i].x), y: arr(l[i].y), h: h, rot: l[i].rot, dessous: false, txt: txt };
+      t = { x: arr(l[i].x), y: arr(l[i].y), h: h, rot: l[i].rot, dessous: false, txt: txt, pont: id };
       bx = boiteLibre(t);
       ok = !ct || (bx[0] >= ct.x0 + 0.5 && bx[2] <= ct.x1 - 0.5 && bx[1] >= ct.y0 + 0.5 && bx[3] <= ct.y1 - 0.5);
       ok = ok && !texteSurPastille(traitsLibre(t), h, bx, pf) && !B.vias.some(function (v) { return v.x + v.diam / 2 + 0.2 > bx[0] && v.x - v.diam / 2 - 0.2 < bx[2] && v.y + v.diam / 2 + 0.2 > bx[1] && v.y - v.diam / 2 - 0.2 < bx[3]; });
@@ -13667,6 +14192,161 @@ function traduire(s) {
       if (ok) { B.textes.push(t); return; }
     }
     PONTS_SANS_TEXTE++;
+  }
+  /* --- Menu Irrigation : Placer, Reset, Déplacer --- */
+  function placerPonts() {
+    if (B.route) terminerRoute();
+    reconnaitrePonts();
+    B.selP = null; B.selV = null; B.selPont = 0;
+    message('Pose des ponts d\'irrigation…'); cv.style.cursor = 'progress';
+    requestAnimationFrame(function () { setTimeout(function () {
+      var avant = instantane(), irr;
+      PONTS_SANS_TEXTE = 0;
+      try { irr = optReIrriguer(null, true); } catch (e) { irr = { ok: 0, ko: ['erreur ' + ((e && e.message) || e)] }; }
+      OPT = null; cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
+      if (irr.ok) empiler(avant);
+      message('Irrigation : ' + (irr.ok ? irr.ok + ' pont(s) d\'irrigation posé(s)' + (PONTS_SANS_TEXTE ? ' (' + PONTS_SANS_TEXTE + ' sans sérigraphie, pas de place)' : '') : (irr.ko.length ? '' : 'aucun pont à poser, les plans sont irrigués')) +
+        (irr.ko.length ? (irr.ok ? ' · ' : '') + 'ATTENTION plan d\'alimentation coupé, aucune place libre, à poser à la main : ' + irr.ko.join(', ') : ''), irr.ko.length > 0);
+      toutRafraichir();
+    }, 0); });
+  }
+  function resetPonts() {
+    var n;
+    if (B.route) terminerRoute();
+    reconnaitrePonts();
+    n = Object.keys(pontsGroupes()).length;
+    if (!n) { message('Aucun pont d\'irrigation.'); return; }
+    empiler();
+    B.pistes = B.pistes.filter(function (t) { return !estPont(t); });
+    B.vias = B.vias.filter(function (v) { return !estPont(v); });
+    B.textes = B.textes.filter(function (t) { return !estPont(t); });
+    B.selP = null; B.selV = null; B.selT = -1; B.selPont = 0;
+    message('Irrigation : ' + n + ' pont(s) d\'irrigation supprimé(s) · Ctrl+Z annule');
+    toutRafraichir();
+  }
+  function deplacerPonts() {
+    if (B.route) terminerRoute();
+    reconnaitrePonts();
+    if (!Object.keys(pontsGroupes()).length) { message('Aucun pont d\'irrigation.'); return; }
+    message('Clic sur un pont (ligne, via ou texte) puis glisser · Suppr : supprimer · Échap : désélectionner');
+  }
+  function supprimerPont(id) {
+    empiler();
+    B.pistes = B.pistes.filter(function (t) { return t.pont !== id; });
+    B.vias = B.vias.filter(function (v) { return v.pont !== id; });
+    B.textes = B.textes.filter(function (t) { return t.pont !== id; });
+    B.selPont = 0; B.selT = -1; B.selP = null; B.selV = null;
+    message('Irrigation : 1 pont(s) d\'irrigation supprimé(s) · Ctrl+Z annule');
+    toutRafraichir();
+  }
+  /* Pont sous le point w (monde) : texte, via, puis ligne ; 0 si aucun */
+  function pontSous(w) {
+    var m = versEcran(w.x, w.y), i, k, t, r;
+    for (i = B.textes.length - 1; i >= 0; i--) { if (!estPont(B.textes[i])) continue; r = repereTexte(B.textes[i], m); if (Math.abs(r.x) <= r.w + 3 && Math.abs(r.y) <= r.h + 3) return B.textes[i].pont; }
+    i = viaSous(w.x, w.y);
+    if (i >= 0 && estPont(B.vias[i])) return B.vias[i].pont;
+    for (i = B.pistes.length - 1; i >= 0; i--) {
+      t = B.pistes[i];
+      if (!estPont(t)) continue;
+      for (k = 0; k + 1 < t.pts.length; k++) if (distSeg(w.x, w.y, t.pts[k], t.pts[k + 1]) <= Math.max(t.w / 2, 4 / B.z)) return t.pont;
+    }
+    return 0;
+  }
+  /* Glisser un pont : toutes ses pièces d'un bloc ; un pont qui traverse une ligne 50 Ω glisse le long de la ligne
+     (courbure suivie, toujours perpendiculaire et centré, longueur inchangée), sinon déplacement libre sur la grille ;
+     isolement contrôlé au lâcher, sinon retour */
+  function debutGlisserPont(id, w) {
+    var g = pontsGroupes()[id], gd = guidePont(g);
+    B.selPont = id; B.sel = null; B.selT = -1; B.selP = null; B.selV = null;
+    B.drag = { pont: id, g: g, x0: accroche(w.x), y0: accroche(w.y), w0: { x: w.x, y: w.y }, guide: gd, ang: gd ? gd.ang : 0, avant: instantane(), bouge: false,
+               p: g.pistes.map(function (t) { return t.pts.map(copieObj); }), v: g.vias.map(copieObj), t: g.textes.map(copieObj) };
+  }
+  function rotLisible(r) { r = ((r % 360) + 360) % 360; if (r > 90 && r <= 270) r -= 180; else if (r > 270) r -= 360; return Math.round(r * 100) / 100; }
+  function glisserPont(d, w) {
+    var dx, dy, gd = d.guide, pr, ang, da, c, s, P0, P1, f;
+    if (gd) {
+      pr = projection50(gd.net, { x: gd.P.x + w.x - d.w0.x, y: gd.P.y + w.y - d.w0.y });
+      if (!pr) return;
+      ang = Math.atan2(pr.n.y, pr.n.x);
+      if (Math.cos(ang - d.ang) < 0) ang += Math.PI;
+      d.ang = ang; da = ang - gd.ang; c = Math.cos(da); s = Math.sin(da); P0 = gd.P; P1 = pr.P;
+      if (!d.bouge && dist(P0, P1) < 0.01 && Math.abs(Math.sin(da)) < 1e-4) return;
+      d.bouge = true;
+      f = function (q) { var x = q.x - P0.x, y = q.y - P0.y; return { x: arr(P1.x + x * c - y * s), y: arr(P1.y + x * s + y * c) }; };
+      d.g.pistes.forEach(function (t, i) { t.pts = d.p[i].map(f); });
+      d.g.vias.forEach(function (v, i) { var q = f(d.v[i]); v.x = q.x; v.y = q.y; });
+      d.g.textes.forEach(function (t, i) { var q = f(d.t[i]); t.x = q.x; t.y = q.y; t.rot = rotLisible(d.t[i].rot + da * 180 / Math.PI); });
+      return;
+    }
+    dx = accroche(w.x) - d.x0; dy = accroche(w.y) - d.y0;
+    if (!dx && !dy && !d.bouge) return;
+    d.bouge = true;
+    d.g.pistes.forEach(function (t, i) { t.pts = d.p[i].map(function (q) { return { x: arr(q.x + dx), y: arr(q.y + dy) }; }); });
+    d.g.vias.forEach(function (v, i) { v.x = arr(d.v[i].x + dx); v.y = arr(d.v[i].y + dy); });
+    d.g.textes.forEach(function (t, i) { t.x = arr(d.t[i].x + dx); t.y = arr(d.t[i].y + dy); });
+  }
+  function finirGlisserPont(d) {
+    var ok = true, ancien = OPT, net = (d.g.vias[0] || d.g.pistes[0] || {}).net, iso = B.isolement;
+    if (!d.bouge) return;
+    optDebut(); OPT.croise = net;
+    try {
+      d.g.vias.forEach(function (v) { if (ok && !(optDansCarte(v, v.diam / 2) && optJeu(v, v, v.diam / 2, 0, net, iso) >= iso - 1e-6)) ok = false; });
+      d.g.pistes.forEach(function (t) { var k; for (k = 0; ok && k + 1 < t.pts.length; k++) if (optJeu(t.pts[k], t.pts[k + 1], t.w / 2, t.couche, net, iso) < iso - 1e-6) ok = false; });
+    } finally { OPT = ancien; }
+    if (ok) { empiler(d.avant); message('Pont d\'irrigation déplacé'); return; }
+    d.g.pistes.forEach(function (t, i) { t.pts = d.p[i].map(copieObj); });
+    d.g.vias.forEach(function (v, i) { v.x = d.v[i].x; v.y = d.v[i].y; });
+    d.g.textes.forEach(function (t, i) { t.x = d.t[i].x; t.y = d.t[i].y; t.rot = d.t[i].rot; });
+    message('Déplacement refusé : pont trop près du cuivre voisin (isolement ' + String(iso).replace('.', ',') + ' mm)', true);
+  }
+  /* Boîte (monde) d'un pont, pour le cadre de sélection */
+  function boitePont(g) {
+    var b = [Infinity, Infinity, -Infinity, -Infinity];
+    function pt(x, y, r) { b[0] = Math.min(b[0], x - r); b[1] = Math.min(b[1], y - r); b[2] = Math.max(b[2], x + r); b[3] = Math.max(b[3], y + r); }
+    g.pistes.forEach(function (t) { t.pts.forEach(function (q) { pt(q.x, q.y, t.w / 2); }); });
+    g.vias.forEach(function (v) { pt(v.x, v.y, v.diam / 2); });
+    g.textes.forEach(function (t) { var x = boiteLibre(t); pt(x[0], x[1], 0); pt(x[2], x[3], 0); });
+    return b;
+  }
+  function dessinerSelPont() {
+    var g = B.selPont ? pontsGroupes()[B.selPont] : null, b, s1, s2;
+    if (!g) return;
+    b = boitePont(g); s1 = versEcran(b[0], b[3]); s2 = versEcran(b[2], b[1]);
+    ecran(); ctx.strokeStyle = COUL.sel; ctx.lineWidth = 1; ctx.setLineDash([5, 3]);
+    ctx.strokeRect(s1.x - 4.5, s1.y - 4.5, s2.x - s1.x + 9, s2.y - s1.y + 9); ctx.setLineDash([]);
+  }
+  function fichePont(f) {
+    var g = pontsGroupes()[B.selPont], b, bs, bt, net, m = null, cs = [];
+    if (!g) { B.selPont = 0; return false; }
+    net = (g.vias[0] || g.pistes[0]).net;
+    g.pistes.forEach(function (t) { if (cs.indexOf(t.couche) < 0) cs.push(t.couche); if (!m || optLong(t.pts) > optLong(m.pts)) m = t; });
+    b = E('div', 'bloc'); f.appendChild(b);
+    b.appendChild(E('h4', '', 'Pont d\'irrigation'));
+    b.appendChild(E('div', 'grandNom', net));
+    b.appendChild(E('div', 'stat', 'Couches ' + cs.sort(function (x, y) { return x - y; }).join(', ') + ' · ' + g.vias.length + ' via(s)'));
+    if (m) {
+      b.appendChild(E('div', 'stat', 'Longueur ' + mmTxt(optLong(m.pts)) + ' mm'));
+      (function () { var l = lignes50Coupees(m.pts[0], m.pts[m.pts.length - 1], segments50()); if (l.length) b.appendChild(E('div', 'stat', 'traverse ' + l.join(', ') + ' (50 Ω)')); })();
+    }
+    b.appendChild(E('div', 'stat', 'Glisser : déplacer le pont d\'un bloc (isolement contrôlé au lâcher)'));
+    bs = E('div', 'boutons'); b.appendChild(bs);
+    bt = E('button', '', 'Supprimer (Suppr)'); bt.addEventListener('click', function () { supprimerPont(B.selPont); }); bs.appendChild(bt);
+    return true;
+  }
+  function ouvrirMenuIrrigation() {
+    var m = $('menu'), r = $('btIrrigation').getBoundingClientRect(), n;
+    reconnaitrePonts(); n = Object.keys(pontsGroupes()).length;
+    m.textContent = '';
+    m.appendChild(E('div', 'titre', 'Ponts d\'irrigation'));
+    [['placer', 'Placer les ponts (plans d\'alimentation coupés)'], ['reset', 'Reset : supprimer tous les ponts'], ['deplacer', 'Déplacer : clic sur un pont (ligne, via ou texte) puis glisser']].forEach(function (x) {
+      var o = E('div', 'option', x[1]);
+      o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); if (x[0] === 'placer') placerPonts(); else if (x[0] === 'reset') resetPonts(); else deplacerPonts(); });
+      m.appendChild(o);
+    });
+    m.appendChild(E('div', 'info', n + ' pont(s) sur le circuit · Ctrl+Z annule'));
+    m.style.display = 'block';
+    m.style.left = Math.min(r.left, window.innerWidth - m.offsetWidth - 8) + 'px';
+    m.style.top = (r.bottom + 4) + 'px';
   }
   /* Billes d'alimentation et de masse : une via dans la bille la relie à son plan */
   function optViasBillesPlan(seul) {
@@ -13789,23 +14469,22 @@ function traduire(s) {
     var avant = instantane(), hors = { n: 0 }, nets, i = 0, faites = 0, restent = 0, t0 = Date.now(), tDessin = Date.now(), nvp, ns, np = 1, passe, f1 = 0;
     B.selP = null; B.selV = null;
     /* Étapes : 1 sorties de masse et d'alimentation ; 2 passe 1 (spirale horaire, dessus seul, aucune via) ;
-       3 passe 2 (ce qui reste, spirale anti-horaire, couche interne prioritaire) ; 4 ré-irrigation des plans.
-       Rien de posé n'est retiré */
+       3 passe 2 (ce qui reste, spirale anti-horaire, couche interne prioritaire) ; contrôle des plans
+       d'alimentation coupés (avertissement seul : les ponts se posent par Irrigation ▸ Placer). Rien de posé n'est retiré */
     function titre() { return 'Routage du chevelu' + (selNet !== null ? ' · ' + selNet : ''); }
     function fin() {
-      avancement(titre(), 'Étape 4/4 · ré-irrigation des plans d\'alimentation', 0, 1, faites + ' liaison(s) routée(s)');
+      avancement(titre(), 'Contrôle des plans d\'alimentation', 0, 1, faites + ' liaison(s) routée(s)');
       requestAnimationFrame(function () { setTimeout(finir, 0); });
     }
     function finir() {
       var irr = { ok: 0, ko: [] }, dur;
       cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
-      PONTS_SANS_TEXTE = 0;
-      try { irr = optReIrriguer(selNet); } catch (e) { irr = { ok: 0, ko: ['erreur ' + e.message] }; }
+      try { irr = optReIrriguer(selNet, false); } catch (e) { irr = { ok: 0, ko: ['erreur ' + e.message] }; }
       OPT = null; dur = Math.round((Date.now() - t0) / 1000);
-      avancementFin(titre(), faites + ' liaison(s) routée(s) · ' + restent + ' restante(s) · ' + dur + ' s' + (irr.ko.length ? ' · plan d\'alimentation coupé : voir la barre d\'état' : ''), irr.ko.length > 0);
-      if (faites || nvp || ns.th || ns.ep || ns.via || irr.ok) empiler(avant); else { B.pistes = avant.pistes; B.vias = avant.vias; }
-      message('Routage du chevelu : ' + faites + ' liaison(s) routée(s) (' + f1 + ' sur le dessus) · ' + restent + ' restante(s)' + (nvp ? ' · ' + nvp + ' via(s) de plan dans les billes' : '') + (ns.th ? ' · ' + ns.th + ' via(s) thermique(s)' : '') + (ns.ep ? ' · ' + ns.ep + ' patte(s) de masse au carré central' : '') + (ns.via ? ' · ' + ns.via + ' sortie(s) vers plan' : '') + (irr.ok ? ' · ' + irr.ok + ' pont(s) d\'irrigation' + (PONTS_SANS_TEXTE ? ' (' + PONTS_SANS_TEXTE + ' sans sérigraphie, pas de place)' : '') : '') +
-        (hors.n ? ' · ' + hors.n + ' liaison(s) laissée(s) en chevelu (alimentation principale, patchs)' : '') + (function () { var p50 = passages50(); return p50 ? ' · ' + p50 + ' passage(s) sous une ligne 50 Ω (dernier recours)' : ''; })() + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s' + (irr.ko.length ? ' · ATTENTION plan d\'alimentation coupé, vias non irriguées, aucune place pour un pont d\'irrigation : ' + irr.ko.join(', ') : ''), (!faites && !nvp && !ns.th && !ns.ep && !ns.via) || irr.ko.length > 0);
+      avancementFin(titre(), faites + ' liaison(s) routée(s) · ' + restent + ' restante(s) · ' + dur + ' s' + (irr.ko.length ? ' · plan d\'alimentation coupé : Irrigation ▸ Placer' : ''), irr.ko.length > 0);
+      if (faites || nvp || ns.th || ns.ep || ns.via) empiler(avant); else { B.pistes = avant.pistes; B.vias = avant.vias; }
+      message('Routage du chevelu : ' + faites + ' liaison(s) routée(s) (' + f1 + ' sur le dessus) · ' + restent + ' restante(s)' + (nvp ? ' · ' + nvp + ' via(s) de plan dans les billes' : '') + (ns.th ? ' · ' + ns.th + ' via(s) thermique(s)' : '') + (ns.ep ? ' · ' + ns.ep + ' patte(s) de masse au carré central' : '') + (ns.via ? ' · ' + ns.via + ' sortie(s) vers plan' : '') +
+        (hors.n ? ' · ' + hors.n + ' liaison(s) laissée(s) en chevelu (alimentation principale, patchs)' : '') + (function () { var p50 = passages50(); return p50 ? ' · ' + p50 + ' passage(s) sous une ligne 50 Ω (dernier recours)' : ''; })() + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s' + (irr.ko.length ? ' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ' + irr.ko.join(', ') + ' — Irrigation ▸ Placer' : ''), (!faites && !nvp && !ns.th && !ns.ep && !ns.via) || irr.ko.length > 0);
       toutRafraichir();
     }
     function un(net) {
@@ -13816,7 +14495,7 @@ function traduire(s) {
       OPT.obs = {};
       gr = B.pistes.some(function (t) { return t.net === net; }) || B.vias.some(function (v) { return v.net === net; }) ? optGroupes() : function (q) { return q; };
       c0 = optNbGroupes(net, gr);
-      B.pistes.forEach(function (t) { if (t.net === net) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
+      B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
       Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
       if (!w || optRf(net)) w = largeurNet(net);
       /* patte de signal : la piste n'est jamais plus large que la patte la plus fine de l'équipotentielle ; si la
@@ -13857,7 +14536,7 @@ function traduire(s) {
         fin(); return;
       }
       message('Routage du chevelu : passe ' + np + '/2 · ' + (i + 1) + '/' + nets.length + ' · ' + nets[i] + ' · ' + faites + ' liaison(s) routée(s)');
-      avancement(titre(), np === 1 ? 'Étape 2/4 · passe 1/2 · sens horaire, dessus seul, sans via' : 'Étape 3/4 · passe 2/2 · sens anti-horaire, couches internes', i, nets.length,
+      avancement(titre(), np === 1 ? 'Étape 2/3 · passe 1/2 · sens horaire, dessus seul, sans via' : 'Étape 3/3 · passe 2/2 · sens anti-horaire, couches internes', i, nets.length,
         (i + 1) + '/' + nets.length + ' · ' + nets[i] + ' · ' + faites + ' liaison(s) routée(s)');
       requestAnimationFrame(function () { setTimeout(function () {
         if (un(nets[i]) && Date.now() - tDessin > 700) { dessiner(); tDessin = Date.now(); }
@@ -13881,7 +14560,7 @@ function traduire(s) {
           tourSuivant(); return;
         }
         message('Routage du chevelu : lignes 50 Ω · tour ' + tour + ' · ' + (k + 1) + '/' + ordre.length + ' · ' + ordre[k] + ' · ' + faites + ' liaison(s) routée(s)');
-        avancement(titre(), 'Étape 0/4 · lignes 50 Ω · tour ' + tour, k, ordre.length, (k + 1) + '/' + ordre.length + ' · ' + ordre[k] + ' · ' + faites + ' liaison(s) routée(s)');
+        avancement(titre(), 'Étape 0/3 · lignes 50 Ω · tour ' + tour, k, ordre.length, (k + 1) + '/' + ordre.length + ' · ' + ordre[k] + ' · ' + faites + ' liaison(s) routée(s)');
         requestAnimationFrame(function () { setTimeout(function () {
           if (un(ordre[k]) && Date.now() - tDessin > 700) { dessiner(); tDessin = Date.now(); }
           k++; un1();
@@ -13891,10 +14570,10 @@ function traduire(s) {
       optDebut(); rfn = liste();
       tourSuivant();
     }
-    avancement(titre(), 'Étape 0/4 · lignes 50 Ω', 0, 1, '');
+    avancement(titre(), 'Étape 0/3 · lignes 50 Ω', 0, 1, '');
     requestAnimationFrame(function () { setTimeout(function () { phaseRf(demarrer); }, 0); });
     function demarrer() {
-    avancement(titre(), 'Étape 1/4 · sorties de masse et d\'alimentation', 0, 1, '');
+    avancement(titre(), 'Étape 1/3 · sorties de masse et d\'alimentation', 0, 1, '');
     requestAnimationFrame(function () { setTimeout(function () {
       nvp = optViasBillesPlan(selNet);
       ns = optSorties(selNet);
@@ -14063,7 +14742,7 @@ function traduire(s) {
       function serigOk() {
         var mes = formes(gab(c).el.filter(estPad).map(function (e) { return elMonde(c, e); })), tous = autres.concat(mes), bx;
         if (txts.some(function (t) { return texteSurPastille(t.l, t.h, t.bx, mes); })) return false;
-        if (c.ta !== false) placerTexte(c, tous, txts.map(function (t) { return t.bx; }));
+        if (c.ta !== false) placerTexte(c, tous, txts.map(function (t) { return t.bx; }), [], null);
         bx = boiteComp(c);
         if (texteSurPastille(traitsComp(c), hTexte(c), bx, tous) || txts.some(function (t) { return croise(t.bx, bx); })) { c.tx = tx0; c.ty = ty0; return false; }
         return true;
@@ -14427,7 +15106,7 @@ function traduire(s) {
     cv2.width = w * dpr; cv2.height = h * dpr; cv2.style.width = w + 'px'; cv2.style.height = h + 'px';
     c.fillStyle = '#000'; c.fillRect(0, 0, cv2.width, cv2.height);
     c.setTransform(dpr * s, 0, 0, -dpr * s, dpr * (w / 2 - (f.x0 + f.x1) / 2 * s), dpr * (h / 2 + (f.y0 + f.y1) / 2 * s));
-    c.strokeStyle = '#333'; c.lineWidth = 0.2; c.strokeRect(ct.x0, ct.y0, ct.x1 - ct.x0, ct.y1 - ct.y0);
+    c.strokeStyle = '#333'; c.lineWidth = 0.2; traceContour(c, ct);
     /* couche dessinée à part : la polarité claire et les perçages ne trouent pas le fond */
     var cv3 = document.createElement('canvas'), c3 = cv3.getContext('2d');
     cv3.width = cv2.width; cv3.height = cv2.height;
@@ -14456,7 +15135,7 @@ function traduire(s) {
         d.appendChild(l2);
       }
       d.appendChild(E('div', 'apStat', L.nom + ' · ' + stat(L)));
-      if (/-cuivre(\d)[.-]/.test(L.nom) && ZONES_VUE[parseInt(/-cuivre(\d)[.-]/.exec(L.nom)[1], 10)]) d.appendChild(E('div', 'avert', 'Zone(s) non irriguée(s) en rouge : relier par une piste de 2 mm entre deux vias'));
+      if (/-cuivre(\d)[.-]/.test(L.nom) && ZONES_VUE[parseInt(/-cuivre(\d)[.-]/.exec(L.nom)[1], 10)]) d.appendChild(E('div', 'avert', 'Zone(s) non irriguée(s) en rouge : Irrigation ▸ Placer'));
       d._i = i;
       d.addEventListener('click', function () { ouvrirVueAp(this._i); });
       p.appendChild(d);
@@ -14515,7 +15194,7 @@ function traduire(s) {
     tmp.width = c.width; tmp.height = c.height;
     x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height);
     x.setTransform(AP.dpr * AP.z, 0, 0, -AP.dpr * AP.z, AP.dpr * AP.ox, AP.dpr * AP.oy);
-    x.strokeStyle = '#333'; x.lineWidth = 1 / AP.z; x.strokeRect(ct.x0, ct.y0, ct.x1 - ct.x0, ct.y1 - ct.y0);
+    x.strokeStyle = '#333'; x.lineWidth = 1 / AP.z; traceContour(x, ct);
     for (i = 0; i < AP.couches.length; i++) {
       L = AP.couches[i];
       if (!L.vis) continue;
@@ -14708,7 +15387,7 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : '')]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'SERIG=' + B.serig.h + '/' + B.serig.contenu + '/' + B.serig.orient, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : ''), 'BORD=' + margeContour() + '/' + coinsContour() + '/' + rayonCoin()]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
@@ -14716,7 +15395,7 @@ function traduire(s) {
                'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)]
                .concat(pattesPleines(c).map(function (q) { return 'PL=' + q; })));
       tp = posTexte(c);
-      d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, 1.0, libelle(c), c.dessous);
+      d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, hTexte(c), texteSerig(c), c.dessous);
     }
     for (i = 0; i < B.nets.length; i++) {
       f = B.nets[i];
@@ -14729,7 +15408,7 @@ function traduire(s) {
     for (i = 0; i < B.pistes.length; i++) {
       f = B.pistes[i];
       d.g(0, 'POLYLINE').g(8, 'CUIVRE_' + f.couche).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, 0).g(40, nb(f.w)).g(41, nb(f.w));
-      d.xdata(['PISTE', 'COUCHE=' + f.couche, 'W=' + f.w, 'NET=' + f.net].concat(f.arc ? ['ARC=' + [f.arc.x, f.arc.y, f.arc.r, f.arc.a0, f.arc.da].join(',')] : []));
+      d.xdata(['PISTE', 'COUCHE=' + f.couche, 'W=' + f.w, 'NET=' + f.net].concat(f.arc ? ['ARC=' + [f.arc.x, f.arc.y, f.arc.r, f.arc.a0, f.arc.da].join(',')] : []).concat(estPont(f) ? ['PONT=' + f.pont] : []));
       for (j = 0; j < f.pts.length; j++) d.g(0, 'VERTEX').g(8, 'CUIVRE_' + f.couche).g(10, nb(f.pts[j].x)).g(20, nb(f.pts[j].y)).g(30, 0);
       d.g(0, 'SEQEND').g(8, 'CUIVRE_' + f.couche);
     }
@@ -14739,7 +15418,7 @@ function traduire(s) {
       for (j = 1; j <= B.nc; j++) d.disque('CUIVRE_' + j, f.x, f.y, f.diam / 2);
       d.cercle('PERCAGE', f.x, f.y, f.perc / 2);
       d.g(0, 'POINT').g(8, 'AZSCAD').g(10, nb(f.x)).g(20, nb(f.y)).g(30, 0);
-      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net].concat(f.couture ? ['COUTURE=1'] : []).concat(f.thermique ? ['THERMIQUE=1'] : []));
+      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net].concat(f.couture ? ['COUTURE=1'] : []).concat(f.thermique ? ['THERMIQUE=1'] : []).concat(estPont(f) ? ['PONT=' + f.pont] : []));
     }
     /* Textes libres de sérigraphie */
     for (i = 0; i < B.textes.length; i++) {
@@ -14747,7 +15426,7 @@ function traduire(s) {
       d.g(0, 'TEXT').g(8, f.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS').g(10, nb(f.x)).g(20, nb(f.y)).g(30, 0).g(40, nb(f.h)).g(1, dxfTexte(f.txt)).g(50, nb(f.rot));
       if (f.dessous) d.g(71, 2);
       d.g(72, 1).g(73, 2).g(11, nb(f.x)).g(21, nb(f.y)).g(31, 0);
-      d.xdata(['TEXTE', 'X=' + f.x, 'Y=' + f.y, 'H=' + f.h, 'ROT=' + f.rot, 'FACE=' + (f.dessous ? 'dessous' : 'dessus'), 'TXT=' + f.txt]);
+      d.xdata(['TEXTE', 'X=' + f.x, 'Y=' + f.y, 'H=' + f.h, 'ROT=' + f.rot, 'FACE=' + (f.dessous ? 'dessous' : 'dessus'), 'TXT=' + f.txt].concat(estPont(f) ? ['PONT=' + f.pont] : []));
     }
     ch = chevelu();
     for (i = 0; i < ch.length; i++) d.ligne('CHEVELU', ch[i].a.x, ch[i].a.y, ch[i].b.x, ch[i].b.y);
@@ -14766,10 +15445,11 @@ function traduire(s) {
       k = cles(xd);
       if (xd[0] === 'PISTE') {
         dern = { couche: parseInt(k.COUCHE, 10) || 1, w: lireNb(k.W) || 1, net: k.NET || '', pts: [] };
+        if (parseInt(k.PONT, 10) > 0) dern.pont = parseInt(k.PONT, 10);
         if (k.ARC) { m = k.ARC.split(',').map(parseFloat); if (m.length === 5 && m.every(isFinite)) dern.arc = { x: m[0], y: m[1], r: m[2], a0: m[3], da: m[4] }; }
       }
-      else if (xd[0] === 'TEXTE') r.textes.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, h: lireNb(k.H) || 1.5, rot: lireNb(k.ROT) || 0, dessous: k.FACE === 'dessous', txt: k.TXT || '' });
-      else if (xd[0] === 'VIA') { r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' }); if (k.THERMIQUE === '1') r.vias[r.vias.length - 1].thermique = true; if (k.COUTURE === '1') r.vias[r.vias.length - 1].couture = true; }
+      else if (xd[0] === 'TEXTE') { r.textes.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, h: lireNb(k.H) || 1.5, rot: lireNb(k.ROT) || 0, dessous: k.FACE === 'dessous', txt: k.TXT || '' }); if (parseInt(k.PONT, 10) > 0) r.textes[r.textes.length - 1].pont = parseInt(k.PONT, 10); }
+      else if (xd[0] === 'VIA') { r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' }); if (k.THERMIQUE === '1') r.vias[r.vias.length - 1].thermique = true; if (k.COUTURE === '1') r.vias[r.vias.length - 1].couture = true; if (parseInt(k.PONT, 10) > 0) r.vias[r.vias.length - 1].pont = parseInt(k.PONT, 10); }
       else if (xd[0] === 'BOARD') {
         r.ok = true; r.lib = k.LIB || ''; r.sch = k.SCH || '';
         if (lireNb(k.LARGEUR)) r.largeur = lireNb(k.LARGEUR);
@@ -14782,11 +15462,15 @@ function traduire(s) {
         if (lireNb(k.DEGPLAN)) r.degPlan = lireNb(k.DEGPLAN);
         if (lireNb(k.HDIEL)) r.hDiel = lireNb(k.HDIEL);
         r.remp = /^(H|B|HB)$/.test(k.REMP || '') ? k.REMP : '';
+        m = /^([\d.]+)\/(ref|refval|val)\/(0|90)$/.exec(k.SERIG || '');
+        r.serig = m ? { h: parseFloat(m[1]), contenu: m[2], orient: parseInt(m[3], 10) } : { h: 1.0, contenu: 'ref', orient: 0 };
         m = /^([GD]):(.+)$/.exec(k.COUPE || '');
         if (m) r.coupe = { agndG: m[1] === 'G', pts: m[2].split(';').map(function (q) { q = q.split(','); return { x: parseFloat(q[0]), y: parseFloat(q[1]) }; }).filter(function (q) { return !isNaN(q.x) && !isNaN(q.y); }) };
         if (r.coupe && r.coupe.pts.length < 2) r.coupe = null;
         m = /^(auto|carte|europe|perso):([\d.]+)x([\d.]+)(?:@(-?[\d.]+),(-?[\d.]+))?$/.exec(k.CONTOUR || '');
         if (m) { r.contour = { type: m[1], l: parseFloat(m[2]), h: parseFloat(m[3]) }; if (m[4] !== undefined) { r.contour.x0 = parseFloat(m[4]); r.contour.y0 = parseFloat(m[5]); } }
+        m = /^([\d.]+)\/(droits|convexes|concaves)\/([\d.]+)$/.exec(k.BORD || '');
+        if (m) { r.contour.marge = parseFloat(m[1]); r.contour.coins = m[2]; r.contour.rayon = parseFloat(m[3]); }
         m = (k.MEMO || '').split(';');
         for (j = 0; j < m.length; j++) if (m[j].indexOf(':') > 0) r.memo[m[j].slice(0, m[j].indexOf(':'))] = m[j].slice(m[j].indexOf(':') + 1);
       } else if (xd[0] === 'COMP') {
@@ -14815,12 +15499,13 @@ function traduire(s) {
     if (!r.ok) { message('Aucun circuit azs-cad dans ' + nom, true); return; }
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
     B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement; B.reglesAuto = false;
-    B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour;
+    B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour; B.serig = r.serig || { h: 1.0, contenu: 'ref', orient: 0 };
     B.planVcc = r.planVcc; B.plansAl = r.plansAl || ''; B.degPlan = r.degPlan; B.hDiel = r.hDiel; B.coupe = r.coupe || null; B.outilCoupe = null; B.remp = r.remp || '';
     if (r.nc) B.nc = r.nc;
     else if (!B.pistes.some(function (t) { return t.couche === 2 || t.couche === 3; })) { B.nc = 2; B.pistes.forEach(function (t) { if (t.couche === 4) t.couche = 2; }); }
     else { B.nc = 6; B.pistes.forEach(function (t) { t.couche = { 1: 1, 2: 3, 3: 3, 4: 6 }[t.couche] || 1; }); }
     B.couche = 1;
+    reconnaitrePonts();
     figerContour();
     B.sel = null; B.annul = []; B.retab = []; B.modifie = false; $('modif').textContent = '';
     $('nomBrd').value = nom;
@@ -14880,7 +15565,7 @@ function traduire(s) {
   window.addEventListener('mousedown', fermerMenuFichier);
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fermerMenuFichier(); });
   $('fichierBrd').addEventListener('change', function () { lireFichier(this, ouvrirBrd); });
-  $('btTexte').addEventListener('click', outilTexte);
+  $('btTexte').addEventListener('click', ouvrirMenuTexte);
   /* Grille : auto, valeurs courantes, ou saisie libre (champ à côté de la liste) */
   function fixerGrille(v) {
     var sel = $('selGrille'), lb = $('grilleLibre');
@@ -14902,6 +15587,7 @@ function traduire(s) {
   $('btPlacer').addEventListener('click', function () { choisirMode('placer'); });
   $('btRouter').addEventListener('click', function () { choisirMode('router'); });
   $('btOptimiser').addEventListener('click', ouvrirMenuOptimiser);
+  $('btIrrigation').addEventListener('click', ouvrirMenuIrrigation);
   majBoutonsCouche();
   window.addEventListener('resize', redimensionner);
 
