@@ -6,13 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-16
- Version    : 1.54.0
+ Version    : 1.55.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.2.1, Schéma 1.13.0, Circuit 1.45.0 (cartouche et
+ Modules    : Bibliothèque 1.2.1, Schéma 1.13.0, Circuit 1.46.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -257,6 +257,9 @@
    1.54.0 2026-11-16  Circuit 1.45.0 : re-routage en deux passages sur couches
                       signal hiérarchisées (GND interdit, VCC en dernier espoir) ;
                       via permise dans une pastille CMS de son réseau
+   1.55.0 2026-11-16  Circuit 1.46.0 : Router le chevelu sort les signaux des boîtiers
+                      à billes (couches signal d'abord, grille fine gardée) ; via
+                      dans toute pastille CMS de son réseau, là où il en faut une
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -335,7 +338,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.54.0</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.55.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -6803,7 +6806,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-16
- Version    : 1.45.0
+ Version    : 1.46.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -7395,6 +7398,16 @@ function traduire(s) {
                       longueur pondérée par couche (même facteurs). Router le
                       chevelu inchangé. Via dans une pastille CMS de son propre
                       réseau permise (routeur, Optimiser ▸ vias)
+   1.46.0 2026-11-16  Router le chevelu, passe 2 : premier essai sur les couches de
+                      signal seules (dessus, internes sans plan), toutes les
+                      couches ensuite ; grille de recherche gardée fine pour un
+                      boîtier à billes (24 M d'états, tampons gardés d'un tracé à
+                      l'autre ; fenêtre trop grande : liaison coupée en deux) ;
+                      place de via réservée seulement sous les billes reliées
+                      (les couches internes passent sous les billes sans
+                      liaison). Via dans la pastille pour toute pastille CMS de
+                      l'équipotentielle (bille, circuit, passif) : départ et
+                      arrivée du routeur, sortie vers plan, touche V à la main
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4, 6 ou 8
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -7525,7 +7538,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.45.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.46.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -10464,8 +10477,7 @@ function traduire(s) {
     if (!pl) { message('Pas de plan pour ' + net + (n ? ' (' + nomCouche(n) + ')' : '') + ' à cet endroit.', true); return; }
     if (n && !planRelie(n, net, der.x, der.y)) { message(nomCouche(n) + ' : autre équipotentielle que ' + net + ' à cet endroit.', true); return; }
     pd = padSous(tousPads(), der.x, der.y, 0);
-    if (pd && pd.e.t === 'smd' && !estBille(pd)) { message('Via sur pastille CMS : tracer d\'abord un segment.', true); return; }
-    if (!pd || estBille(pd)) poserViaJonction(der);
+    if (!pd || pd.e.t === 'smd') poserViaJonction(der);
     terminerRoute();
   }
   /* Boutons de couche : couleur de la couche, bouton actif plein, plan en pointillés */
@@ -12656,13 +12668,19 @@ function traduire(s) {
   var MARGE_MAX = 20;
   /* Router le chevelu, signal : passage sous une ligne 50 Ω permis en dernier recours (aucun autre chemin) */
   var CROISE_PERMIS = null;
+  /* Router le chevelu, passe 2 : premier essai sur les couches de signal seules (dessus et internes sans plan) ;
+     la grille de recherche reste fine (moins de couches) et les plans ne sont pas entamés ; sinon toutes les couches */
+  var RC_SIGNAL = false;
+  function couchesRoutage() { return couchesSignal().filter(function (n) { return n === 1 || (n !== bas() && !netRemp(n)); }); }
+  /* tampons de recherche gardés d'un tracé à l'autre (pas de réallocation par équipotentielle) */
+  var TAMPON = { n: 0, gs: null, par: null, ferme: null }, ETATS_MAX = 24e6;
   function optRouterNet(net, w, gr, passe, seuls) {
     var av = OPT.croise;
     OPT.croise = (gr || CROISE_PERMIS === net) && !optRf(net) && !estAlimNom(net) && !estMasseNom(net) ? net : null;
     try { return optRouterNet0(net, w, gr, passe, seuls); } finally { OPT.croise = av; }
   }
   function optRouterNet0(net, w, gr, passe, seuls) {
-    var L = couchesSignal(), nl = L.length, h = w / 2, iso = B.isolement, vd = B.via.diam, ct = OPT.ct, pi = [], i, j, k, p, r, X0, Y0, X1, Y1, nx, ny, N,
+    var L = RC_SIGNAL ? couchesRoutage() : couchesSignal(), nl = L.length, h = w / 2, iso = B.isolement, vd = B.via.diam, ct = OPT.ct, pi = [], i, j, k, p, r, X0, Y0, X1, Y1, nx, ny, N,
         mt, mv, mm, blk = [], cher = [], larg = [], kl = 0, lv = null, hk = gr && !optRf(net) ? LARGE_HEUR : 1, clr = null, fcl = null, strict = !!(passe && passe.stricte), vb, gs, par, res = { pistes: [], vias: [], manque: 0 }, sources, reste, t, tg, ch, d, best, relies, mg, o, np0, nv0, ns0, okc, vus2,
         neck = false, wn = w, hn = 0, piN = [], piL = [], dmN = {}, mtn = 0, blkN = [], zn = null, RZ = 0,
         DX = [1, 1, 0, -1, -1, -1, 0, 1], DY = [0, 1, 1, 1, 0, -1, -1, -1], PEN = optRf(net) ? [0, 3, 0] : [0, 0.3, 0.8], nbp, oc;
@@ -12698,7 +12716,9 @@ function traduire(s) {
     oc = optCentre(pi[0]);
     function cale(v, o) { return o + Math.ceil((v - o) / r - 1e-9) * r; }
     r = B.grille / 4;
-    for (;;) { nx = Math.floor((X1 - cale(X0, oc.x)) / r) + 1; ny = Math.floor((Y1 - cale(Y0, oc.y)) / r) + 1; if (nx * ny * nl * 8 <= 8e6) break; r *= 2; }
+    for (;;) { nx = Math.floor((X1 - cale(X0, oc.x)) / r) + 1; ny = Math.floor((Y1 - cale(Y0, oc.y)) / r) + 1; if (nx * ny * nl * 8 <= ETATS_MAX) break; r *= 2; }
+    /* boîtier à billes : entre deux billes seule la grille fine passe ; fenêtre trop grande : liaison coupée en deux */
+    if (gr && r > B.grille / 4 + 1e-9 && r <= B.grille * 2 && pi.some(function (q) { return estBille(OPT.pads[q]); })) { OPT.trop = true; OPT_RAISON = 'fenêtre trop grande pour la grille fine d\'un boîtier à billes'; return null; }
     /* fenêtre trop grande pour une grille fine : signalé (OPT.trop), la liaison est alors coupée en deux */
     if (r > B.grille * 2) { OPT.trop = true; OPT_RAISON = 'trop long pour la grille du routeur : maille ' + mmTxt(r) + ' mm > 2 × grille ' + mmTxt(B.grille) + ' mm'; return null; }
     if (nx < 2 || ny < 2) { OPT_RAISON = 'fenêtre de recherche vide'; return null; }
@@ -12805,13 +12825,13 @@ function traduire(s) {
         for (ix = Math.max(0, Math.ceil((pc.x - g2 - X0) / r)); ix <= Math.min(nx - 1, Math.floor((pc.x + g2 - X0) / r)); ix++)
           if (dist({ x: X0 + ix * r, y: Y0 + iy * r }, pc) <= g2) gp[iy * nx + ix] = 1;
     });
-    /* Router le chevelu : place d'une via réservée sous chaque bille des autres équipotentielles (desservie ou non,
-       reliée ou non) ; sur toutes les couches, les pistes passent entre les billes, jamais dessous */
+    /* Router le chevelu : place d'une via réservée sous chaque bille reliée à une autre équipotentielle (là où une via
+       sera nécessaire) ; une bille sans liaison ne réserve rien : les couches internes passent dessous */
     if (gr) (function () {
       var tc2 = toutesCouches();
       OPT.cuPads.forEach(function (ob, q) {
         var pd = OPT.pads[q];
-        if ((ob.net && ob.net === net) || !estBille(pd)) return;
+        if (!ob.net || ob.net === net || !estBille(pd)) return;
         marquer(optBoite({ k: 'd', c: { x: pd.e.x, y: pd.e.y }, r: vd / 2, couches: tc2 }), false);
       });
     })();
@@ -12988,15 +13008,16 @@ function traduire(s) {
         }
       });
       vus = Object.keys(vus).map(function (k3) { return vus[k3]; });
-      /* Router le chevelu, boîtier à billes : via dans la pastille ; la liaison part du centre de la bille sur une
-         autre couche de signal (via déjà posée dans la bille : départ sans coût) */
-      if (gr && !strict && estBille(pd)) (function () {
-        var ix = Math.round((c.x - X0) / r), iy = Math.round((c.y - Y0) / r), kc, z, deja;
+      /* Router le chevelu, toute pastille CMS de l'équipotentielle (bille, circuit, passif) : via dans la pastille ; la
+         liaison part de la pastille sur une autre couche de signal (via déjà posée : départ sans coût) */
+      if (gr && !strict && pd.e.t === 'smd' && !pd.e.via && !/^(PATCH|PONT)$/.test((compParRef(pd.ref) || {}).type || '')) (function () {
+        var ix = Math.round((c.x - X0) / r), iy = Math.round((c.y - Y0) / r), kc, z, deja, pv;
         if (ix < 0 || iy < 0 || ix >= nx || iy >= ny) return;
-        kc = iy * nx + ix;
-        if (!optEg(pt(kc), c)) return;
-        deja = B.vias.some(function (v2) { return v2.net === net && optEg(v2, c); }) || res.vias.some(function (v2) { return optEg(v2, c); });
-        if (!deja && optJeu(c, c, vd / 2, 0, net, iso) < iso - 1e-6) return;
+        kc = iy * nx + ix; pv = pt(kc);
+        /* bille : via au centre ; autre pastille CMS : via au nœud le plus proche du centre, dans la pastille */
+        if (estBille(pd) ? !optEg(pv, c) : !optDansPad(q, pv.x, pv.y, 0)) return;
+        deja = B.vias.some(function (v2) { return v2.net === net && optEg(v2, pv); }) || res.vias.some(function (v2) { return optEg(v2, pv); });
+        if (!deja && optJeu(pv, pv, vd / 2, 0, net, iso) < iso - 1e-6) return;
         for (z = 0; z < nl; z++) {
           if (pd.couches.indexOf(L[z]) >= 0 || blk[z][kc] || (cz && cz[z] && cz[z][kc])) continue;
           vus.push({ k: kc, li: z, c: deja ? 0 : vd + LARGE_VIA_BILLE, lead: null, bille: !deja });
@@ -13004,7 +13025,8 @@ function traduire(s) {
       })();
       return vus;
     }
-    gs = new Float32Array(N * nl * 8); par = new Int32Array(N * nl * 8); var ferme = new Uint8Array(N * nl * 8);
+    if (TAMPON.n < N * nl * 8) { TAMPON.gs = TAMPON.par = TAMPON.ferme = null; TAMPON.n = N * nl * 8; TAMPON.gs = new Float32Array(TAMPON.n); TAMPON.par = new Int32Array(TAMPON.n); TAMPON.ferme = new Uint8Array(TAMPON.n); }
+    gs = TAMPON.gs.subarray(0, N * nl * 8); par = TAMPON.par.subarray(0, N * nl * 8); var ferme = TAMPON.ferme.subarray(0, N * nl * 8);
     /* A* : état = (couche, nœud, direction d'arrivée) */
     /* ligne 50 Ω : plus court chemin (A* exact, sans coût de proximité), virages à 45° seulement et chers : tronçons droits, aucun détour décoratif */
     var rfDroit = optRf(net);
@@ -13880,7 +13902,9 @@ function traduire(s) {
       cible = pl ? cleRemp(pl, e.x, e.y) : null;
       if (!cible || f('P:' + p.ref + ':' + p.nom) === f(cible)) return;
       bx = cadrePad(e); w = Math.min(bx[2] - bx[0], bx[3] - bx[1]); ce = optCentre(i);
-      optAxes(i).some(function (A) {
+      /* via dans la pastille quand elle y tient (aucune sortie à tracer) ; sinon sortie courte et via */
+      if (optDansCarte(ce, vd / 2) && !viaIci(ce, vd, net) && !(netRemp(pl) !== 'GND' && evidee(ce, vd / 2)) && optJeu(ce, ce, vd / 2, 0, net, iso) >= iso - 1e-6) { poserVia(ce, B.via.perc, vd, net, false); n.via++; ok = true; }
+      if (!ok) optAxes(i).some(function (A) {
         var g, V, L;
         for (g = 0; g <= 2.5 && !ok; g += 0.05) {
           L = A.L0 + iso + vd / 2 + g; V = optPt(ce.x + A.d[0] * L, ce.y + A.d[1] * L);
@@ -14489,7 +14513,18 @@ function traduire(s) {
     }
     function un(net) {
       /* équipotentielle entière d'un coup ; trop étendue pour la grille : liaison par liaison, en dichotomie */
-      function essai(ww, pp) { var r2; OPT.trop = false; r2 = optRouterNet(net, ww, gr, pp); if (!r2 && OPT.trop) r2 = optRouterLiens(net, ww, gr, pp); return r2; }
+      function essai0(ww, pp) { var r2; OPT.trop = false; r2 = optRouterNet(net, ww, gr, pp); if (!r2 && OPT.trop) r2 = optRouterLiens(net, ww, gr, pp); return r2; }
+      function essai(ww, pp) {
+        var r2 = null, r3;
+        if (pp && !pp.stricte && couchesRoutage().length > 1 && couchesRoutage().length < couchesSignal().length) {
+          RC_SIGNAL = true;
+          try { r2 = essai0(ww, pp); } finally { RC_SIGNAL = false; }
+          if (r2 && r2.pistes.length && !r2.manque) return r2;
+        }
+        r3 = essai0(ww, pp);
+        if (r2 && r2.pistes.length && (!r3 || !r3.pistes.length || r2.manque <= r3.manque)) return r2;
+        return r3;
+      }
       var etat = { pistes: B.pistes, vias: B.vias }, lg = {}, w = 0, m = 0, gr, c0, c1, res, essais, wp, k;
       /* équipotentielle sans cuivre : chaque pastille est son propre groupe, pas de calcul de connexité */
       OPT.obs = {};
