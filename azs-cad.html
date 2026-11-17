@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-16
- Version    : 1.55.0
+ Date       : 2026-11-17
+ Version    : 1.57.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.2.1, Schéma 1.13.0, Circuit 1.46.0 (cartouche et
+ Modules    : Bibliothèque 1.3.0, Schéma 1.14.0, Circuit 1.48.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -260,6 +260,17 @@
    1.55.0 2026-11-16  Circuit 1.46.0 : Router le chevelu sort les signaux des boîtiers
                       à billes (couches signal d'abord, grille fine gardée) ; via
                       dans toute pastille CMS de son réseau, là où il en faut une
+   1.55.1 2026-11-16  Circuit 1.46.1 : billes reliées en plein aux faces remplies
+                      (pas de frein thermique sous un boîtier à billes)
+   1.56.0 2026-11-16  Bibliothèque 1.3.0, Schéma 1.13.1, Circuit 1.47.0 : pastille
+                      CMS ronde (mot ROND) ; billes rondes au pas de 0,8 mm,
+                      carrées au pas de 1 mm
+   1.57.0 2026-11-17  Fusion des deux branches 1.55.0 : Circuit 1.48.0 : état des
+                      couches internes, bouton Vider, passage 8 → 6 couches sans
+                      blocage par les ponts ; Schéma 1.14.0 : « Supprimer, garder
+                      fils/étiquettes » (fils à nu rebranchés d'un clic), deux bouts
+                      libres joints, « Étiquettes au lieu du fil », pastille PAD
+                      posée sur une patte reliée d'office
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -338,7 +349,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.55.0</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.57.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -386,7 +397,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-11
- Version    : 1.2.1
+ Version    : 1.3.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -463,6 +474,9 @@
                       normalisés intégrés, chargés d'un coup
    1.2.1  2026-11-12  Matrices 22 × 22 aux pas de 1,0 (BGA22x22-1, FCG484) et de
                       0,8 (FBGA22x22-0.8, FCVG484)
+   1.3.0  2026-11-16  Pastille CMS ronde : mot ROND en fin de ligne SMD (disque,
+                      oblongue si largeur ≠ hauteur). Matrices de billes au pas de
+                      0,8 mm en pastilles rondes ; carrées aux autres pas
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -470,7 +484,8 @@
      SOURCE  <origine> [référence…]        (facultatif, élément importé)
      LICENCE <non-diffusable|diffusable>   (facultatif, élément importé)
      PAD    <patte> <x> <y> <perçage> <diamètre> <ROND|CARRE|OVALE> [rot]   (DIL)
-     SMD    <patte> <x> <y> <largeur> <hauteur> [rot]                       (CMS)
+     SMD    <patte> <x> <y> <largeur> <hauteur> [rot] [ROND]                (CMS ;
+            ROND = pastille ronde, oblongue si largeur ≠ hauteur)
      TRAIT  <x1> <y1> <x2> <y2> <épaisseur>
      RECT   <x1> <y1> <x2> <y2> <épaisseur>
      ARC    <cx> <cy> <rayon> <angle début> <angle fin> <épaisseur>
@@ -650,7 +665,7 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.2.1</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.3.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
@@ -1154,6 +1169,8 @@ function traduire(s) {
   }
   function estPad(e) { return e.t === 'pad' || e.t === 'smd'; }
   function formePad(e) {
+    /* pastille CMS ronde (mot ROND) : disque si largeur = hauteur, sinon oblongue */
+    if (e.t === 'smd' && e.rond) return Math.abs(e.dx - e.dy) < 1e-9 ? { disque: { x: e.x, y: e.y, r: e.dx / 2 } } : { pts: rectArrondi(e.x, e.y, e.dx, e.dy, Math.min(e.dx, e.dy) / 2, e.rot) };
     if (e.t === 'smd') return { pts: rectArrondi(e.x, e.y, e.dx, e.dy, 0, e.rot) };
     if (e.forme === 'CARRE') return { pts: rectArrondi(e.x, e.y, e.diam, e.diam, 0, e.rot) };
     if (e.forme === 'OVALE') return { pts: rectArrondi(e.x, e.y, 2 * e.diam, e.diam, e.diam / 2, e.rot) };
@@ -1205,7 +1222,7 @@ function traduire(s) {
      ====================================================================== */
   function Gab(nom) { return { nom: nom, el: [] }; }
   function gPad(g, n, x, y, perc, diam, forme, rot) { g.el.push({ t: 'pad', nom: String(n), x: arr(x), y: arr(y), perc: perc, diam: diam, forme: forme, rot: rot || 0 }); }
-  function gSmd(g, n, x, y, dx, dy) { g.el.push({ t: 'smd', nom: String(n), x: arr(x), y: arr(y), dx: dx, dy: dy, rot: 0 }); }
+  function gSmd(g, n, x, y, dx, dy, rond) { var e = { t: 'smd', nom: String(n), x: arr(x), y: arr(y), dx: dx, dy: dy, rot: 0 }; if (rond) e.rond = true; g.el.push(e); }
   function gTrait(g, x1, y1, x2, y2, w) { g.el.push({ t: 'trait', x1: arr(x1), y1: arr(y1), x2: arr(x2), y2: arr(y2), w: w || 0.2 }); }
   function gRect(g, x1, y1, x2, y2, w) { g.el.push({ t: 'rect', x1: arr(Math.min(x1, x2)), y1: arr(Math.min(y1, y2)), x2: arr(Math.max(x1, x2)), y2: arr(Math.max(y1, y2)), w: w || 0.2 }); }
   function gArc(g, cx, cy, r, a1, a2, w) { g.el.push({ t: 'arc', cx: arr(cx), cy: arr(cy), r: arr(r), a1: normAng(a1), a2: normAng(a2), w: w || 0.2 }); }
@@ -1359,9 +1376,10 @@ function traduire(s) {
     var L = 'ABCDEFGHJKLMNPRTUVWY';
     return i < 20 ? L.charAt(i) : L.charAt(Math.floor(i / 20) - 1) + L.charAt(i % 20);
   }
+  /* Matrice de billes : pastilles rondes au pas de 0,8 mm, carrées aux autres pas (les deux 484 billes se distinguent) */
   function genBga(v, pas, pref) {
     var rc = String(v).split('x'), R = +rc[0], C = +rc[1], g = Gab(pref + R + 'x' + C + '-' + pas), d = BGA_PAD[pas], r, c, hx = (C - 1) * pas / 2 + pas * 0.75, hy = (R - 1) * pas / 2 + pas * 0.75;
-    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d);
+    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d, pas === 0.8);
     gRect(g, -hx, -hy, hx, hy);
     gPoint(g, -hx - 0.35, hy, 0.25);
     return gTextes(g);
@@ -1521,7 +1539,7 @@ function traduire(s) {
           e = { t: 'pad', nom: mots[1] || '', x: nb(2), y: nb(3), perc: nb(4), diam: nb(5), forme: (mots[6] || 'ROND').toUpperCase(), rot: mots[7] ? nb(7) : 0 };
           if (['ROND', 'CARRE', 'OVALE'].indexOf(e.forme) < 0) ok = false;
           break;
-        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] ? nb(6) : 0 }; break;
+        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] && !/^ROND$/i.test(mots[6]) ? nb(6) : 0 }; if (/^ROND$/i.test(mots[6] || '') || /^ROND$/i.test(mots[7] || '')) e.rond = true; break;
         case 'TRAIT': e = { t: 'trait', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'RECT': e = { t: 'rect', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'ARC': e = { t: 'arc', cx: nb(1), cy: nb(2), r: nb(3), a1: nb(4), a2: nb(5), w: nb(6) }; break;
@@ -1560,7 +1578,7 @@ function traduire(s) {
         e = p.el[j];
         switch (e.t) {
           case 'pad': o.push('  PAD ' + [e.nom, ecrireNb(e.x), ecrireNb(e.y), ecrireNb(e.perc), ecrireNb(e.diam), e.forme, ecrireNb(e.rot)].join(' ')); break;
-          case 'smd': o.push('  SMD ' + [e.nom, ecrireNb(e.x), ecrireNb(e.y), ecrireNb(e.dx), ecrireNb(e.dy), ecrireNb(e.rot)].join(' ')); break;
+          case 'smd': o.push('  SMD ' + [e.nom, ecrireNb(e.x), ecrireNb(e.y), ecrireNb(e.dx), ecrireNb(e.dy), ecrireNb(e.rot)].join(' ') + (e.rond ? ' ROND' : '')); break;
           case 'trait': o.push('  TRAIT ' + [e.x1, e.y1, e.x2, e.y2, e.w].map(ecrireNb).join(' ')); break;
           case 'rect': o.push('  RECT ' + [e.x1, e.y1, e.x2, e.y2, e.w].map(ecrireNb).join(' ')); break;
           case 'arc': o.push('  ARC ' + [e.cx, e.cy, e.r, e.a1, e.a2, e.w].map(ecrireNb).join(' ')); break;
@@ -3635,8 +3653,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
- Date       : 2026-11-13
- Version    : 1.13.0
+ Date       : 2026-11-17
+ Version    : 1.14.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3814,6 +3832,13 @@ function traduire(s) {
                       des pattes au schéma ; suppression d'une liste de composants
                       (fils et symboles d'alimentation devenus isolés compris) ou
                       changement de valeur, un seul Ctrl+Z
+   1.13.1 2026-11-16  Lecture du mot ROND des lignes SMD de la bibliothèque
+   1.14.0 2026-11-17  Fiche du composant : « Supprimer, garder fils/étiquettes » ; fils
+                      laissés à nu (point orange), clic sur le bout puis sur une
+                      patte pour rebrancher ; plusieurs de suite possibles ;
+                      orange puis orange : les deux fils n'en font qu'un ; fil
+                      sélectionné : bouton « Étiquettes au lieu du fil » ;
+                      pastille PAD posée sur une patte : liaison implicite
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -3922,7 +3947,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.13.0</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.14.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -4078,7 +4103,7 @@ var TRAD_EN = [
   ['(Maj + clic : point de référence)', '(Shift + click: reference point)'],
   ['Liaisons restant à router', 'Connections left to route'],
   ['Optimiser ▾', 'Optimize ▾'], ['Optimiser le schéma', 'Optimize the schematic'], ['Placement (gauche → droite, passifs dans l\'axe)', 'Placement (left → right, passives in line)'], ['Tracer les fils (45°, espacés)', 'Route wires (45°, spaced)'],
-  ['composant(s) placé(s)', 'component(s) placed'], ['Étiquettes à la place des fils trop longs', 'Net labels instead of overlong wires'], ['fil(s) remplacé(s) par des étiquettes', 'wire(s) replaced by net labels'], ['Fil au lieu des étiquettes', 'Wire instead of labels'], ['Nom du réseau', 'Net name'], ['Nom déjà pris par un autre réseau : ', 'Name already used by another net: '], ['Réseau renommé : ', 'Net renamed: '], ['fil(s) tracé(s)', 'wire(s) routed'], ['fil(s) laissé(s) au tracé automatique', 'wire(s) left to automatic routing'], ['Tout', 'Everything'], ['Symboles lisibles (IC et connecteurs)', 'Readable symbols (ICs and connectors)'],
+  ['composant(s) placé(s)', 'component(s) placed'], ['Étiquettes à la place des fils trop longs', 'Net labels instead of overlong wires'], ['fil(s) remplacé(s) par des étiquettes', 'wire(s) replaced by net labels'], ['Fil au lieu des étiquettes', 'Wire instead of labels'], ['Étiquettes au lieu du fil', 'Labels instead of wire'], ['Nom du réseau', 'Net name'], ['Nom déjà pris par un autre réseau : ', 'Name already used by another net: '], ['Réseau renommé : ', 'Net renamed: '], ['fil(s) tracé(s)', 'wire(s) routed'], ['fil(s) laissé(s) au tracé automatique', 'wire(s) left to automatic routing'], ['Tout', 'Everything'], ['Symboles lisibles (IC et connecteurs)', 'Readable symbols (ICs and connectors)'],
   ['Ranger les masses et alimentations', 'Tidy ground and power symbols'], ['symbole(s) redessiné(s)', 'symbol(s) redrawn'], ['Optimisation', 'Optimization'], ['rien à modifier', 'nothing to change'],
   ['Arrangements de lisibilité : symboles d\'IC et de connecteurs, masses et alimentations (Ctrl+Z annule)', 'Readability arrangements: IC and connector symbols, ground and power symbols (Ctrl+Z undoes)'],
   ['symbole(s) d\'alimentation rangé(s)', 'power symbol(s) tidied'], ['laissé(s) en place (plusieurs liaisons ou pas de place)', 'left in place (several connections or no room)'],
@@ -4388,7 +4413,7 @@ function traduire(s) {
       ok = true; e = null;
       switch (t) {
         case 'PAD': e = { t: 'pad', nom: mots[1] || '', x: nb(2), y: nb(3), perc: nb(4), diam: nb(5), forme: (mots[6] || 'ROND').toUpperCase(), rot: mots[7] ? nb(7) : 0 }; break;
-        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] ? nb(6) : 0 }; break;
+        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] && !/^ROND$/i.test(mots[6]) ? nb(6) : 0 }; if (/^ROND$/i.test(mots[6] || '') || /^ROND$/i.test(mots[7] || '')) e.rond = true; break;
         case 'TRAIT': e = { t: 'trait', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'RECT': e = { t: 'rect', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'ARC': e = { t: 'arc', cx: nb(1), cy: nb(2), r: nb(3), a1: nb(4), a2: nb(5), w: nb(6) }; break;
@@ -4845,6 +4870,7 @@ function traduire(s) {
     dessinerGrille();
     dessinerLiaisons();
     for (i = 0; i < S.comps.length; i++) dessinerComposant(S.comps[i], false);
+    dessinerBoutsLibres();
     dessinerSelectionPattes();
     if (S.pose && S.pose.x !== undefined) dessinerComposant(S.pose, true);
     $('vide').style.display = S.comps.length || S.pose ? 'none' : 'flex';
@@ -4861,7 +4887,7 @@ function traduire(s) {
     vers.push(instantane());
     S.comps = i.comps; S.fils = i.fils; S.bus = i.bus;
     S.sel = i.sel >= 0 ? S.comps[i.sel] || null : null;
-    S.selL = null; S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null;
+    S.selL = null; S.rebr = null; S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null;
     marquer(); toutRafraichir();
   }
 
@@ -4923,8 +4949,20 @@ function traduire(s) {
     var d = S.dernierPose, c = { id: S.nId++, type: d.type, ref: repereSuivant(d.type), val: d.val, pol: d.pol, rot: d.rot, x: pt.x, y: pt.y };
     empiler();
     S.comps.push(c);
+    pontagePad(c);
     message(libelle(c) + ' posé');
     toutRafraichir();
+  }
+  /* Pastille (PAD) posée exactement sur une patte existante : liaison implicite, qui suit ensuite le déplacement */
+  function pontagePad(c) {
+    var i, j, pl, n = 0;
+    if (c.type !== 'PAD') return;
+    for (i = 0; i < S.comps.length; i++) {
+      if (S.comps[i] === c) continue;
+      pl = pattesMonde(S.comps[i]);
+      for (j = 0; j < pl.length; j++) if (Math.abs(pl[j].wx - c.x) < 0.05 && Math.abs(pl[j].wy - c.y) < 0.05) { S.fils.push({ a: ep(c, '1'), b: ep(S.comps[i], pl[j].nom), type: 'n', pts: null }); n++; }
+    }
+    if (n) message('Pastille ' + c.ref + ' reliée à ' + n + ' patte(s) posée(s) dessous');
   }
   function annulerPose() { S.pose = null; $('aide').textContent = ''; majPalette(); aideLiaison(); dessiner(); }
   function deposer() {
@@ -4932,6 +4970,7 @@ function traduire(s) {
     empiler();
     S.comps.push({ id: S.nId++, type: c.type, ref: repereSuivant(c.type), val: c.val, pol: c.pol, rot: c.rot, x: c.x, y: c.y });
     S.sel = S.comps[S.comps.length - 1];
+    pontagePad(S.sel);
     S.dernierPose = { type: c.type, val: c.val, pol: c.pol, rot: c.rot };
     annulerPose();
     toutRafraichir();
@@ -5038,6 +5077,7 @@ function traduire(s) {
     bs = E('div', 'boutons'); b.appendChild(bs);
     bt = E('button', '', 'Rotation 90° (R)'); bt.addEventListener('click', tourner); bs.appendChild(bt);
     bt = E('button', '', 'Supprimer'); bt.addEventListener('click', supprimer); bs.appendChild(bt);
+    if (c.type !== 'PWR') { bt = E('button', '', 'Supprimer, garder fils/étiquettes'); bt.addEventListener('click', supprimerGarder); bs.appendChild(bt); }
   }
   function toutRafraichir() { remplirListe(); fiche(); aideLiaison(); dessiner(); }
   function centrerSur(c) {
@@ -5060,6 +5100,74 @@ function traduire(s) {
     }
     if (!S.sel) return;
     empiler(); purger(S.sel.id); S.comps.splice(S.comps.indexOf(S.sel), 1); S.sel = null; toutRafraichir();
+  }
+  /* Supprimer en gardant fils et étiquettes : le composant part, chaque liaison qui y arrivait garde
+     son tracé et finit sur un bout libre (point orange) à l'ancienne position de la patte.
+     Bout libre : { c: nombre négatif unique, p: '', x, y, d: direction de sortie, libre: true } */
+  function idLibre() { var m = 0, i; for (i = 0; i < S.fils.length; i++) { if (S.fils[i].a.c < m) m = S.fils[i].a.c; if (S.fils[i].b.c < m) m = S.fils[i].b.c; } return m - 1; }
+  function supprimerGarder() {
+    var c = S.sel, cache = {}, n = 0, nb = 0, i, k, f, e, so;
+    if (!c || c.type === 'PWR') return;
+    empiler();
+    for (i = 0; i < S.fils.length; i++) {
+      f = S.fils[i];
+      for (k = 0; k < 2; k++) {
+        e = k ? f.b : f.a;
+        if (e.c !== c.id) continue;
+        so = sortiePatte(e, cache);
+        if (!so) continue;
+        e = { c: idLibre(), p: '', x: so.p.x, y: so.p.y, d: so.d, libre: true };
+        if (k) f.b = e; else f.a = e;
+        n++;
+      }
+    }
+    for (i = S.bus.length - 1; i >= 0; i--) if (S.bus[i].a.concat(S.bus[i].b).some(function (x) { return x.c === c.id; })) { S.bus.splice(i, 1); nb++; }
+    purger(c.id);
+    S.comps.splice(S.comps.indexOf(c), 1); S.sel = null;
+    message(c.ref + ' retiré · ' + n + ' liaison(s) à nu : clic sur le point orange puis sur une patte pour rebrancher' + (nb ? ' · ' + nb + ' bus supprimé(s)' : ''));
+    toutRafraichir();
+  }
+  function boutLibreSous(w) {
+    var i, k, e, bd = 8 / S.z, best = null, d;
+    for (i = 0; i < S.fils.length; i++) for (k = 0; k < 2; k++) {
+      e = k ? S.fils[i].b : S.fils[i].a;
+      if (!e.libre) continue;
+      d = Math.sqrt((w.x - e.x) * (w.x - e.x) + (w.y - e.y) * (w.y - e.y));
+      if (d < bd) { bd = d; best = { f: S.fils[i], k: k ? 'b' : 'a' }; }
+    }
+    return best;
+  }
+  function rebrancher(e) {
+    var r = S.rebr, autre = r.f[r.k === 'a' ? 'b' : 'a'];
+    S.rebr = null;
+    if (!autre.libre && memeEp(autre, e)) { message('Liaison d\'une patte sur elle-même refusée.', true); aideLiaison(); dessiner(); return; }
+    empiler();
+    r.f[r.k] = e; r.f.pts = null; delete r.f.opt;
+    S.selL = null; toutRafraichir();
+  }
+  /* Deux bouts libres : les deux fils n'en font plus qu'un, les deux points orange disparaissent */
+  function joindre(r1, r2) {
+    var a = r1.f[r1.k === 'a' ? 'b' : 'a'], b = r2.f[r2.k === 'a' ? 'b' : 'a'], n;
+    S.rebr = null;
+    if (!a.libre && !b.libre && memeEp(a, b)) { message('Liaison d\'une patte sur elle-même refusée.', true); aideLiaison(); dessiner(); return; }
+    empiler();
+    n = { a: a, b: b, type: r1.f.type, pts: null };
+    if (r1.f.nomNet || r2.f.nomNet) n.nomNet = r1.f.nomNet || r2.f.nomNet;
+    if (r1.f.lab || r2.f.lab) n.lab = true;
+    S.fils.splice(S.fils.indexOf(r1.f), 1, n);
+    S.fils.splice(S.fils.indexOf(r2.f), 1);
+    S.selL = null; toutRafraichir();
+  }
+  function dessinerBoutsLibres() {
+    var i, k, e, p;
+    for (i = 0; i < S.fils.length; i++) for (k = 0; k < 2; k++) {
+      e = k ? S.fils[i].b : S.fils[i].a;
+      if (!e.libre) continue;
+      p = versEcran(e.x, e.y);
+      ecran();
+      ctx.beginPath(); ctx.arc(p.x, p.y, S.rebr && S.rebr.f === S.fils[i] && S.rebr.k === (k ? 'b' : 'a') ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff9a1f'; ctx.fill();
+    }
   }
 
   /* ======================================================================
@@ -5086,18 +5194,21 @@ function traduire(s) {
   function copieBus(b) { return { a: b.a.map(copieObj), b: b.b.map(copieObj), type: b.type }; }
   function estBus(o) { return Array.isArray(o.a); }
   function posEp(e, cache) {
-    var c = compParId(e.c), l, i;
+    var c, l, i;
+    if (e.libre) return { x: e.x, y: e.y };
+    c = compParId(e.c);
     if (!c) return null;
     l = cache[e.c] || (cache[e.c] = pattesMonde(c));
     for (i = 0; i < l.length; i++) if (l[i].nom === e.p) return { x: l[i].wx, y: l[i].wy };
     return null;
   }
-  function nomEp(e) { var c = compParId(e.c); return c ? (c.type === 'PWR' ? c.val : c.ref + '.' + e.p) : '?'; }
+  function nomEp(e) { var c = e.libre ? null : compParId(e.c); if (e.libre) return '(libre)'; return c ? (c.type === 'PWR' ? c.val : c.ref + '.' + e.p) : '?'; }
   /* Sortie d'une patte : direction perpendiculaire à sa rangée, vers l'extérieur,
      au-delà du nom de patte pour un IC */
   var ZOOM_SORTIE = 6;
   function sortiePatte(e, cache) {
     var c = compParId(e.c), p = posEp(e, cache), l, b = [1e9, 1e9, -1e9, -1e9], i, d, ext = 2.54, px, lab = e.p;
+    if (e.libre) return { p: p, s: { x: p.x + e.d[0] * ext, y: p.y + e.d[1] * ext }, d: e.d };
     if (!c || !p) return null;
     if (c.type === 'PWR') { d = transPts([estMasse(c.val) ? [0, 1] : [0, -1]], 0, 0, c.rot)[0]; d = [Math.round(d[0]), Math.round(d[1])]; ext = 1.27; }
     else if (c.type !== 'IC') { d = transPts([[e.p === '1' ? -1 : 1, 0]], 0, 0, c.rot)[0]; d = [Math.round(d[0]), Math.round(d[1])]; }
@@ -5218,6 +5329,7 @@ function traduire(s) {
   function route(ea, eb, cache, obs, segs, net) {
     var A = sortiePatte(ea, cache), B = sortiePatte(eb, cache), dx, dy, l, k;
     if (!A || !B) return null;
+    if (Math.abs(B.p.x - A.p.x) < 1e-6 && Math.abs(B.p.y - A.p.y) < 1e-6) return [A.p, B.p];
     /* Deux pattes face à face dans le même axe, rien entre elles : un seul segment droit */
     dx = B.p.x - A.p.x; dy = B.p.y - A.p.y; l = Math.abs(dx) + Math.abs(dy);
     if (l > 1e-6 && (Math.abs(dx) < 1e-6 || Math.abs(dy) < 1e-6) && Math.abs(dx / l - A.d[0]) < 1e-6 && Math.abs(dy / l - A.d[1]) < 1e-6 && A.d[0] === -B.d[0] && A.d[1] === -B.d[1]) {
@@ -5634,6 +5746,7 @@ function traduire(s) {
   function clicPatte(pt) {
     var e = ep(pt.c, pt.p), a;
     S.groupe = []; S.groupeA = null; S.dernier = null;
+    if (S.rebr) { rebrancher(e); return; }
     if (!S.lien) { S.lien = e; aideLiaison(); dessiner(); return; }
     a = S.lien; S.lien = null; aideLiaison();
     if (memeEp(a, e)) { dessiner(); return; }
@@ -5683,12 +5796,13 @@ function traduire(s) {
     message('Bus de ' + n + ' liaisons créé.');
     toutRafraichir();
   }
-  function annulerLiaison() { S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null; aideLiaison(); dessiner(); }
+  function annulerLiaison() { S.rebr = null; S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null; aideLiaison(); dessiner(); }
   function aideLiaison() {
     var t = '';
     if (S.pose) return;
     if (S.groupeA) t = 'Groupe 1 : ' + S.groupeA.length + ' pattes · groupe 2 : ' + S.groupe.length + ' / ' + S.groupeA.length + ' (Ctrl ou Maj + clic sur l\'autre composant) · Échap : annuler';
     else if (S.groupe.length) t = 'Groupe : ' + S.groupe.length + ' patte(s) · Ctrl+clic : ajouter/retirer · Maj+clic : plage · puis second groupe sur un autre composant';
+    else if (S.rebr) t = 'Rebrancher : clic sur la patte d\'arrivée · Échap : annuler';
     else if (S.lien) t = 'Liaison depuis ' + nomEp(S.lien) + ' : clic sur la patte d\'arrivée · Échap : annuler';
     else if (S.dernierPose && !S.sel && !S.selL) t = 'Clic dans le vide : reposer ' + S.dernierPose.type + (S.dernierPose.val ? ' ' + S.dernierPose.val : '');
     $('aide').textContent = t;
@@ -6061,8 +6175,8 @@ function traduire(s) {
       dd = sensDe(so.d);
       if (dd < 0) return null;
       L = Math.max(1, Math.ceil(dist(so.p, so.s) / g - 1e-6));
-      if (compParId(e.c).type === 'IC' && compParId(e.c).sym) L = 2;
-      if (compParId(e.c).type === 'PWR') L = 1;
+      if (!e.libre && compParId(e.c).type === 'IC' && compParId(e.c).sym) L = 2;
+      if (!e.libre && compParId(e.c).type === 'PWR') L = 1;
       q = []; for (k = 1; k <= L; k++) q.push((iy(so.p.y) + DY[dd] * k) * nx + ix(so.p.x) + DX[dd] * k);
       /* l'amorce traverse au besoin le dessin de son propre composant (boîtier dessiné tel quel) */
       q.forEach(function (h) { if (h >= 0 && h < N) blk[h] = 0; });
@@ -6262,6 +6376,11 @@ function traduire(s) {
       bt.addEventListener('click', function () { empiler(); o.pts = null; delete o.lab; delete o.opt; toutRafraichir(); });
       bs.appendChild(bt);
     }
+    if (!bus && !o.lab && o.type !== 'rf' && [o.a, o.b].every(function (x) { var q = x.libre ? null : compParId(x.c); return !q || q.type !== 'PWR'; })) {
+      bt = E('button', '', 'Étiquettes au lieu du fil');
+      bt.addEventListener('click', function () { empiler(); o.lab = true; o.pts = null; delete o.opt; toutRafraichir(); });
+      bs.appendChild(bt);
+    }
     bt = E('button', '', 'Supprimer (Suppr)'); bt.addEventListener('click', supprimer); bs.appendChild(bt);
     if (!bus) b.appendChild(E('div', 'stat', 'Carré : déplacer le coude · rond : nouveau coude · double-clic sur le fil : effacer'));
   }
@@ -6324,6 +6443,8 @@ function traduire(s) {
     l = p ? p.el.filter(function (e) { return !estPad(e) && e.t !== 'texte'; }) : [];
     return l;
   }
+  function epTxt(e) { return e.libre ? e.c + ':L;' + e.x.toFixed(4) + ';' + e.y.toFixed(4) + ';' + e.d[0] + ';' + e.d[1] : e.c + ':' + e.p; }
+  function epLu(o) { var t; if (o.c < 0 && o.p.indexOf('L;') === 0) { t = o.p.split(';'); return { c: o.c, p: '', x: parseFloat(t[1]), y: parseFloat(t[2]), d: [parseInt(t[3], 10), parseInt(t[4], 10)], libre: true }; } return o; }
   function ecrireDxf() {
     var d = new Dxf(), i, j, c, l, e, R = calculerRoutes(), pts, f, bu, g, bm, k, calq, pl;
     d.g(0, 'SECTION').g(2, 'HEADER').g(9, '$ACADVER').g(1, 'AC1009').g(9, '$INSBASE').g(10, 0).g(20, 0).g(30, 0).g(9, '$DWGCODEPAGE').g(3, 'ANSI_1252').g(0, 'ENDSEC');
@@ -6380,7 +6501,7 @@ function traduire(s) {
       pts = R.fils[i];
       if (!pts) continue;
       d.polyligne(f.type === 'rf' ? 'LIGNES_50OHM' : 'LIAISONS', pts, { tirets: f.type === 'rf' },
-        ['FIL', 'A=' + f.a.c + ':' + f.a.p, 'B=' + f.b.c + ':' + f.b.p, 'TYPE=' + f.type, 'TRACE=' + (f.lab ? 'etiquette' : f.pts ? (f.opt ? 'opt' : 'manuel') : 'auto')].concat(f.nomNet ? ['NOM=' + f.nomNet] : []));
+        ['FIL', 'A=' + epTxt(f.a), 'B=' + epTxt(f.b), 'TYPE=' + f.type, 'TRACE=' + (f.lab ? 'etiquette' : f.pts ? (f.opt ? 'opt' : 'manuel') : 'auto')].concat(f.nomNet ? ['NOM=' + f.nomNet] : []));
     }
     for (i = 0; i < S.bus.length; i++) {
       bu = S.bus[i];
@@ -6451,7 +6572,7 @@ function traduire(s) {
         if (/^[LGD]$/.test(k.SYM || '')) res.comps[res.comps.length - 1].sym = k.SYM;
       } else if (xd[0] === 'FIL') {
         dern = [];
-        res.fils.push({ a: k.A[0], b: k.B[0], type: k.TYPE || 'n', pts: k.TRACE === 'manuel' || k.TRACE === 'opt' ? dern : null });
+        res.fils.push({ a: epLu(k.A[0]), b: epLu(k.B[0]), type: k.TYPE || 'n', pts: k.TRACE === 'manuel' || k.TRACE === 'opt' ? dern : null });
         if (k.TRACE === 'opt') res.fils[res.fils.length - 1].opt = 'lu';
         if (k.TRACE === 'etiquette') res.fils[res.fils.length - 1].lab = true;
         if (k.NOM) res.fils[res.fils.length - 1].nomNet = k.NOM;
@@ -6552,7 +6673,10 @@ function traduire(s) {
         else clicPatte(pt);
         return;
       }
-      if (S.lien || S.groupe.length || S.groupeA) annulerLiaison();
+      l = boutLibreSous(w);
+      if (l && S.rebr && S.rebr.f !== l.f) { joindre(S.rebr, l); return; }
+      if (l) { S.lien = null; S.groupe = []; S.groupeA = null; S.rebr = l; S.selL = l.f; S.sel = null; toutRafraichir(); return; }
+      if (S.rebr || S.lien || S.groupe.length || S.groupeA) annulerLiaison();
       l = etiquetteSous(w);
       if (l) { S.selL = l.f; S.sel = null; toutRafraichir(); return; }
       l = liaisonSous(w);
@@ -6634,7 +6758,7 @@ function traduire(s) {
     if (k === 'Escape') {
       fermerMenu();
       if (S.pose) annulerPose();
-      else if (S.lien || S.groupe.length || S.groupeA) annulerLiaison();
+      else if (S.rebr || S.lien || S.groupe.length || S.groupeA) annulerLiaison();
       else if (S.sel || S.selL) { S.sel = null; S.selL = null; toutRafraichir(); }
     }
     else if ((k === 'r' || k === 'R') && !ev.ctrlKey && !ev.metaKey) tourner();
@@ -6805,8 +6929,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-16
- Version    : 1.46.0
+ Date       : 2026-11-17
+ Version    : 1.48.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -7408,6 +7532,28 @@ function traduire(s) {
                       liaison). Via dans la pastille pour toute pastille CMS de
                       l'équipotentielle (bille, circuit, passif) : départ et
                       arrivée du routeur, sortie vers plan, touche V à la main
+   1.46.1 2026-11-16  Billes d'un boîtier à billes : raccord plein aux faces
+                      remplies, sans frein thermique (soudure par refusion)
+   1.47.0 2026-11-16  Pastille CMS ronde (mot ROND de la bibliothèque) : dessin,
+                      isolements, plans, Gerber et DXF sur le disque réel ;
+                      matrices de billes au pas de 0,8 mm en pastilles rondes
+   1.48.0 2026-11-17  Couches internes : état affiché (libre, ponts seulement,
+                      n pistes de signal, plan seul / pistes dans le plan) ;
+                      bouton Vider : lignes de pont retirées, équipotentielles
+                      re-routées en entier sans la couche (signaux ×1, ×2, ×4…,
+                      VCC en dernier espoir, GND jamais), gardées même plus
+                      longues, le reste listé ; un seul Ctrl+Z. Changement du
+                      nombre de couches : seules les pistes de signal bloquent ;
+                      lignes de pont gardées sur une couche conservée sans
+                      report, sinon retirées. Alimentation affectée à une
+                      couche : ses lignes de pont retirées. Pont sans ligne
+                      supprimé (vias, texte). Plan coupé : avertissement
+                      Irrigation ▸ Placer
+
+ À faire :
+   - Option automatique : supprimer les îlots artificiels d'une couche
+     d'alimentation dus à des restrictions (dégagements, isolements) bien
+     au-delà des minima PCBCart (+ 33 %)
 
  Couches (DXF) : CUIVRE_1 (dessus) … CUIVRE_N (dessous), N = 2, 4, 6 ou 8
                  VERNIS_DESSUS VERNIS_DESSOUS TEXTE_DESSUS TEXTE_DESSOUS
@@ -7538,7 +7684,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.46.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.48.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -7813,6 +7959,10 @@ var TRAD_EN = [
   ['Clic sur un pont (ligne, via ou texte) puis glisser · Suppr : supprimer · Échap : désélectionner', 'Click a bridge (line, via or text) then drag · Del: delete · Esc: deselect'],
   ['Couches', 'Layers'], ['traverse ', 'crosses '], ['plan d\'alimentation coupé', 'supply plane split'], ['Irrigation ▸ Placer', 'Feed ▸ Place'], ['Étape 0/3 · lignes 50 Ω', 'Step 0/3 · 50 Ω lines'],
   ['Zone(s) non irriguée(s) en rouge', 'Unfed zone(s) in red'], ['Contrôle des plans d\'alimentation', 'Checking supply planes'], ['vias non irriguées', 'vias not fed'], ['zones non reliées', 'unconnected zones'], ['ATTENTION', 'WARNING'], ['pont(s) sur le circuit', 'bridge(s) on the board'], ['Longueur', 'Length'], ['Supprimer (Suppr)', 'Delete (Del)'],
+  ['Vider la couche ', 'Empty layer '], ['Vider', 'Empty'], ['libre', 'free'], ['ponts seulement (', 'bridges only ('], ['piste(s) de signal dans le plan', 'signal track(s) in the plane'], ['plan seul', 'plane only'], ['piste(s) de signal', 'signal track(s)'], ['pont(s)', 'bridge(s)'],
+  ['Pistes re-routées sur les autres couches signal (×1, ×2, ×4…, VCC en dernier espoir, GND jamais), lignes de pont retirées', 'Tracks re-routed on the other signal layers (×1, ×2, ×4…, VCC as last hope, GND never), bridge lines removed'],
+  ['équipotentielle(s) déplacée(s)', 'net(s) moved'], ['équipotentielle(s) re-routée(s) ailleurs', 'net(s) re-routed elsewhere'], ['ligne(s) de pont retirée(s)', 'bridge line(s) removed'], ['non déplacées : ', 'not moved: '], ['piste(s) de signal restent', 'signal track(s) remain'],
+  ['ligne(s) de pont retirée(s) des couches devenues plans · vérifier : Irrigation ▸ Placer', 'bridge line(s) removed from layers that became planes · check: Feed ▸ Place'], ['Pistes de signal sur les couches internes ', 'Signal tracks on inner layers '], [' : vider des couches d\'abord (bouton Vider).', ': empty layers first (Empty button).'],
   ['mm comprise, coins compris) dépasse ce format.', 'mm included, corners included) exceeds this format.'], ['Marge (mm)', 'Margin (mm)'], ['Coins', 'Corners'], ['Droits', 'Square'], ['Arrondis convexes', 'Rounded (convex)'], ['Rognés concaves (quart de cible)', 'Notched (concave, quarter target)'], ['Rayon (mm)', 'Radius (mm)'],
   ['Distance minimale entre le projet et le bord ; mires et « AZS » comprises dans la carte', 'Minimum distance between the project and the edge; fiducials and "AZS" inside the board'], ['Arc centré sur la mire, 2 mm au moins', 'Arc centred on the fiducial, 2 mm minimum'], ['Quart de cercle centré sur le coin, 1 mm au moins (rayon de la fraise)', 'Quarter circle centred on the corner, 1 mm minimum (router bit radius)'],
   ['Sérigraphie · format', 'Silkscreen · format'], ['Sérigraphie · contrôle', 'Silkscreen · check'], ['Contenu', 'Content'], ['Référence.valeur (R1.100K)', 'Reference.value (R1.100K)'], ['Référence (R1)', 'Reference (R1)'], ['Valeur (100K)', 'Value (100K)'],
@@ -8010,6 +8160,8 @@ function traduire(s) {
   }
   function estPad(e) { return e.t === 'pad' || e.t === 'smd'; }
   function formePad(e) {
+    /* pastille CMS ronde (mot ROND) : disque si largeur = hauteur, sinon oblongue */
+    if (e.t === 'smd' && e.rond) return Math.abs(e.dx - e.dy) < 1e-9 ? { disque: { x: e.x, y: e.y, r: e.dx / 2 } } : { pts: rectArrondi(e.x, e.y, e.dx, e.dy, Math.min(e.dx, e.dy) / 2, e.rot) };
     if (e.t === 'smd') return { pts: rectArrondi(e.x, e.y, e.dx, e.dy, 0, e.rot) };
     if (e.forme === 'CARRE') return { pts: rectArrondi(e.x, e.y, e.diam, e.diam, 0, e.rot) };
     if (e.forme === 'OVALE') return { pts: rectArrondi(e.x, e.y, 2 * e.diam, e.diam, e.diam / 2, e.rot) };
@@ -8047,7 +8199,7 @@ function traduire(s) {
       ok = true; e = null;
       switch (t) {
         case 'PAD': e = { t: 'pad', nom: mots[1] || '', x: nb(2), y: nb(3), perc: nb(4), diam: nb(5), forme: (mots[6] || 'ROND').toUpperCase(), rot: mots[7] ? nb(7) : 0 }; break;
-        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] ? nb(6) : 0 }; break;
+        case 'SMD': e = { t: 'smd', nom: mots[1] || '', x: nb(2), y: nb(3), dx: nb(4), dy: nb(5), rot: mots[6] && !/^ROND$/i.test(mots[6]) ? nb(6) : 0 }; if (/^ROND$/i.test(mots[6] || '') || /^ROND$/i.test(mots[7] || '')) e.rond = true; break;
         case 'TRAIT': e = { t: 'trait', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'RECT': e = { t: 'rect', x1: nb(1), y1: nb(2), x2: nb(3), y2: nb(4), w: nb(5) }; break;
         case 'ARC': e = { t: 'arc', cx: nb(1), cy: nb(2), r: nb(3), a1: nb(4), a2: nb(5), w: nb(6) }; break;
@@ -8598,7 +8750,7 @@ function traduire(s) {
      ====================================================================== */
   function Gab(nom) { return { nom: nom, el: [] }; }
   function gPad(g, n, x, y, perc, diam, forme, rot) { g.el.push({ t: 'pad', nom: String(n), x: arr(x), y: arr(y), perc: perc, diam: diam, forme: forme, rot: rot || 0 }); }
-  function gSmd(g, n, x, y, dx, dy) { g.el.push({ t: 'smd', nom: String(n), x: arr(x), y: arr(y), dx: dx, dy: dy, rot: 0 }); }
+  function gSmd(g, n, x, y, dx, dy, rond) { var e = { t: 'smd', nom: String(n), x: arr(x), y: arr(y), dx: dx, dy: dy, rot: 0 }; if (rond) e.rond = true; g.el.push(e); }
   function gTrait(g, x1, y1, x2, y2, w) { g.el.push({ t: 'trait', x1: arr(x1), y1: arr(y1), x2: arr(x2), y2: arr(y2), w: w || 0.2 }); }
   function gRect(g, x1, y1, x2, y2, w) { g.el.push({ t: 'rect', x1: arr(Math.min(x1, x2)), y1: arr(Math.min(y1, y2)), x2: arr(Math.max(x1, x2)), y2: arr(Math.max(y1, y2)), w: w || 0.2 }); }
   function gArc(g, cx, cy, r, a1, a2, w) { g.el.push({ t: 'arc', cx: arr(cx), cy: arr(cy), r: arr(r), a1: normAng(a1), a2: normAng(a2), w: w || 0.2 }); }
@@ -8752,9 +8904,10 @@ function traduire(s) {
     var L = 'ABCDEFGHJKLMNPRTUVWY';
     return i < 20 ? L.charAt(i) : L.charAt(Math.floor(i / 20) - 1) + L.charAt(i % 20);
   }
+  /* Matrice de billes : pastilles rondes au pas de 0,8 mm, carrées aux autres pas (les deux 484 billes se distinguent) */
   function genBga(v, pas, pref) {
     var rc = String(v).split('x'), R = +rc[0], C = +rc[1], g = Gab(pref + R + 'x' + C + '-' + pas), d = BGA_PAD[pas], r, c, hx = (C - 1) * pas / 2 + pas * 0.75, hy = (R - 1) * pas / 2 + pas * 0.75;
-    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d);
+    for (r = 0; r < R; r++) for (c = 0; c < C; c++) gSmd(g, ligneBga(r) + (c + 1), (c - (C - 1) / 2) * pas, ((R - 1) / 2 - r) * pas, d, d, pas === 0.8);
     gRect(g, -hx, -hy, hx, hy);
     gPoint(g, -hx - 0.35, hy, 0.25);
     return gTextes(g);
@@ -9477,7 +9630,7 @@ function traduire(s) {
     return Object.keys(par).sort(function (a, b) { return a - b; }).map(function (c) { return c + '=' + par[c].sort(triNat).join('|'); }).join(';');
   }
   function affEnTable() { var a = affectations(B.nc), m = {}; Object.keys(a).forEach(function (k) { a[k].forEach(function (nm) { m[nm] = +k; }); }); return m; }
-  function fixerAff(nm, v) { var m = affEnTable(); delete m[nm]; if (v !== 'a') m[nm] = +v; empiler(); B.plansAl = serialiserAff(m); toutRafraichir(); }
+  function fixerAff(nm, v) { var m = affEnTable(), np; delete m[nm]; if (v !== 'a') m[nm] = +v; empiler(); B.plansAl = serialiserAff(m); np = nettoyerPontsPlans(); toutRafraichir(); if (np) message(np + ' ligne(s) de pont retirée(s) des couches devenues plans · vérifier : Irrigation ▸ Placer'); }
   function grouperTensions() {
     var m = affEnTable(), fam = {}, n = 0;
     B.nets.filter(estAlim).forEach(function (x) { var v = tensionNom(x.nom); if (v > 0) (fam[v] = fam[v] || []).push(x.nom); });
@@ -9492,7 +9645,7 @@ function traduire(s) {
       if (!cible) return;
       l.forEach(function (nm) { m[nm] = cible; }); n++;
     });
-    B.plansAl = serialiserAff(m);
+    B.plansAl = serialiserAff(m); nettoyerPontsPlans();
     toutRafraichir();
     message(n ? n + ' groupe(s) de tensions identiques : un seul plan par groupe (les réseaux groupés sont reliés entre eux par le plan)' : 'Aucune tension identique à regrouper');
   }
@@ -9509,7 +9662,7 @@ function traduire(s) {
     });
     d = E('div', 'boutons'); b.appendChild(d);
     va = E('button', '', 'Regrouper les tensions identiques'); va.title = '+3V3 et +3V3_PLL sur la même couche : un seul plan'; va.addEventListener('click', grouperTensions); d.appendChild(va);
-    if (B.plansAl) { va = E('button', '', 'Tout en automatique'); va.addEventListener('click', function () { empiler(); B.plansAl = ''; toutRafraichir(); }); d.appendChild(va); }
+    if (B.plansAl) { va = E('button', '', 'Tout en automatique'); va.addEventListener('click', function () { empiler(); B.plansAl = ''; nettoyerPontsPlans(); toutRafraichir(); }); d.appendChild(va); }
     if (Object.keys(pile().g).some(function (k) { return pile().g[k].length > 1; })) b.appendChild(E('div', 'avert', 'Réseaux groupés = reliés entre eux par le plan (une ferrite ou un 0 Ω entre eux est court-circuité)'));
   }
   /* Nombre de couches, empilement, plans */
@@ -9525,6 +9678,18 @@ function traduire(s) {
       d = E('div', 'stat', n + ' · ' + (n === bas() ? 'GND · plan de masse rempli · signaux en dernier recours (dessous)' : n === 1 ? 'signaux' + (netVcc() ? ' · ' + netVcc() + ' en chevelu' : '') + ' (dessus)' : netRemp(n) ? nomPlan(n) + ' · plan rempli · signaux en dernier recours' : 'signaux (interne)'));
       d.style.borderLeft = '4px ' + (netRemp(n) && n !== bas() ? 'dashed ' : 'solid ') + coulCouche(n); d.style.paddingLeft = '6px';
       b.appendChild(d);
+      /* état des couches internes et bouton Vider */
+      if (n > 1 && n < bas()) (function () {
+        var e = etatCouche(n), t = netRemp(n) ? (e.sig ? e.sig + ' piste(s) de signal dans le plan' : 'plan seul') + (e.ponts ? ' · ' + e.ponts + ' pont(s)' : '')
+          : (!e.sig && !e.ponts ? 'libre' : !e.sig ? 'ponts seulement (' + e.ponts + ')' : e.sig + ' piste(s) de signal' + (e.ponts ? ' · ' + e.ponts + ' pont(s)' : '')), bt;
+        d.appendChild(E('span', '', ' · ' + t));
+        if (e.sig || e.ponts) {
+          bt = E('button', '', 'Vider'); bt.style.marginLeft = '6px';
+          bt.title = 'Pistes re-routées sur les autres couches signal (×1, ×2, ×4…, VCC en dernier espoir, GND jamais), lignes de pont retirées';
+          bt.addEventListener('click', function () { viderCouche(n); });
+          d.appendChild(bt);
+        }
+      })();
     });
     d = E('div', 'boutons'); b.appendChild(d);
     va = E('button', '', B.coupe ? 'Retracer la coupe' : 'Tracer la coupe AGND / DGND'); va.addEventListener('click', outilCoupe); d.appendChild(va);
@@ -9559,23 +9724,94 @@ function traduire(s) {
     b.appendChild(E('div', 'stat', 'Thermiques : 4 rayons de 0,3 mm · retrait du bord 0,5 mm · vias reliées en plein'));
     if (!netParNom('GND') && !netParNom('AGND') && !netParNom('DGND')) b.appendChild(E('div', 'avert', 'Aucune équipotentielle GND : le plan GND reste isolé.'));
   }
-  /* Changement du nombre de couches : dessous suivi, pistes internes reportées dans l'ordre, refus sinon */
+  /* --- Couches internes : état, vider une couche, ponts retirés des couches devenues plans --- */
+  /* État d'une couche : nombre de pistes de signal (hors ponts) et nombre de ponts qui y passent */
+  function etatCouche(n) {
+    var sig = 0, ponts = {};
+    B.pistes.forEach(function (t) { if (t.couche !== n) return; if (estPont(t)) ponts[t.pont] = 1; else sig++; });
+    return { sig: sig, ponts: Object.keys(ponts).length };
+  }
+  /* Retire les lignes de pont des couches choisies ; un pont sans ligne disparaît (vias et texte) ; renvoie le nombre de lignes */
+  function retirerPontsCouches(choix) {
+    var n0 = B.pistes.length, ids = {};
+    B.pistes = B.pistes.filter(function (t) { return !(estPont(t) && choix(t.couche)); });
+    B.pistes.forEach(function (t) { if (estPont(t)) ids[t.pont] = 1; });
+    B.vias = B.vias.filter(function (v) { return !estPont(v) || ids[v.pont]; });
+    B.textes = B.textes.filter(function (t) { return !estPont(t) || ids[t.pont]; });
+    if (B.selPont && !ids[B.selPont]) B.selPont = 0;
+    B.selT = -1;
+    return n0 - B.pistes.length;
+  }
+  /* Une couche interne devenue plan d'alimentation ne garde pas de ligne de pont */
+  function nettoyerPontsPlans() {
+    reconnaitrePonts();
+    return retirerPontsCouches(function (c) { return c <= 1 || c >= bas() || !!netRemp(c); });
+  }
+  /* Vider la couche n : ses lignes de pont sont retirées, ses équipotentielles sont re-routées en entier sans elle
+     (couches signal ×1, ×2, ×4… ; plans VCC en dernier espoir ; GND jamais), gardées même plus longues ; ce qui ne
+     passe pas reste sur la couche et est listé. Un seul Ctrl+Z annule tout */
+  var RR_INTERDITE = 0;
+  function viderCouche(n) {
+    var nets = [], avant, sig, pads, f, i = 0, ok = 0, ko = [], np, t0 = Date.now(), titre = 'Vider la couche ' + n;
+    if (B.route) terminerRoute();
+    reconnaitrePonts();
+    avant = instantane();
+    B.pistes.forEach(function (t) { if (t.couche === n && !estPont(t) && nets.indexOf(t.net) < 0) nets.push(t.net); });
+    np = retirerPontsCouches(function (c) { return c === n; });
+    cv.style.cursor = 'progress';
+    pads = tousPads(); f = connexite(pads); sig = optSignature();
+    function fin() {
+      var irr = { ko: [] }, rest = etatCouche(n).sig;
+      RR_INTERDITE = 0; OPT = null;
+      cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
+      if (np) { try { irr = optReIrriguer(null, false); } catch (e) { irr = { ko: [] }; } OPT = null; }
+      if (ok || np) empiler(avant);
+      avancementFin(titre, ok + ' équipotentielle(s) déplacée(s) · ' + Math.round((Date.now() - t0) / 1000) + ' s', ko.length > 0);
+      message('Couche ' + n + ' : ' + (rest ? rest + ' piste(s) de signal restent' : 'libre') + ' · ' + ok + ' équipotentielle(s) re-routée(s) ailleurs' + (np ? ' · ' + np + ' ligne(s) de pont retirée(s)' : '') +
+        (ko.length ? ' · non déplacées : ' + ko.join(', ') : '') + (irr.ko.length ? ' · ATTENTION plan d\'alimentation coupé : ' + irr.ko.join(', ') + ' — Irrigation ▸ Placer' : ''), ko.length > 0 || irr.ko.length > 0);
+      toutRafraichir();
+    }
+    function pas() {
+      var net, det, r;
+      if (i >= nets.length) { fin(); return; }
+      net = nets[i++];
+      avancement(titre, net, i, nets.length, ok + ' équipotentielle(s) déplacée(s)');
+      r = optRaisonNet(net, pads, f);
+      if (r) ko.push(net + ' (' + r + ')');
+      else {
+        det = { force: true };
+        RR_INTERDITE = n;
+        try { if (optRerouterNet(net, sig, det)) ok++; else ko.push(net + ' (' + (det.raison || 'aucun tracé') + ')'); }
+        catch (e) { ko.push(net + ' (' + ((e && e.message) || e) + ')'); }
+        RR_INTERDITE = 0; OPT = null;
+      }
+      setTimeout(pas, 0);
+    }
+    setTimeout(pas, 0);
+  }
+  /* Changement du nombre de couches : dessous suivi, pistes de signal internes reportées dans l'ordre, refus si elles
+     ne tiennent pas (les ponts ne bloquent pas : leurs lignes restent sur une couche gardée telle quelle et sans
+     autre piste reportée dessus, sinon elles partent ; un pont sans ligne disparaît) */
   function changerNbCouches(n) {
-    var ancien = B.nc, us = {}, l, map = {}, k;
+    var ancien = B.nc, us = {}, l, map = {}, k, np, irr = { ko: [] };
     if (n === ancien) return true;
+    reconnaitrePonts();
     /* dessus et dessous suivis ; couches internes gardées si elles existent encore, sinon tassées dans l'ordre */
-    B.pistes.forEach(function (t) { if (t.couche > 1 && t.couche < ancien) us[t.couche] = true; });
+    B.pistes.forEach(function (t) { if (t.couche > 1 && t.couche < ancien && !estPont(t)) us[t.couche] = true; });
     l = Object.keys(us).map(Number).sort(function (a, b) { return a - b; });
-    if (l.length > n - 2) { message('Pistes sur les couches internes ' + l.join(', ') + ' : en supprimer d\'abord.', true); return false; }
+    if (l.length > n - 2) { message('Pistes de signal sur les couches internes ' + l.join(', ') + ' : vider des couches d\'abord (bouton Vider).', true); return false; }
     map[1] = 1; map[ancien] = n;
     if (l.length && l[l.length - 1] < n) l.forEach(function (x) { map[x] = x; });
     else for (k = 0; k < l.length; k++) map[l[k]] = k + 2;
     empiler();
-    B.pistes.forEach(function (t) { t.couche = map[t.couche]; });
+    np = retirerPontsCouches(function (c) { return !(c > 1 && c < n && !Object.keys(map).some(function (x) { return +x !== c && map[x] === c; })); });
+    B.pistes.forEach(function (t) { if (!estPont(t)) t.couche = map[t.couche]; });
     if (B.substrat === substratDefaut(ancien)) B.substrat = substratDefaut(n);
     B.nc = n;
+    np += nettoyerPontsPlans();
     (function () { var t = syncLargeur50(); if (t) message(t, t.indexOf('trop près') >= 0); })();
     if (B.couche > n || B.couche === ancien || estPlan(B.couche)) B.couche = 1;
+    if (np) { try { irr = optReIrriguer(null, false); } catch (e) { irr = { ko: [] }; } OPT = null; message(n + ' couches · ' + np + ' ligne(s) de pont retirée(s)' + (irr.ko.length ? ' · ATTENTION plan d\'alimentation coupé : ' + irr.ko.join(', ') + ' — Irrigation ▸ Placer' : ''), irr.ko.length > 0); }
     toutRafraichir();
     return true;
   }
@@ -10031,6 +10267,8 @@ function traduire(s) {
      (noms de pattes séparés par « | », chaîne simple pour que l'annulation la copie) */
   function pattesPleines(c) { return c && c.plein ? String(c.plein).split('|') : []; }
   function enPlein(ref, nom) { return pattesPleines(compParRef(ref)).indexOf(nom) >= 0; }
+  /* Raccord plein : patte forcée en plein, ou bille (soudée par refusion : le frein thermique n'y sert à rien) */
+  function padPlein(p) { return estBille(p) || enPlein(p.ref, p.nom); }
   function fixerPlein(c, nom, plein) {
     var l = pattesPleines(c).filter(function (q) { return q !== nom; });
     if (plein && String(nom).indexOf('|') < 0) l.push(nom);
@@ -11617,7 +11855,7 @@ function traduire(s) {
       if (plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) continue;
       nt = netDe(p.ref + ':' + p.nom); meme = !!nt && relie(nt.nom, p.e.x, p.e.y);
       /* via de patch, ou pastille forcée en plein : reliée sans dégagement ni rayons */
-      if (meme && (p.e.via || enPlein(p.ref, p.nom))) { ancres.push({ x: p.e.x, y: p.e.y }); continue; }
+      if (meme && (p.e.via || padPlein(p))) { ancres.push({ x: p.e.x, y: p.e.y }); continue; }
       gPastille(G, p.e, degEn(p.e, zb));
     }
     for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (relie(v.net, v.x, v.y)) ancres.push({ x: v.x, y: v.y }); else G.flash(v.x, v.y, v.diam + 2 * degEn(v, zb)); }
@@ -11631,7 +11869,7 @@ function traduire(s) {
     G.polarite(true);
     for (i = 0; i < pads.length; i++) {
       p = pads[i];
-      if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via || enPlein(p.ref, p.nom)) continue;
+      if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via || padPlein(p)) continue;
       nt = netDe(p.ref + ':' + p.nom);
       if (nt && relie(nt.nom, p.e.x, p.e.y)) {
         a = rayons(G, p.e, degEn(p.e, zb), n, obsNet[nt.nom] || (obsNet[nt.nom] = obstacles(nt.nom)), saignee);
@@ -11952,7 +12190,7 @@ function traduire(s) {
     OPT.pads.forEach(function (p, i) { (parRef[p.ref] = parRef[p.ref] || []).push(i); });
     OPT.pads.forEach(function (p, i) {
       var net = OPT.cuPads[i].net, dmin = Infinity, v = parRef[p.ref];
-      if (!net || p.e.via || enPlein(p.ref, p.nom)) return;
+      if (!net || p.e.via || padPlein(p)) return;
       v.forEach(function (j) { if (j !== i) dmin = Math.min(dmin, dist(p.e, OPT.pads[j].e)); });
       p.couches.forEach(function (n) {
         if (!relieRemp(n, net, p.e.x, p.e.y)) return;
@@ -12840,7 +13078,7 @@ function traduire(s) {
     for (i = 0; i < nl; i++) cher.push(null);
     OPT.pads.forEach(function (pd, q) {
       var ob = OPT.cuPads[q], z, mc = 2 * B.degPlan + 0.05 + h, ix, iy, ix0, ix1, iy0, iy1;
-      if (!ob.net || ob.net === net || pd.e.via || enPlein(pd.ref, pd.nom)) return;
+      if (!ob.net || ob.net === net || pd.e.via || padPlein(pd)) return;
       for (z = 0; z < nl; z++) {
         if (pd.couches.indexOf(L[z]) < 0 || !relieRemp(L[z], ob.net, pd.e.x, pd.e.y)) continue;
         cher[z] = cher[z] || new Uint8Array(N);
@@ -12970,7 +13208,7 @@ function traduire(s) {
       fcl = [];
       for (i = 0; i < nl; i++) {
         fcl.push(facteurCouche(L[i]));
-        if (L[i] === bas() || (RR_COUCHES === 1 && L[i] !== 1 && netRemp(L[i]))) (function (z) {
+        if (L[i] === bas() || L[i] === RR_INTERDITE || (RR_COUCHES === 1 && L[i] !== 1 && netRemp(L[i]))) (function (z) {
           var garde = new Uint8Array(N), ix, iy, k2;
           pi.forEach(function (q) {
             var ob = OPT.cuPads[q], m = 1.0 + h, ix0, ix1, iy0, iy1;
@@ -13235,7 +13473,7 @@ function traduire(s) {
            long (égal compris : une piste mal dessinée est redessinée même sans gain de longueur) */
         v1 = optViolations(net);
         det.l1 = optLongNet(net); det.nv1 = optNbVias(net); det.v1 = v1; sigOk = optSignature() === sig;
-        if ((v1 < v0 || (v1 === v0 && optCoutNet(net) <= c0 + 1e-6)) && sigOk) { det.garde = true; return Math.max(c0 - optCoutNet(net), 0.001); }
+        if ((det.force || v1 < v0 || (v1 === v0 && optCoutNet(net) <= c0 + 1e-6)) && sigOk) { det.garde = true; return Math.max(c0 - optCoutNet(net), 0.001); }
         det.raison = optRaisonRefus(det, sigOk);
       } else det.raison = rs || 'aucun tracé trouvé';
     } catch (e) { det.raison = 'calcul interrompu : ' + ((e && e.message) || e); }
