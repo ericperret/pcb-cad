@@ -1,6 +1,6 @@
 # azs-cad
 
-A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-cad.html`**, plain HTML, CSS and JavaScript, no library, no dependency, works offline. Inspired by the spirit of Eagle 4.01 (library, schematic, board), not a clone. The interface is French or English depending on the browser. Current version: **1.50.1**.
+A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-cad.html`**, plain HTML, CSS and JavaScript, no library, no dependency, works offline. Inspired by the spirit of Eagle 4.01 (library, schematic, board), not a clone. The interface is French or English depending on the browser. Current version: **1.63.0**.
 
 ![Schematic](azs-schematic.png)
 
@@ -21,15 +21,20 @@ One project is open at a time and shared in memory by the three modules (nothing
 - **Stack-up**: one ground plane below, one plane per secondary supply (same voltages grouped on one layer), signals everywhere. Panel *Supply planes*: per net, auto / no plane / chosen inner layer.
 - **Fabrication minimums** from PCBCart + 33 %; only track width and via drill are set, the copper diameter follows.
 - **Route the ratsnest**: automatic routing by priority (50 ohm lines, signals, supplies, grounds), clockwise spiral from the densest IC, top then bottom pass.
-- **Re-route**: shortest path kept only if not longer; pin by pin, segment by segment, step by step (Space, arrows, Esc) with the decision and its reason displayed.
-- **Optimize**: vias, 45 degree corners, parallel tracks spaced, tracks centered between neighbours, LEDs / resistors / coupling capacitors moved close to their pins.
+- **Re-route**: every track (50 ohm excepted) is undone and redrawn at shortest; the new trace is kept only if its real length is equal or shorter, or if it runs less often between the pins of a fine-pitch part; pin by pin, segment by segment, step by step (Space, arrows, Esc) with the decision and its reason displayed. A **clearance check** ends it: a track or via too close to foreign copper or to the edge, or lying between two pins, goes back to the ratsnest.
+- **Fine-pitch parts** (pitch 1.27 mm or less, SOIC included): no track and no via between two neighbouring pins; two vias and a pass underneath or beside are preferred.
+- **Routing weights** (Optimize): distance, signal layer, power layer, via, crossing under a 50 ohm line, drawing in a power layer, crossing between fine pins; saved with the board.
+- **Optimize**: vias, 45 degree corners, parallel tracks spaced, tracks centered between neighbours (a via follows the track, or its entry is shifted at 45 degrees), LEDs / resistors / coupling capacitors moved close to their pins.
+- **Right click on a track**: width, centering, **Round** (one single arc; on an integrated circuit pad, straight exit along the pad axis, then the arc).
+- **Outline**: format of choice, margin, square, convex or concave corners; *Recenter* gives equal margins top / bottom and left / right.
+- **Layers**: *Empty* an inner layer re-routes its nets elsewhere and lists what remains.
 - **Irrigation bridge**: a supply plane cut in two islands is fed again by a 1 mm x 5 mm line on the inner signal layers with four DIL-like vias and a silkscreen text (IRRIGATION net).
 - **Decoupling**: *Review* proposes, per IC supply pin, one 100 nF and one bulk capacitor, and deletes the redundant ones (applied to the schematic too). *Place* puts each capacitor in the nearest free spot around the pin it serves, in a spiral.
 
 ## 50 ohm RF
 
 - Line width follows the substrate thickness.
-- Right click on a 50 ohm line: length, **Round** (one single arc over the whole full-width line).
+- Right click on a 50 ohm line: length, **Round** (one single arc over the whole full-width line); a line shorter than 1 cm gets the 50 ohm width offered first.
 - The router lets other signals cross under a thick 50 ohm line only as a last resort: inner layer, at 90 degrees, straight, fixed length, counted in the report.
 - Patterns from 400 to 3000 MHz: Wilkinson 2-way divider, T divider 2/4/8 outputs, directional coupler 15/20/30 dB, low-pass and band-pass filters, rectangular patch antenna, quarter-wave monopole.
 

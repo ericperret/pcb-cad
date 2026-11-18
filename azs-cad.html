@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-17
- Version    : 1.58.0
+ Date       : 2026-11-18
+ Version    : 1.63.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.3.0, Schéma 1.14.0, Circuit 1.49.0 (cartouche et
+ Modules    : Bibliothèque 1.4.0, Schéma 1.15.1, Circuit 1.54.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -275,6 +275,36 @@
                       part de ces minimums
    1.58.0 2026-11-17  Circuit 1.49.0 : à l'ouverture d'un circuit, choix des
                       réglages du projet ou haute densité PCBCart + 30 %
+   1.59.0 2026-11-17  Fusion de projets (Bibliothèque 1.4.0, Schéma 1.15.0, Circuit
+                      1.50.0) : Ouvrir un projet, projet ouvert = Remplacer ou
+                      Fusionner ; schéma en planches (onglets, Suppr sur l'onglet
+                      choisi) ; composants renumérotés à la suite ; revue des noms
+                      de réseau communs (Connecter / Renommer new-…) ; circuit routé
+                      du module posé en groupe à la souris ; « _ » remplacé par
+                      « - » dans les noms produits (projet, Gerber, nomenclature)
+   1.59.1 2026-11-17  Schéma 1.15.1 : bouton « − » des planches ; clic sur une
+                      étiquette = renommer le réseau, nom déjà porté par un autre
+                      réseau (toutes planches) = proposition de fusion
+   1.59.2 2026-11-18  Circuit 1.50.1 : Optimiser ▸ Re-router, interdiction de passer
+                      entre les pattes d'un composant qui porte une ligne 50 Ω
+   1.59.3 2026-11-18  Circuit 1.50.2 : Re-router, tracé gardé seulement si longueur
+                      et vias égales ou inférieures ; axes de sortie des points de
+                      passage retirés tous remis à zéro
+   1.59.4 2026-11-18  Circuit 1.50.3 : Re-router jugé sur la longueur réelle seule
+   1.60.0 2026-11-18  Circuit 1.51.0 : Optimiser ▸ Pondérations du routage…,
+                      enregistrées dans le circuit
+   1.60.1 2026-11-18  Version affichée en tête de page à jour ; Circuit 1.51.1 :
+                      Pondérations en tête du menu Optimiser, menu défilant
+   1.61.0 2026-11-18  Circuit 1.52.0 : Recentrer sur tout le projet ; Vider une couche
+                      affiche ses avertissements ; clic droit : largeur 50 Ω,
+                      Arrondir pour toute piste ; panneau de droite rééquilibré
+   1.61.1 2026-11-18  Circuit 1.52.1 : Recentrer, marges égales haut/bas et
+                      gauche/droite (boîte exacte des textes)
+   1.62.0 2026-11-18  Circuit 1.53.0 : Centrer entre les voisines avec via ; contrôle
+                      d'isolement après Re-router ; Arrondir sort droit d'un IC ;
+                      coût du passage entre pattes fines
+   1.63.0 2026-11-18  Circuit 1.54.0 : ni piste ni via entre les pattes d'un composant
+                      fin (pas ≤ 1,27 mm par défaut)
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -353,7 +383,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.58.0</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.63.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -401,7 +431,7 @@
               et gabarits normalisés
  Auteur     : Eric PERRET
  Date       : 2026-11-11
- Version    : 1.3.0
+ Version    : 1.4.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Historique :
    0.1.0  2026-10-31  Lecteur de bibliothèques Eagle .lbr (abandonné)
@@ -481,6 +511,8 @@
    1.3.0  2026-11-16  Pastille CMS ronde : mot ROND en fin de ligne SMD (disque,
                       oblongue si largeur ≠ hauteur). Matrices de billes au pas de
                       0,8 mm en pastilles rondes ; carrées aux autres pas
+   1.4.0  2026-11-17  Fusion d'un projet : composants et gabarits absents copiés
+                      dans le projet (même nom : celui du projet gardé)
 
  Format .lib (texte, unités mm, angles en degrés sens trigonométrique)
    # commentaire
@@ -669,7 +701,7 @@
   #impErreur{color:var(--err); font-size:12px; min-height:16px; margin-top:6px}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Bibliothèque 1.3.0</span></span>
+  <span class="titre">azs-cad<span>Bibliothèque 1.4.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichier" accept=".lib,.txt">
   <input type="file" id="fichierProjet" accept=".lib,.txt">
@@ -3635,7 +3667,17 @@ function traduire(s) {
   ajuster();
   /* Dans azs-cad.html : un clic dans le module lui donne le clavier (raccourcis) */
   window.addEventListener('pointerdown', function () { if (!document.hasFocus()) window.focus(); }, true);
+  /* Fusion : composants et gabarits absents du projet copiés ; même nom = celui du projet gardé */
+  function fusionnerProjet(texte) {
+    var r = lireLib(texte), np = 0, nc = 0;
+    r.lib.packages.forEach(function (p) { if (!PROJ.packages.some(function (x) { return x.nom === p.nom; })) { PROJ.packages.push(p); np++; } });
+    r.lib.composants.forEach(function (c) { if (!PROJ.composants.some(function (x) { return x.nom === c.nom; })) { PROJ.composants.push(c); nc++; } });
+    if (np || nc) { PROJ.modifie = true; trierLib(); remplirListes(); fiche(); dessiner(); }
+    message('Fusion : ' + nc + ' composant(s) et ' + np + ' gabarit(s) ajoutés au projet');
+    return { p: np, c: nc };
+  }
   window.AZS_MODULE = {
+    fusionnerProjet: fusionnerProjet,
     chargerProjet: chargerProjet,
     texteProjet: function () { return ecrireLib(PROJ, PROJ.nom); },
     enregistrerProjet: function () { enregistrer(PROJ); },
@@ -3658,7 +3700,7 @@ function traduire(s) {
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
  Date       : 2026-11-17
- Version    : 1.14.0
+ Version    : 1.15.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3843,6 +3885,19 @@ function traduire(s) {
                       orange puis orange : les deux fils n'en font qu'un ; fil
                       sélectionné : bouton « Étiquettes au lieu du fil » ;
                       patte posée sur une patte (pose ou glisser) : liaison implicite
+   1.15.0 2026-11-17  Planches : onglets en bas du dessin, « + » pour une planche
+                      vide, clic sur l'onglet affiché puis Suppr pour la supprimer ;
+                      liaison entre planches toujours en étiquettes ; équipotentielles,
+                      noms, repères, liste et fichier sur tout le projet (DXF : PL=,
+                      PLANCHES=). Fusion d'un projet : ses planches à la suite,
+                      composants renumérotés, alimentations de même nom réunies,
+                      revue des noms communs : Connecter (deux pastilles PAD face
+                      à face disparaissent dans une seule liaison) ou Renommer
+                      (new-nom) ; un seul Ctrl+Z
+   1.15.1 2026-11-17  Bouton « − » : supprime la planche affichée. Clic sur une
+                      étiquette : renommer le réseau ; nom déjà porté par un autre
+                      réseau, sur n'importe quelle planche : fusion proposée (liaison
+                      en étiquettes ; deux pastilles PAD face à face disparaissent)
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -3913,6 +3968,10 @@ function traduire(s) {
   #listePosee li.sel{background:var(--accentClair); border-left-color:var(--accent)}
 
   #centre{grid-area:centre; position:relative; min-width:0; min-height:0; background:#fff}
+  #planches{position:absolute; left:8px; bottom:6px; display:flex; gap:4px; z-index:5}
+  #planches button{padding:3px 10px; font-size:12px; background:#f3f5f8}
+  #planches button.actif{background:#fff; border-color:var(--accent); color:var(--accent); font-weight:600}
+  #planches button.choisi{background:var(--accentClair); box-shadow:0 0 0 2px var(--accent)}
   #cv{position:absolute; inset:0; width:100%; height:100%; display:block}
   .vide{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; pointer-events:none; padding:20px; font-size:14px; color:#9aa1ab}
 
@@ -3951,7 +4010,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.14.0</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.15.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -3990,6 +4049,7 @@ function traduire(s) {
 <div id="centre">
   <canvas id="cv"></canvas>
   <div class="vide" id="vide">Choisir R, C, D, L ou un composant du projet (à cocher dans l'onglet Bibliothèque)</div>
+  <div id="planches"></div>
 </div>
 
 <div id="droite"><div id="fiche"></div></div>
@@ -4107,6 +4167,8 @@ var TRAD_EN = [
   ['(Maj + clic : point de référence)', '(Shift + click: reference point)'],
   ['Liaisons restant à router', 'Connections left to route'],
   ['Optimiser ▾', 'Optimize ▾'], ['Optimiser le schéma', 'Optimize the schematic'], ['Placement (gauche → droite, passifs dans l\'axe)', 'Placement (left → right, passives in line)'], ['Tracer les fils (45°, espacés)', 'Route wires (45°, spaced)'],
+  ['Fusion : noms de réseau communs', 'Merge: shared net names'], ['Nom', 'Name'], ['Ajouté', 'Added'], ['Connecter', 'Connect'], ['Renommer', 'Rename'], ['Tout connecter', 'Connect all'], ['Tout renommer', 'Rename all'], ['Appliquer', 'Apply'],
+  ['Nouvelle planche vide', 'New empty sheet'], ['Supprimer la planche affichée', 'Delete the displayed sheet'], ['Afficher la planche', 'Show the sheet'], ['Planche affichée · clic : la choisir (Suppr la supprime)', 'Displayed sheet · click: select it (Del deletes it)'], ['Planches : ', 'Sheets: '], [' · affichée : ', ' · shown: '],
   ['composant(s) placé(s)', 'component(s) placed'], ['Étiquettes à la place des fils trop longs', 'Net labels instead of overlong wires'], ['fil(s) remplacé(s) par des étiquettes', 'wire(s) replaced by net labels'], ['Fil au lieu des étiquettes', 'Wire instead of labels'], ['Étiquettes au lieu du fil', 'Labels instead of wire'], ['Nom du réseau', 'Net name'], ['Nom déjà pris par un autre réseau : ', 'Name already used by another net: '], ['Réseau renommé : ', 'Net renamed: '], ['fil(s) tracé(s)', 'wire(s) routed'], ['fil(s) laissé(s) au tracé automatique', 'wire(s) left to automatic routing'], ['Tout', 'Everything'], ['Symboles lisibles (IC et connecteurs)', 'Readable symbols (ICs and connectors)'],
   ['Ranger les masses et alimentations', 'Tidy ground and power symbols'], ['symbole(s) redessiné(s)', 'symbol(s) redrawn'], ['Optimisation', 'Optimization'], ['rien à modifier', 'nothing to change'],
   ['Arrangements de lisibilité : symboles d\'IC et de connecteurs, masses et alimentations (Ctrl+Z annule)', 'Readability arrangements: IC and connector symbols, ground and power symbols (Ctrl+Z undoes)'],
@@ -4346,6 +4408,7 @@ function traduire(s) {
   var FONCTION_PASSIF = { D: { 1: 'K', 2: 'A' } };
   var LIB = { packages: [], composants: [] };
   var S = {
+    planches: [{ nom: 'Planche 1', comps: [], fils: [], bus: [] }], pc: 0, inter: [], plSel: false,
     comps: [], fils: [], bus: [], polys: [], dragFil: null, dernierPose: null, nId: 1, selL: null, lien: null, groupe: [], groupeA: null, dernier: null, curseur: null,
     sel: null, pose: null, drag: null, pan: null, survol: null,
     annul: [], retab: [], modifie: false, nomLib: '',
@@ -4709,11 +4772,11 @@ function traduire(s) {
   }
   function libelle(c) { return c.val ? c.ref + '.' + c.val : c.ref; }
   function repereSuivant(type) {
-    var max = 0, i, n, pre = PREFIXE[type];
-    for (i = 0; i < S.comps.length; i++) {
-      if (S.comps[i].ref.indexOf(pre) !== 0) continue;
-      n = parseInt(S.comps[i].ref.slice(pre.length), 10);
-      if (!isNaN(n) && n > max && String(n) === S.comps[i].ref.slice(pre.length)) max = n;
+    var max = 0, i, n, pre = PREFIXE[type], tc = tousComps();
+    for (i = 0; i < tc.length; i++) {
+      if (tc[i].ref.indexOf(pre) !== 0) continue;
+      n = parseInt(tc[i].ref.slice(pre.length), 10);
+      if (!isNaN(n) && n > max && String(n) === tc[i].ref.slice(pre.length)) max = n;
     }
     return pre + (max + 1);
   }
@@ -4883,14 +4946,19 @@ function traduire(s) {
   /* ======================================================================
      Annuler / rétablir
      ====================================================================== */
-  function instantane() { return { comps: S.comps.map(copieObj), fils: S.fils.map(copieFil), bus: S.bus.map(copieBus), sel: S.sel ? S.comps.indexOf(S.sel) : -1 }; }
+  function instantane() {
+    ranger();
+    return { pl: S.planches.map(function (p) { return { nom: p.nom, comps: p.comps.map(copieObj), fils: p.fils.map(copieFil), bus: p.bus.map(copieBus), vue: p.vue ? copieObj(p.vue) : null }; }),
+             inter: S.inter.map(copieFil), pc: S.pc, sel: S.sel ? S.comps.indexOf(S.sel) : -1 };
+  }
   function empiler(i) { S.annul.push(i || instantane()); if (S.annul.length > 300) S.annul.shift(); S.retab = []; marquer(); }
   function restaurer(de, vers) {
     var i = de.pop();
     if (!i) return;
     vers.push(instantane());
-    S.comps = i.comps; S.fils = i.fils; S.bus = i.bus;
-    S.sel = i.sel >= 0 ? S.comps[i.sel] || null : null;
+    S.planches = i.pl; S.inter = i.inter; S.pc = Math.min(i.pc, S.planches.length - 1);
+    S.comps = S.planches[S.pc].comps; S.fils = S.planches[S.pc].fils; S.bus = S.planches[S.pc].bus;
+    S.sel = i.sel >= 0 && i.pc === S.pc ? S.comps[i.sel] || null : null;
     S.selL = null; S.rebr = null; S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null;
     marquer(); toutRafraichir();
   }
@@ -5021,14 +5089,14 @@ function traduire(s) {
     majPalette();
   }
   function remplirListe() {
-    var ul = $('listePosee'), l = S.comps.filter(function (x) { return x.type !== 'PWR'; }).sort(function (a, b) { return triNat(a.ref, b.ref); }), i, li;
+    var ul = $('listePosee'), l = tousComps().filter(function (x) { return x.type !== 'PWR'; }).sort(function (a, b) { return triNat(a.ref, b.ref); }), i, li, plDe = planchesDesComps();
     ul.textContent = '';
     for (i = 0; i < l.length; i++) {
       li = document.createElement('li');
-      li.textContent = libelle(l[i]);
+      li.textContent = libelle(l[i]) + (S.planches.length > 1 ? '  · ' + (plDe[l[i].id] + 1) : '');
       li.className = l[i] === S.sel ? 'sel' : '';
       li._c = l[i];
-      li.addEventListener('click', function () { S.sel = this._c; centrerSur(this._c); toutRafraichir(); });
+      li.addEventListener('click', function () { var k = planchesDesComps()[this._c.id]; if (k !== S.pc) allerPlanche(k, true); S.sel = this._c; centrerSur(this._c); toutRafraichir(); });
       ul.appendChild(li);
     }
     $('titrePosee').textContent = 'Composants (' + l.length + ')';
@@ -5042,10 +5110,11 @@ function traduire(s) {
     b = E('div', 'bloc'); f.appendChild(b);
     if (!c) {
       b.appendChild(E('h4', '', 'Schéma'));
-      for (i = 0; i < S.comps.length; i++) if (S.comps[i].type !== 'PWR') cpt[S.comps[i].type] = (cpt[S.comps[i].type] || 0) + 1;
+      tousComps().forEach(function (x) { if (x.type !== 'PWR') cpt[x.type] = (cpt[x.type] || 0) + 1; });
       for (k in PREFIXE) if (cpt[k]) b.appendChild(E('div', 'stat', (k === 'PONT' ? 'Ponts de masse' : NOM_TYPE[k] + 's') + ' : ' + cpt[k]));
-      if (!S.comps.length) b.appendChild(E('div', 'stat', 'Aucun composant posé.'));
-      b.appendChild(E('div', 'stat', 'Liaisons : ' + S.fils.length + ' · bus : ' + S.bus.length));
+      if (!tousComps().length) b.appendChild(E('div', 'stat', 'Aucun composant posé.'));
+      b.appendChild(E('div', 'stat', 'Liaisons : ' + tousFils().length + ' · bus : ' + tousBus().length));
+      if (S.planches.length > 1) b.appendChild(E('div', 'stat', 'Planches : ' + S.planches.length + ' · affichée : ' + S.planches[S.pc].nom));
       b.appendChild(E('div', 'stat', 'Bibliothèque : ' + (S.nomLib || 'aucune')));
       return;
     }
@@ -5056,7 +5125,7 @@ function traduire(s) {
     ref.value = c.ref;
     ref.addEventListener('change', function () {
       var v = this.value.replace(/\s+/g, ''), j;
-      for (j = 0; j < S.comps.length; j++) if (S.comps[j] !== c && S.comps[j].ref === v) v = '';
+      tousComps().forEach(function (x) { if (x !== c && x.ref === v) v = ''; });
       if (!v) { this.value = c.ref; message('Repère vide ou déjà utilisé.', true); return; }
       empiler(); c.ref = v; toutRafraichir();
     });
@@ -5090,7 +5159,7 @@ function traduire(s) {
     bt = E('button', '', 'Supprimer'); bt.addEventListener('click', supprimer); bs.appendChild(bt);
     if (c.type !== 'PWR') { bt = E('button', '', 'Supprimer, garder fils/étiquettes'); bt.addEventListener('click', supprimerGarder); bs.appendChild(bt); }
   }
-  function toutRafraichir() { remplirListe(); fiche(); aideLiaison(); dessiner(); }
+  function toutRafraichir() { normaliserFils(); remplirListe(); fiche(); aideLiaison(); majPlanches(); dessiner(); }
   function centrerSur(c) {
     var b = bboxMonde(c);
     S.ox = S.W / 2 - (b[0] + b[2]) / 2 * S.z; S.oy = S.H / 2 + (b[1] + b[3]) / 2 * S.z;
@@ -5106,6 +5175,7 @@ function traduire(s) {
       empiler();
       k = S.fils.indexOf(S.selL); if (k >= 0) S.fils.splice(k, 1);
       k = S.bus.indexOf(S.selL); if (k >= 0) S.bus.splice(k, 1);
+      k = S.inter.indexOf(S.selL); if (k >= 0) S.inter.splice(k, 1);
       S.selL = null; toutRafraichir();
       return;
     }
@@ -5115,19 +5185,20 @@ function traduire(s) {
   /* Supprimer en gardant fils et étiquettes : le composant part, chaque liaison qui y arrivait garde
      son tracé et finit sur un bout libre (point orange) à l'ancienne position de la patte.
      Bout libre : { c: nombre négatif unique, p: '', x, y, d: direction de sortie, libre: true } */
-  function idLibre() { var m = 0, i; for (i = 0; i < S.fils.length; i++) { if (S.fils[i].a.c < m) m = S.fils[i].a.c; if (S.fils[i].b.c < m) m = S.fils[i].b.c; } return m - 1; }
+  function idLibre() { var m = 0, i, l = tousFils(); for (i = 0; i < l.length; i++) { if (l[i].a.c < m) m = l[i].a.c; if (l[i].b.c < m) m = l[i].b.c; } return m - 1; }
   function supprimerGarder() {
     var c = S.sel, cache = {}, n = 0, nb = 0, i, k, f, e, so;
     if (!c || c.type === 'PWR') return;
     empiler();
-    for (i = 0; i < S.fils.length; i++) {
-      f = S.fils[i];
+    var lf = S.fils.concat(S.inter);
+    for (i = 0; i < lf.length; i++) {
+      f = lf[i];
       for (k = 0; k < 2; k++) {
         e = k ? f.b : f.a;
         if (e.c !== c.id) continue;
         so = sortiePatte(e, cache);
         if (!so) continue;
-        e = { c: idLibre(), p: '', x: so.p.x, y: so.p.y, d: so.d, libre: true };
+        e = { c: idLibre(), p: '', x: so.p.x, y: so.p.y, d: so.d, libre: true, pl: S.pc };
         if (k) f.b = e; else f.a = e;
         n++;
       }
@@ -5139,12 +5210,12 @@ function traduire(s) {
     toutRafraichir();
   }
   function boutLibreSous(w) {
-    var i, k, e, bd = 8 / S.z, best = null, d;
-    for (i = 0; i < S.fils.length; i++) for (k = 0; k < 2; k++) {
-      e = k ? S.fils[i].b : S.fils[i].a;
-      if (!e.libre) continue;
+    var i, k, e, bd = 8 / S.z, best = null, d, l = filsVus();
+    for (i = 0; i < l.length; i++) for (k = 0; k < 2; k++) {
+      e = k ? l[i].b : l[i].a;
+      if (!e.libre || !surPlanche(e)) continue;
       d = Math.sqrt((w.x - e.x) * (w.x - e.x) + (w.y - e.y) * (w.y - e.y));
-      if (d < bd) { bd = d; best = { f: S.fils[i], k: k ? 'b' : 'a' }; }
+      if (d < bd) { bd = d; best = { f: l[i], k: k ? 'b' : 'a' }; }
     }
     return best;
   }
@@ -5165,18 +5236,17 @@ function traduire(s) {
     n = { a: a, b: b, type: r1.f.type, pts: null };
     if (r1.f.nomNet || r2.f.nomNet) n.nomNet = r1.f.nomNet || r2.f.nomNet;
     if (r1.f.lab || r2.f.lab) n.lab = true;
-    S.fils.splice(S.fils.indexOf(r1.f), 1, n);
-    S.fils.splice(S.fils.indexOf(r2.f), 1);
+    retirerFil(r1.f); retirerFil(r2.f); S.fils.push(n);
     S.selL = null; toutRafraichir();
   }
   function dessinerBoutsLibres() {
-    var i, k, e, p;
-    for (i = 0; i < S.fils.length; i++) for (k = 0; k < 2; k++) {
-      e = k ? S.fils[i].b : S.fils[i].a;
-      if (!e.libre) continue;
+    var i, k, e, p, l = filsVus();
+    for (i = 0; i < l.length; i++) for (k = 0; k < 2; k++) {
+      e = k ? l[i].b : l[i].a;
+      if (!e.libre || !surPlanche(e)) continue;
       p = versEcran(e.x, e.y);
       ecran();
-      ctx.beginPath(); ctx.arc(p.x, p.y, S.rebr && S.rebr.f === S.fils[i] && S.rebr.k === (k ? 'b' : 'a') ? 6 : 4, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(p.x, p.y, S.rebr && S.rebr.f === l[i] && S.rebr.k === (k ? 'b' : 'a') ? 6 : 4, 0, Math.PI * 2);
       ctx.fillStyle = '#ff9a1f'; ctx.fill();
     }
   }
@@ -5186,7 +5256,97 @@ function traduire(s) {
      Liaison : { a: {c: id composant, p: patte}, b: {...}, type: 'n' | 'rf' }
      Bus     : { a: [extrémités], b: [extrémités], type }, appairées par rang
      ====================================================================== */
-  function compParId(id) { var i; for (i = 0; i < S.comps.length; i++) if (S.comps[i].id === id) return S.comps[i]; return null; }
+  /* ======================================================================
+     Planches : chaque planche a ses composants, fils et bus ; la planche affichée est dans S.comps, S.fils, S.bus
+     (mêmes tableaux) ; une liaison entre deux planches (S.inter) est toujours en étiquettes ; les équipotentielles,
+     les noms de réseau, les repères, la liste et le fichier couvrent tout le projet
+     ====================================================================== */
+  function ranger() { var p = S.planches[S.pc]; p.comps = S.comps; p.fils = S.fils; p.bus = S.bus; }
+  function tousComps() { ranger(); return [].concat.apply([], S.planches.map(function (p) { return p.comps; })); }
+  function tousFils() { ranger(); return [].concat.apply([], S.planches.map(function (p) { return p.fils; })).concat(S.inter); }
+  function tousBus() { ranger(); return [].concat.apply([], S.planches.map(function (p) { return p.bus; })); }
+  function planchesDesComps() { var m = {}; ranger(); S.planches.forEach(function (p, k) { p.comps.forEach(function (c) { m[c.id] = k; }); }); return m; }
+  function plancheDe(e, m) { return e.libre ? (e.pl || 0) : m[e.c]; }
+  function surPlanche(e) { var i; if (e.libre) return (e.pl || 0) === S.pc; for (i = 0; i < S.comps.length; i++) if (S.comps[i].id === e.c) return true; return false; }
+  function filsVus() { return S.fils.concat(S.inter.filter(function (f) { return surPlanche(f.a) || surPlanche(f.b); })); }
+  function retirerFil(f) { var k; ranger(); S.planches.forEach(function (p) { k = p.fils.indexOf(f); if (k >= 0) p.fils.splice(k, 1); }); k = S.inter.indexOf(f); if (k >= 0) S.inter.splice(k, 1); }
+  /* chaque liaison sur la planche de ses deux bouts ; deux planches différentes : liaison entre planches, en étiquettes */
+  function normaliserFils() {
+    var m = planchesDesComps(), n = S.planches.map(function () { return []; }), inter = [];
+    S.planches.forEach(function (p) { p.fils.forEach(range); });
+    S.inter.forEach(range);
+    function range(f) {
+      var a = plancheDe(f.a, m), b = plancheDe(f.b, m);
+      if (a === undefined) a = b; if (b === undefined) b = a;
+      if (a === undefined || a >= n.length) a = b = S.pc;
+      if (a === b) n[a].push(f);
+      else { f.lab = true; f.pts = null; delete f.opt; inter.push(f); }
+    }
+    S.planches.forEach(function (p, k) { p.fils = n[k]; });
+    S.inter = inter; S.fils = S.planches[S.pc].fils;
+  }
+  /* exécute fn avec la planche k en place (sans affichage), puis remet la planche affichée */
+  function avecPlanche(k, fn) {
+    var p0 = S.pc, P = S.planches;
+    ranger();
+    S.pc = k; S.comps = P[k].comps; S.fils = P[k].fils; S.bus = P[k].bus;
+    try { return fn(); } finally { ranger(); S.pc = p0; S.comps = P[p0].comps; S.fils = P[p0].fils; S.bus = P[p0].bus; }
+  }
+  function allerPlanche(k, sans) {
+    var P = S.planches;
+    if (k < 0 || k >= P.length) return;
+    ranger();
+    P[S.pc].vue = { ox: S.ox, oy: S.oy, z: S.z };
+    S.pc = k; S.comps = P[k].comps; S.fils = P[k].fils; S.bus = P[k].bus;
+    S.sel = null; S.selL = null; S.rebr = null; S.lien = null; S.groupe = []; S.groupeA = null; S.dernier = null; S.plSel = false;
+    if (P[k].vue) { S.ox = P[k].vue.ox; S.oy = P[k].vue.oy; S.z = P[k].vue.z; } else ajusterVue();
+    if (!sans) toutRafraichir();
+  }
+  function ajouterPlanche(nom) { ranger(); S.planches.push({ nom: nom, comps: [], fils: [], bus: [] }); return S.planches.length - 1; }
+  /* Suppr sur l'onglet sélectionné : la planche, ses composants et ses liaisons (entre planches comprises) partent */
+  function supprimerPlanche(k) {
+    var P = S.planches, ids = {}, nom = P[k].nom;
+    if (P.length < 2) { message('Dernière planche : utiliser Fichier ▸ Nouveau projet.', true); return; }
+    if (!confirm('Supprimer la planche « ' + nom + ' », ses composants et ses liaisons ?')) return;
+    empiler();
+    ranger();
+    P[k].comps.forEach(function (c) { ids[c.id] = true; });
+    function hors(e) { return e.libre ? (e.pl || 0) === k : !!ids[e.c]; }
+    S.inter = S.inter.filter(function (f) { return !hors(f.a) && !hors(f.b); });
+    P.splice(k, 1);
+    S.pc = Math.min(Math.max(0, k - 1), P.length - 1);
+    S.comps = P[S.pc].comps; S.fils = P[S.pc].fils; S.bus = P[S.pc].bus;
+    tousFils().forEach(function (f) { [f.a, f.b].forEach(function (e) { if (e.libre && (e.pl || 0) > k) e.pl--; }); });
+    S.sel = null; S.selL = null; S.plSel = false; MEMO_ROUTES = {};
+    if (P[S.pc].vue) { S.ox = P[S.pc].vue.ox; S.oy = P[S.pc].vue.oy; S.z = P[S.pc].vue.z; } else ajusterVue();
+    message('Planche « ' + nom + ' » supprimée · Ctrl+Z annule');
+    toutRafraichir();
+  }
+  function majPlanches() {
+    var d = $('planches'), bt;
+    if (!d) return;
+    d.textContent = '';
+    S.planches.forEach(function (p, k) {
+      bt = E('button', k === S.pc ? (S.plSel ? 'actif choisi' : 'actif') : '', p.nom);
+      bt.title = k === S.pc ? 'Planche affichée · clic : la choisir (Suppr la supprime)' : 'Afficher la planche';
+      bt.addEventListener('mousedown', function (ev) { ev.stopPropagation(); });
+      bt.addEventListener('click', function () { if (k === S.pc) { S.plSel = !S.plSel; majPlanches(); } else allerPlanche(k); });
+      d.appendChild(bt);
+    });
+    bt = E('button', '', '+'); bt.title = 'Nouvelle planche vide';
+    bt.addEventListener('click', function () { var k; empiler(); k = ajouterPlanche('Planche ' + (S.planches.length + 1)); allerPlanche(k); });
+    d.appendChild(bt);
+    bt = E('button', '', '−'); bt.title = 'Supprimer la planche affichée';
+    bt.disabled = S.planches.length < 2;
+    bt.addEventListener('click', function () { supprimerPlanche(S.pc); });
+    d.appendChild(bt);
+  }
+  function compParId(id) {
+    var i, k, l;
+    for (i = 0; i < S.comps.length; i++) if (S.comps[i].id === id) return S.comps[i];
+    for (k = 0; k < S.planches.length; k++) { if (k === S.pc) continue; l = S.planches[k].comps; for (i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; }
+    return null;
+  }
   function ep(c, p) { return { c: c.id, p: p }; }
   function memeEp(a, b) { return a.c === b.c && a.p === b.p; }
   function indexEp(g, e) { var i; for (i = 0; i < g.length; i++) if (memeEp(g[i], e)) return i; return -1; }
@@ -5352,17 +5512,20 @@ function traduire(s) {
   /* Tous les tracés, dans l'ordre, chacun tenant compte des précédents.
      Résultat gardé tant que ni les composants, ni les liaisons, ni la bibliothèque n'ont changé
      (zoomer, déplacer la vue, survoler, cliquer, enregistrer ne recalculent plus rien) */
-  var MEMO_ROUTES = { cle: null, lib: null, r: null };
+  var MEMO_ROUTES = {};
   function calculerRoutes() {
-    var cle = JSON.stringify(S.comps) + '|' + JSON.stringify(S.fils) + '|' + JSON.stringify(S.bus);
-    if (MEMO_ROUTES.r && MEMO_ROUTES.lib === LIB && MEMO_ROUTES.cle === cle) return MEMO_ROUTES.r;
-    MEMO_ROUTES.r = calculerRoutesBrut(); MEMO_ROUTES.lib = LIB; MEMO_ROUTES.cle = cle;
-    return MEMO_ROUTES.r;
+    var cle, m;
+    ranger();
+    cle = S.pc + '|' + JSON.stringify(S.planches.map(function (p) { return [p.comps, p.fils, p.bus]; })) + '|' + JSON.stringify(S.inter);
+    m = MEMO_ROUTES[S.pc] || (MEMO_ROUTES[S.pc] = {});
+    if (m.r && m.lib === LIB && m.cle === cle) return m.r;
+    m.r = calculerRoutesBrut(); m.lib = LIB; m.cle = cle;
+    return m.r;
   }
   /* Nom d'une équipotentielle : alimentation (GND, 3V3…), sinon fonction d'une patte d'IC, sinon de connecteur, sinon repère.patte */
   function nomsNets(net) {
     var r = {}, rang = {}, src = {}, par = {};
-    S.comps.forEach(function (c) {
+    tousComps().forEach(function (c) {
       pattesMonde(c).forEach(function (p) {
         var k = net({ c: c.id, p: p.nom }), v, q;
         if (c.type === 'PWR') { v = c.val; q = 4; }
@@ -5372,7 +5535,7 @@ function traduire(s) {
       });
     });
     /* nom donné par l'utilisateur (clic droit sur une étiquette) : prioritaire */
-    S.fils.forEach(function (f) { if (f.nomNet) { r[net(f.a)] = f.nomNet; rang[net(f.a)] = 5; } });
+    tousFils().forEach(function (f) { if (f.nomNet) { r[net(f.a)] = f.nomNet; rang[net(f.a)] = 5; } });
     /* un nom ne désigne qu'une équipotentielle : un nom automatique déjà pris reçoit le repère de son composant */
     Object.keys(r).forEach(function (k) { (par[r[k]] = par[r[k]] || []).push(k); });
     Object.keys(par).forEach(function (v) {
@@ -5382,7 +5545,7 @@ function traduire(s) {
       l.forEach(function (k, j) {
         var n2;
         if (j === 0 && (rang[k] >= 4 || rang[l[1]] < rang[k])) return;
-        n2 = v + '_' + src[k];
+        n2 = v + '-' + src[k];
         while (vus[n2] || (par[n2] && par[n2][0] !== k)) n2 += "'";
         vus[n2] = true; r[k] = n2;
       });
@@ -5391,31 +5554,52 @@ function traduire(s) {
   }
   /* Étiquette (amorce ou drapeau) sous le point w : { f, i } */
   function etiquetteSous(w) {
-    var R = calculerRoutes(), i, e, L, t, u, v, o;
-    for (i = 0; i < S.fils.length; i++) {
-      if (!S.fils[i].lab || !R.lab[i]) continue;
-      o = R.lab[i];
+    var R = calculerRoutes(), i, e, L, t, u, v, o, l = [];
+    for (i = 0; i < S.fils.length; i++) if (S.fils[i].lab && R.lab[i]) l.push({ f: S.fils[i], i: i, o: R.lab[i] });
+    R.inter.forEach(function (x) { l.push({ f: x.f, i: -1, o: x }); });
+    for (i = 0; i < l.length; i++) {
+      o = l[i].o;
       for (t = 0; t < 2; t++) {
         e = t ? o.b : o.a;
         if (!e) continue;
         L = (o.nom.length * 6.6 + 16) / S.z;
         u = (w.x - e.p.x) * e.d[0] + (w.y - e.p.y) * e.d[1]; v = Math.abs((w.x - e.p.x) * e.d[1] - (w.y - e.p.y) * e.d[0]);
-        if (u >= -0.5 && u <= dist(e.p, e.q) + L && v <= 8 / S.z) return { f: S.fils[i], i: i, nom: o.nom };
+        if (u >= -0.5 && u <= dist(e.p, e.q) + L && v <= 8 / S.z) return { f: l[i].f, i: l[i].i, nom: o.nom };
       }
     }
     return null;
   }
   /* Clic droit sur une étiquette : nom du réseau (toutes ses étiquettes), unique */
+  /* Clic sur une étiquette : nom du réseau (toutes ses étiquettes) ; nom déjà porté par un autre réseau, sur cette planche
+     ou une autre : proposition de fusion des deux réseaux (deux pastilles PAD face à face disparaissent dans une seule liaison) */
   function renommerReseau(et) {
-    var net = equipotentielles(), k = net(et.f.a), noms = nomsNets(net), v = prompt(typeof traduire === 'function' ? traduire('Nom du réseau') : 'Nom du réseau', et.nom), x;
+    var net = equipotentielles(), k = net(et.f.a), noms = nomsNets(net), v = prompt(typeof traduire === 'function' ? traduire('Nom du réseau') : 'Nom du réseau', et.nom), x, autre = null, pa, pn, tous, m, rep, net2, kk;
     if (v === null) return;
-    v = v.replace(/^\s+|\s+$/g, '').replace(/[;:=\s]+/g, '_');
-    if (!v) return;
-    for (x in noms) if (noms.hasOwnProperty(x) && x !== k && noms[x] === v) { message('Nom déjà pris par un autre réseau : ' + v, true); return; }
+    v = v.replace(/^\s+|\s+$/g, '').replace(/[;:=|\s]+/g, '-');
+    if (!v || v === et.nom) return;
+    for (x in noms) if (noms.hasOwnProperty(x) && x !== k && noms[x] === v) { autre = x; break; }
+    if (!autre) {
+      empiler();
+      tousFils().forEach(function (f) { if (net(f.a) === k) f.nomNet = v; });
+      message('Réseau renommé : ' + v);
+      toutRafraichir();
+      return;
+    }
+    tous = function (e) { return !e.libre && !!compParId(e.c); };
+    pa = pattesDuNet(net, k, tous); pn = pattesDuNet(net, autre, tous);
+    if (!pa.length || !pn.length) { message('Nom déjà pris par un autre réseau : ' + v, true); return; }
+    m = planchesDesComps();
+    if (!confirm('« ' + v + ' » est déjà le nom d\'un autre réseau (' + pn.slice(0, 4).map(function (q) { return q.c.ref + '.' + q.p; }).join(', ') + (pn.length > 4 ? '…' : '') +
+      ' · planche ' + S.planches[m[pn[0].c.id]].nom + ').\nFusionner les deux réseaux ?')) return;
     empiler();
-    S.fils.forEach(function (f) { if (net(f.a) === k) f.nomNet = v; });
-    message('Réseau renommé : ' + v);
-    toutRafraichir();
+    rep = connecterReseaux(v, pa, pn);
+    net2 = equipotentielles(); kk = net2(rep.e);
+    tousFils().forEach(function (f) { if (net2(f.a) === kk) f.nomNet = v; });
+    MEMO_ROUTES = {};
+    if (S.sel && !compParId(S.sel.id)) S.sel = null;
+    S.selL = null;
+    message('Réseaux fusionnés sous le nom ' + v + (rep.pads ? ' · deux pastilles PAD retirées, une seule liaison' : '') + ' · Ctrl+Z annule');
+    toutRafraichir(); publierSch(true);
   }
   /* Amorce d'étiquette : dans l'axe de sortie de la patte, au-delà de son nom pour un IC dessiné en boîtier */
   function amorceEtiq(e, cache) {
@@ -5454,7 +5638,12 @@ function traduire(s) {
     return n;
   }
   function calculerRoutesBrut() {
-    var cache = {}, obs = obstacles(), net = equipotentielles(), segs = [], r = { fils: [], bus: [], net: net, lab: {} }, i, j, f, pts, g, n, noms = nomsNets(net), ea, eb;
+    var cache = {}, obs = obstacles(), net = equipotentielles(), segs = [], r = { fils: [], bus: [], net: net, lab: {}, inter: [] }, i, j, f, pts, g, n, noms = nomsNets(net), ea, eb;
+    /* liaisons entre planches : une étiquette à chaque bout posé sur la planche affichée */
+    S.inter.forEach(function (fi) {
+      var o = { f: fi, a: surPlanche(fi.a) ? amorceEtiq(fi.a, cache) : null, b: surPlanche(fi.b) ? amorceEtiq(fi.b, cache) : null, nom: noms[net(fi.a)] || nomEp(fi.a) };
+      if (o.a || o.b) r.inter.push(o);
+    });
     /* pattes de toutes les équipotentielles : un fil ne passe pas à moins de 1,27 mm d'une patte qui n'est pas la sienne */
     ROUTE_BROCHES = [];
     S.comps.forEach(function (c) { pattesMonde(c).forEach(function (p) { ROUTE_BROCHES.push({ x: p.wx, y: p.wy, net: net({ c: c.id, p: p.nom }) }); }); });
@@ -5555,6 +5744,11 @@ function traduire(s) {
       if (S.selL === f) sel = pts;
       ajouterSegs(segs, pts, net(f.a), f, coul, rf ? 3 : 2);
     }
+    R.inter.forEach(function (x) {
+      var cl = hn !== null && net(x.f.a) === hn ? COUL.filSel : couleurL(x.f);
+      if (x.a) { dessinerEtiquette(x.a, x.nom, cl); S.polys.push([x.a.p, x.a.q]); }
+      if (x.b) { dessinerEtiquette(x.b, x.nom, cl); S.polys.push([x.b.p, x.b.q]); }
+    });
     for (i = 0; i < S.bus.length; i++) {
       g = R.bus[i];
       if (!g) continue;
@@ -5583,14 +5777,14 @@ function traduire(s) {
   }
   /* Équipotentielles : liaisons, paires de bus, et alimentations de même nom */
   function equipotentielles() {
-    var par = {}, i, k, c, pwr = {};
+    var par = {}, i, k, c, pwr = {}, TF = tousFils(), TB = tousBus(), TC = tousComps();
     function cle(e) { return e.c + ':' + e.p; }
     function trouver(x) { while (par[x] && par[x] !== x) { par[x] = par[par[x]] || par[x]; x = par[x]; } return x; }
     function unir(a, b) { var ra, rb; if (!par[a]) par[a] = a; if (!par[b]) par[b] = b; ra = trouver(a); rb = trouver(b); if (ra !== rb) par[ra] = rb; }
-    for (i = 0; i < S.fils.length; i++) unir(cle(S.fils[i].a), cle(S.fils[i].b));
-    for (i = 0; i < S.bus.length; i++) for (k = 0; k < S.bus[i].a.length; k++) unir(cle(S.bus[i].a[k]), cle(S.bus[i].b[k]));
-    for (i = 0; i < S.comps.length; i++) {
-      c = S.comps[i];
+    for (i = 0; i < TF.length; i++) unir(cle(TF[i].a), cle(TF[i].b));
+    for (i = 0; i < TB.length; i++) for (k = 0; k < TB[i].a.length; k++) unir(cle(TB[i].a[k]), cle(TB[i].b[k]));
+    for (i = 0; i < TC.length; i++) {
+      c = TC[i];
       if (c.type !== 'PWR') continue;
       if (pwr[c.val]) unir(pwr[c.val], c.id + ':1'); else { pwr[c.val] = c.id + ':1'; if (!par[pwr[c.val]]) par[pwr[c.val]] = pwr[c.val]; }
     }
@@ -5826,8 +6020,12 @@ function traduire(s) {
     S.bus = S.bus.filter(function (b) { return b.a.concat(b.b).every(ok); });
   }
   function purger(id) {
-    S.fils = S.fils.filter(function (f) { return f.a.c !== id && f.b.c !== id; });
-    S.bus = S.bus.filter(function (b) { return !b.a.concat(b.b).some(function (e) { return e.c === id; }); });
+    function okF(f) { return f.a.c !== id && f.b.c !== id; }
+    function okB(b) { return !b.a.concat(b.b).some(function (e) { return e.c === id; }); }
+    ranger();
+    S.planches.forEach(function (p) { p.fils = p.fils.filter(okF); p.bus = p.bus.filter(okB); });
+    S.inter = S.inter.filter(okF);
+    S.fils = S.planches[S.pc].fils; S.bus = S.planches[S.pc].bus;
   }
 
   /* Clic droit sur le corps d'un passif : valeurs courantes */
@@ -6454,10 +6652,11 @@ function traduire(s) {
     l = p ? p.el.filter(function (e) { return !estPad(e) && e.t !== 'texte'; }) : [];
     return l;
   }
-  function epTxt(e) { return e.libre ? e.c + ':L;' + e.x.toFixed(4) + ';' + e.y.toFixed(4) + ';' + e.d[0] + ';' + e.d[1] : e.c + ':' + e.p; }
-  function epLu(o) { var t; if (o.c < 0 && o.p.indexOf('L;') === 0) { t = o.p.split(';'); return { c: o.c, p: '', x: parseFloat(t[1]), y: parseFloat(t[2]), d: [parseInt(t[3], 10), parseInt(t[4], 10)], libre: true }; } return o; }
+  function epTxt(e) { return e.libre ? e.c + ':L;' + e.x.toFixed(4) + ';' + e.y.toFixed(4) + ';' + e.d[0] + ';' + e.d[1] + ';' + (e.pl || 0) : e.c + ':' + e.p; }
+  function epLu(o) { var t; if (o.c < 0 && o.p.indexOf('L;') === 0) { t = o.p.split(';'); return { c: o.c, p: '', x: parseFloat(t[1]), y: parseFloat(t[2]), d: [parseInt(t[3], 10), parseInt(t[4], 10)], libre: true, pl: parseInt(t[5] || '0', 10) || 0 }; } return o; }
   function ecrireDxf() {
-    var d = new Dxf(), i, j, c, l, e, R = calculerRoutes(), pts, f, bu, g, bm, k, calq, pl;
+    var d = new Dxf(), i, j, c, l, e, R, pts, f, bu, g, bm, k, calq, pl, TC = tousComps(), np, routes = [];
+    for (np = 0; np < S.planches.length; np++) routes.push(avecPlanche(np, calculerRoutes));
     d.g(0, 'SECTION').g(2, 'HEADER').g(9, '$ACADVER').g(1, 'AC1009').g(9, '$INSBASE').g(10, 0).g(20, 0).g(30, 0).g(9, '$DWGCODEPAGE').g(3, 'ANSI_1252').g(0, 'ENDSEC');
     d.g(0, 'SECTION').g(2, 'TABLES');
     d.g(0, 'TABLE').g(2, 'LTYPE').g(70, 2);
@@ -6472,8 +6671,8 @@ function traduire(s) {
     d.g(0, 'ENDSEC');
 
     d.g(0, 'SECTION').g(2, 'BLOCKS');
-    for (i = 0; i < S.comps.length; i++) {
-      c = S.comps[i];
+    for (i = 0; i < TC.length; i++) {
+      c = TC[i];
       calq = c.type === 'PWR' ? 'ALIMENTATIONS' : 'COMPOSANTS';
       d.g(0, 'BLOCK').g(8, '0').g(2, 'C_' + c.id).g(70, 0).g(10, 0).g(20, 0).g(30, 0).g(3, 'C_' + c.id);
       l = geomLocale(c);
@@ -6497,26 +6696,34 @@ function traduire(s) {
 
     d.g(0, 'SECTION').g(2, 'ENTITIES');
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
-    d.xdata(['SCHEMA', 'VERSION=0.3.0', 'LIB=' + (S.nomLib || '')]);
-    for (i = 0; i < S.comps.length; i++) {
-      c = S.comps[i];
+    d.xdata(['SCHEMA', 'VERSION=0.4.0', 'LIB=' + (S.nomLib || '')].concat(S.planches.length > 1 || S.planches[0].nom !== 'Planche 1' ? ['PLANCHES=' + S.planches.map(function (p) { return String(p.nom).replace(/[|;=]/g, '-'); }).join('|')] : []));
+    for (np = 0; np < S.planches.length; np++) for (i = 0; i < S.planches[np].comps.length; i++) {
+      c = S.planches[np].comps[i];
       d.g(0, 'INSERT').g(8, c.type === 'PWR' ? 'ALIMENTATIONS' : 'COMPOSANTS').g(2, 'C_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
-      d.xdata(['COMP', 'ID=' + c.id, 'TYPE=' + c.type, 'REF=' + c.ref, 'VAL=' + c.val, 'POL=' + (c.pol || '')].concat(c.sym ? ['SYM=' + c.sym] : [], texteFn(c.fn)));
+      d.xdata(['COMP', 'ID=' + c.id, 'TYPE=' + c.type, 'REF=' + c.ref, 'VAL=' + c.val, 'POL=' + (c.pol || '')].concat(c.sym ? ['SYM=' + c.sym] : [], texteFn(c.fn), np ? ['PL=' + np] : []));
       if (c.type === 'PWR') continue;
       bm = bboxMonde(c);
       if (c.type === 'IC') d.texte('TEXTES', (bm[0] + bm[2]) / 2, (bm[1] + bm[3]) / 2, 1.5, libelle(c));
       else d.texte('TEXTES', (bm[0] + bm[2]) / 2, bm[3] + 1, 1.27, libelle(c));
     }
-    for (i = 0; i < S.fils.length; i++) {
-      f = S.fils[i];
-      pts = R.fils[i];
+    for (np = 0; np < S.planches.length; np++) for (i = 0; i < S.planches[np].fils.length; i++) {
+      f = S.planches[np].fils[i];
+      pts = routes[np].fils[i];
       if (!pts) continue;
       d.polyligne(f.type === 'rf' ? 'LIGNES_50OHM' : 'LIAISONS', pts, { tirets: f.type === 'rf' },
         ['FIL', 'A=' + epTxt(f.a), 'B=' + epTxt(f.b), 'TYPE=' + f.type, 'TRACE=' + (f.lab ? 'etiquette' : f.pts ? (f.opt ? 'opt' : 'manuel') : 'auto')].concat(f.nomNet ? ['NOM=' + f.nomNet] : []));
     }
-    for (i = 0; i < S.bus.length; i++) {
-      bu = S.bus[i];
-      g = R.bus[i];
+    /* liaisons entre planches : en étiquettes ; tracé = amorce au premier bout */
+    for (i = 0; i < S.inter.length; i++) {
+      f = S.inter[i];
+      e = f.a.libre ? { x: f.a.x, y: f.a.y } : (function () { var q = compParId(f.a.c), m2 = q ? pattesMonde(q).filter(function (p) { return p.nom === f.a.p; })[0] : null; return m2 ? { x: m2.wx, y: m2.wy } : null; })();
+      if (!e) continue;
+      d.polyligne('LIAISONS', [e, { x: e.x + 1.27, y: e.y }], {},
+        ['FIL', 'A=' + epTxt(f.a), 'B=' + epTxt(f.b), 'TYPE=' + f.type, 'TRACE=etiquette'].concat(f.nomNet ? ['NOM=' + f.nomNet] : []));
+    }
+    for (np = 0; np < S.planches.length; np++) for (i = 0; i < S.planches[np].bus.length; i++) {
+      bu = S.planches[np].bus[i];
+      g = routes[np].bus[i];
       if (!g) continue;
       l = ['BUS', 'TYPE=' + bu.type];
       for (k = 0; k < bu.a.length; k++) l.push('A=' + bu.a[k].c + ':' + bu.a[k].p);
@@ -6576,10 +6783,10 @@ function traduire(s) {
       xd = x(e);
       if (!xd || !xd.length) continue;
       k = cles(xd);
-      if (xd[0] === 'SCHEMA') res.lib = k.LIB || '';
+      if (xd[0] === 'SCHEMA') { res.lib = k.LIB || ''; if (k.PLANCHES) res.planches = k.PLANCHES.split('|'); }
       else if (xd[0] === 'COMP') {
         res.comps.push({ id: parseInt(k.ID, 10), type: k.TYPE, ref: k.REF || '', val: k.VAL || '', pol: k.POL || '', fn: lireFn(k.FN),
-                         x: lireNb(v(e, 10)) || 0, y: lireNb(v(e, 20)) || 0, rot: lireNb(v(e, 50)) || 0 });
+                         x: lireNb(v(e, 10)) || 0, y: lireNb(v(e, 20)) || 0, rot: lireNb(v(e, 50)) || 0, pl: parseInt(k.PL || '0', 10) || 0 });
         if (/^[LGD]$/.test(k.SYM || '')) res.comps[res.comps.length - 1].sym = k.SYM;
       } else if (xd[0] === 'FIL') {
         dern = [];
@@ -6607,20 +6814,193 @@ function traduire(s) {
     S.modifie = false; $('modif').textContent = '';
     message('Enregistré : ' + nom);
   }
+  /* même bibliothèque au « _ » / « - » près (noms de projet passés en « - ») */
+  function memeLib(a, b) { return String(a || '').replace(/[_\s]+/g, '-').toLowerCase() === String(b || '').replace(/[_\s]+/g, '-').toLowerCase(); }
   function ouvrirSchema(texte, nom) {
     var r = lireDxf(texte), i, max = 0;
     if (!r.comps.length && !r.fils.length) { message('Aucun schéma azs-cad dans ' + nom, true); return; }
-    S.comps = r.comps; S.fils = r.fils; S.bus = r.bus;
-    for (i = 0; i < S.comps.length; i++) max = Math.max(max, S.comps[i].id);
+    S.planches = planchesLues(r, function (k) { return r.planches && r.planches[k] ? r.planches[k] : 'Planche ' + (k + 1); });
+    S.inter = []; S.pc = 0; MEMO_ROUTES = {};
+    S.comps = S.planches[0].comps; S.fils = S.planches[0].fils; S.bus = S.planches[0].bus;
+    normaliserFils();
+    tousComps().forEach(function (c) { max = Math.max(max, c.id); });
     S.nId = max + 1;
     S.sel = null; S.selL = null; S.lien = null; S.groupe = []; S.groupeA = null; S.annul = []; S.retab = [];
     S.modifie = false; $('modif').textContent = '';
     $('nomSch').value = nom;
     publierSch(true);
-    message(S.comps.length + ' élément(s), ' + S.fils.length + ' liaison(s), ' + S.bus.length + ' bus' +
-      (r.lib && r.lib !== S.nomLib ? ' · bibliothèque attendue : ' + r.lib : ''), !!(r.lib && r.lib !== S.nomLib));
+    message(r.comps.length + ' élément(s), ' + r.fils.length + ' liaison(s), ' + r.bus.length + ' bus' + (S.planches.length > 1 ? ', ' + S.planches.length + ' planches' : '') +
+      (r.lib && memeLib(r.lib, S.nomLib) ? '' : r.lib ? ' · bibliothèque attendue : ' + r.lib : ''), !!(r.lib && !memeLib(r.lib, S.nomLib)));
     ajusterVue();
     toutRafraichir();
+  }
+  /* ======================================================================
+     Fusion d'un projet : ses planches s'ajoutent à la suite ; composants renumérotés à la suite (R1 → premier R
+     libre…), alimentations de même nom réunies d'office ; revue des noms de réseau présents des deux côtés :
+     Connecter (une liaison en étiquettes ; deux pastilles PAD face à face disparaissent dans une seule liaison)
+     ou Renommer (new-nom, new2-nom…) ; la fusion et la revue font une seule opération (un Ctrl+Z)
+     ====================================================================== */
+  function fusionner(texte, nom) {
+    var r = lireDxf(texte), base = String(nom || 'projet').replace(/\.sch\.dxf$/i, '').replace(/\.dxf$/i, ''), P, k0, ids = {}, pris = {}, maxPre = {}, lib0, ancien = {};
+    if (!r.comps.length) { message('Aucun schéma azs-cad dans ' + nom, true); return null; }
+    empiler();
+    ranger();
+    tousComps().forEach(function (c) { var m = /^([A-Za-z]*)(\d+)$/.exec(c.ref); ancien[c.id] = true; pris[c.ref] = true; if (m) maxPre[m[1]] = Math.max(maxPre[m[1]] || 0, +m[2]); });
+    P = planchesLues(r, function (k) { return base + (r.planches && r.planches.length > 1 ? ' · ' + r.planches[k] : ''); });
+    k0 = S.planches.length;
+    r.comps.slice().sort(function (a, b) { return triNat(a.ref, b.ref); }).forEach(function (c) {
+      var m, n;
+      ids[c.id] = S.nId++;
+      if (c.type === 'PWR' || !c.ref) return;
+      m = /^([A-Za-z]*)(\d+)$/.exec(c.ref);
+      if (m) { n = (maxPre[m[1]] || 0) + 1; maxPre[m[1]] = n; c.ref = m[1] + n; }
+      else { n = 2; while (pris[c.ref + '-' + n]) n++; c.ref = c.ref + '-' + n; }
+      pris[c.ref] = true;
+    });
+    r.comps.forEach(function (c) { c.id = ids[c.id]; });
+    lib0 = idLibre();
+    function remap(e) {
+      if (e.libre) { e.c = lib0--; e.pl = (e.pl || 0) + k0; return; }
+      if (ids[e.c] !== undefined) e.c = ids[e.c];
+    }
+    r.fils.forEach(function (f) { remap(f.a); remap(f.b); });
+    r.bus.forEach(function (b) { b.a.forEach(remap); b.b.forEach(remap); });
+    S.planches = S.planches.concat(P);
+    MEMO_ROUTES = {};
+    normaliserFils();
+    allerPlanche(k0, true);
+    toutRafraichir();
+    publierSch(true);
+    message(base + ' fusionné : ' + P.length + ' planche(s), ' + r.comps.filter(function (c) { return c.type !== 'PWR'; }).length + ' composant(s) renuméroté(s) à la suite');
+    revueNoms(ancien);
+    return { n: P.length, ids: ids };
+  }
+  /* Noms de réseau d'un côté (composants de ce côté) : réseaux reliés seulement, nom donné à la main, fonction d'une
+     patte d'IC ou de connecteur, valeur d'une pastille PAD ; un réseau qui touche une alimentation est déjà réuni */
+  function nomsCote(net, dedans) {
+    var r = {}, rang = {}, lies = {}, o = {};
+    tousFils().forEach(function (f) {
+      if (!dedans(f.a) && !dedans(f.b)) return;
+      lies[net(f.a)] = true;
+      if (f.nomNet) { r[net(f.a)] = f.nomNet; rang[net(f.a)] = 5; }
+    });
+    tousBus().forEach(function (b) { b.a.concat(b.b).forEach(function (e) { if (dedans(e)) lies[net(e)] = true; }); });
+    tousComps().forEach(function (c) {
+      if (!dedans({ c: c.id })) return;
+      pattesMonde(c).forEach(function (p) {
+        var k = net({ c: c.id, p: p.nom }), v, q;
+        if (c.type === 'PWR') { rang[k] = 9; r[k] = null; return; }
+        if (c.type === 'IC' && p.f) { v = p.f; q = estConnecteur(c) ? 2 : 3; }
+        else if (c.type === 'PAD' && c.val) { v = c.val; q = 2; }
+        else return;
+        if (!rang[k] || q > rang[k]) { rang[k] = q; r[k] = v; }
+      });
+    });
+    Object.keys(r).forEach(function (k) { if (r[k] && lies[k]) (o[r[k]] = o[r[k]] || []).push(k); });
+    return o;
+  }
+  function pattesDuNet(net, k, dedans) {
+    var l = [];
+    tousComps().forEach(function (c) {
+      if (c.type === 'PWR' || !dedans({ c: c.id })) return;
+      pattesMonde(c).forEach(function (p) { if (net({ c: c.id, p: p.nom }) === k) l.push({ c: c, p: p.nom }); });
+    });
+    return l;
+  }
+  function revueNoms(ancien) {
+    var net = equipotentielles(), estA = function (e) { return e.libre ? false : !!ancien[e.c]; }, estN = function (e) { return e.libre ? false : !ancien[e.c] && !!compParId(e.c); },
+        nA = nomsCote(net, estA), nN = nomsCote(net, estN), lignes = [], fond, boite, tb, bs, bt;
+    Object.keys(nN).sort(triNat).forEach(function (nom) {
+      var ka, kn, pa, pn;
+      if (!nA[nom]) return;
+      ka = nA[nom][0]; kn = nN[nom][0];
+      if (ka === kn) return;
+      pa = pattesDuNet(net, ka, estA); pn = pattesDuNet(net, kn, estN);
+      if (!pa.length || !pn.length) return;
+      lignes.push({ nom: nom, pa: pa, pn: pn, kn: kn, choix: 'connecter' });
+    });
+    if (!lignes.length) { message('Fusion faite · aucun nom de réseau commun aux deux côtés'); return; }
+    function txt(l) { return l.slice(0, 4).map(function (x) { return x.c.ref + '.' + x.p; }).join(', ') + (l.length > 4 ? '…' : ''); }
+    fond = E('div'); fond.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+    boite = E('div'); boite.style.cssText = 'background:#fff;color:#1f2328;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);padding:16px 18px;max-width:min(900px,94vw);max-height:86vh;overflow:auto;font-size:13px';
+    fond.appendChild(boite);
+    boite.appendChild(E('h3', '', 'Fusion : noms de réseau communs'));
+    boite.lastChild.style.margin = '0 0 6px';
+    boite.appendChild(E('div', '', lignes.length + ' nom(s) présent(s) des deux côtés · Connecter : un seul réseau (deux pastilles PAD face à face disparaissent dans une seule liaison) · Renommer : le côté ajouté prend new-nom'));
+    tb = E('table'); tb.style.cssText = 'border-collapse:collapse;margin:10px 0;width:100%';
+    (function () { var tr = E('tr'); ['Nom', 'Projet', 'Ajouté', 'Action'].forEach(function (t) { var th = E('th', '', t); th.style.cssText = 'text-align:left;border-bottom:1px solid #ccc;padding:3px 6px'; tr.appendChild(th); }); tb.appendChild(tr); })();
+    lignes.forEach(function (l) {
+      var tr = E('tr'), sel = E('select');
+      [['connecter', 'Connecter'], ['renommer', 'Renommer']].forEach(function (v) { var op = E('option', '', v[1]); op.value = v[0]; sel.appendChild(op); });
+      sel.value = l.choix; sel.addEventListener('change', function () { l.choix = this.value; });
+      l.sel = sel;
+      [l.nom, txt(l.pa), txt(l.pn)].forEach(function (t) { var td = E('td', '', t); td.style.cssText = 'padding:3px 6px;border-bottom:1px solid #eee'; tr.appendChild(td); });
+      var td = E('td'); td.style.cssText = 'padding:3px 6px;border-bottom:1px solid #eee'; td.appendChild(sel); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+    boite.appendChild(tb);
+    bs = E('div'); bs.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+    bt = E('button', '', 'Tout connecter'); bt.addEventListener('click', function () { lignes.forEach(function (l) { l.choix = l.sel.value = 'connecter'; }); }); bs.appendChild(bt);
+    bt = E('button', '', 'Tout renommer'); bt.addEventListener('click', function () { lignes.forEach(function (l) { l.choix = l.sel.value = 'renommer'; }); }); bs.appendChild(bt);
+    bt = E('button', 'principal', 'Appliquer'); bt.addEventListener('click', function () { document.body.removeChild(fond); appliquerRevue(lignes, net, estA, estN); }); bs.appendChild(bt);
+    boite.appendChild(bs);
+    document.body.appendChild(fond);
+  }
+  /* Deux réseaux réunis par une liaison en étiquettes ; deux pastilles PAD face à face disparaissent, leurs
+     liaisons n'en font qu'une ; renvoie { e: une patte du réseau réuni, pads } */
+  function connecterReseaux(nom, la, ln) {
+    var pa = la.filter(function (x) { return x.c.type === 'PAD'; })[0], pn = ln.filter(function (x) { return x.c.type === 'PAD'; })[0], fa, fn, ea, en, i;
+    if (pa && pn) {
+      fa = tousFils().filter(function (f) { return f.a.c === pa.c.id || f.b.c === pa.c.id; });
+      fn = tousFils().filter(function (f) { return f.a.c === pn.c.id || f.b.c === pn.c.id; });
+      ea = fa.map(function (f) { return f.a.c === pa.c.id ? f.b : f.a; }).filter(function (e) { return e.c !== pa.c.id; });
+      en = fn.map(function (f) { return f.a.c === pn.c.id ? f.b : f.a; }).filter(function (e) { return e.c !== pn.c.id; });
+      if (ea.length && en.length) {
+        fa.concat(fn).forEach(retirerFil);
+        [pa.c, pn.c].forEach(function (c) { var m = planchesDesComps(); avecPlanche(m[c.id], function () { purger(c.id); S.comps.splice(S.comps.indexOf(c), 1); }); });
+        S.inter.push({ a: copieObj(ea[0]), b: copieObj(en[0]), type: 'n', pts: null, lab: true, nomNet: nom });
+        for (i = 1; i < ea.length; i++) S.inter.push({ a: copieObj(ea[0]), b: copieObj(ea[i]), type: 'n', pts: null, lab: true });
+        for (i = 1; i < en.length; i++) S.inter.push({ a: copieObj(en[0]), b: copieObj(en[i]), type: 'n', pts: null, lab: true });
+        normaliserFils();
+        return { e: copieObj(ea[0]), pads: true };
+      }
+    }
+    S.inter.push({ a: ep(la[0].c, la[0].p), b: ep(ln[0].c, ln[0].p), type: 'n', pts: null, lab: true, nomNet: nom });
+    normaliserFils();
+    return { e: ep(la[0].c, la[0].p), pads: false };
+  }
+  function appliquerRevue(lignes, net, estA, estN) {
+    var nc = 0, nr = 0, np = 0, noms = {}, tf = tousFils();
+    Object.keys(nomsNets(net)).forEach(function (k) { noms[nomsNets(net)[k]] = true; });
+    tf.forEach(function (f) { if (f.nomNet) noms[f.nomNet] = true; });
+    lignes.forEach(function (l) {
+      var nv, j;
+      if (l.choix === 'renommer') {
+        nv = 'new-' + l.nom; j = 2;
+        while (noms[nv]) nv = 'new' + (j++) + '-' + l.nom;
+        noms[nv] = true;
+        tousFils().forEach(function (f) { if (net(f.a) === l.kn) f.nomNet = nv; });
+        nr++;
+        return;
+      }
+      if (connecterReseaux(l.nom, l.pa, l.pn).pads) np++;
+      nc++;
+    });
+    if (S.sel && !compParId(S.sel.id)) S.sel = null;
+    MEMO_ROUTES = {};
+    marquer(); toutRafraichir(); publierSch(true);
+    message('Fusion : ' + nc + ' réseau(x) connecté(s)' + (np ? ' (dont ' + np + ' paire(s) de pastilles PAD retirée(s))' : '') + ' · ' + nr + ' renommé(s) new-… · Ctrl+Z annule la fusion');
+  }
+  /* Planches d'un schéma lu : composants par planche (PL), fils et bus sur la planche de leur premier composant */
+  function planchesLues(r, nomDe) {
+    var n = 1, P = [], m = {};
+    r.comps.forEach(function (c) { n = Math.max(n, c.pl + 1); });
+    if (r.planches) n = Math.max(n, r.planches.length);
+    for (var k = 0; k < n; k++) P.push({ nom: nomDe(k), comps: [], fils: [], bus: [] });
+    r.comps.forEach(function (c) { m[c.id] = c.pl; P[c.pl].comps.push(c); delete c.pl; });
+    r.fils.forEach(function (f) { var k2 = plancheDe(f.a, m); if (k2 === undefined) k2 = plancheDe(f.b, m); P[k2 === undefined || k2 >= n ? 0 : k2].fils.push(f); });
+    r.bus.forEach(function (b) { var k2 = m[b.a[0].c]; P[k2 === undefined ? 0 : k2].bus.push(b); });
+    return P;
   }
   function ajusterVue() {
     var b = [1e9, 1e9, -1e9, -1e9], i, m, w, h;
@@ -6668,6 +7048,7 @@ function traduire(s) {
   cv.addEventListener('mousedown', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), c, pt, l, occupe = !!(S.sel || S.selL || S.lien || S.groupe.length || S.groupeA);
     ev.preventDefault();
+    if (S.plSel) { S.plSel = false; majPlanches(); }
     bulle(null, '');
     if (S.pose) {
       if (ev.button === 0) deposer(); else if (ev.button === 2) annulerPose();
@@ -6689,7 +7070,7 @@ function traduire(s) {
       if (l) { S.lien = null; S.groupe = []; S.groupeA = null; S.rebr = l; S.selL = l.f; S.sel = null; toutRafraichir(); return; }
       if (S.rebr || S.lien || S.groupe.length || S.groupeA) annulerLiaison();
       l = etiquetteSous(w);
-      if (l) { S.selL = l.f; S.sel = null; toutRafraichir(); return; }
+      if (l) { S.selL = l.f; S.sel = null; toutRafraichir(); setTimeout(function () { renommerReseau(l); }, 30); return; }
       l = liaisonSous(w);
       if (l) { S.selL = l; S.sel = null; toutRafraichir(); return; }
       c = composantSous(w);
@@ -6773,7 +7154,7 @@ function traduire(s) {
       else if (S.sel || S.selL) { S.sel = null; S.selL = null; toutRafraichir(); }
     }
     else if ((k === 'r' || k === 'R') && !ev.ctrlKey && !ev.metaKey) tourner();
-    else if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); supprimer(); }
+    else if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); if (S.plSel) supprimerPlanche(S.pc); else supprimer(); }
   });
 
   /* ======================================================================
@@ -6819,7 +7200,8 @@ function traduire(s) {
   /* Menu Fichier */
   function nouveauSchema() {
     if (S.modifie && !confirm('Abandonner les modifications non enregistrées ?')) return;
-    S.comps = []; S.fils = []; S.bus = []; S.nId = 1; S.dernierPose = null; S.sel = null; S.selL = null; S.lien = null; S.groupe = []; S.groupeA = null;
+    S.planches = [{ nom: 'Planche 1', comps: [], fils: [], bus: [] }]; S.pc = 0; S.inter = []; S.plSel = false; MEMO_ROUTES = {};
+    S.comps = S.planches[0].comps; S.fils = S.planches[0].fils; S.bus = S.planches[0].bus; S.nId = 1; S.dernierPose = null; S.sel = null; S.selL = null; S.lien = null; S.groupe = []; S.groupeA = null;
     S.annul = []; S.retab = []; S.modifie = false; $('modif').textContent = ''; $('nomSch').value = 'schema.sch.dxf';
     S.ox = S.W / 2; S.oy = S.H / 2; message(''); toutRafraichir();
   }
@@ -6888,12 +7270,13 @@ function traduire(s) {
     enregistrer: enregistrerSchema,
     /* texte du .sch.dxf pour l'archive <base>.azs.zip, marqué enregistré */
     sauver: function (nom) { var t = ecrireDxf(); S.modifie = false; $('modif').textContent = ''; message('Enregistré : ' + nom); return t; },
-    vide: function () { return !S.comps.length && !S.fils.length; },
+    vide: function () { return !tousComps().length && !tousFils().length; },
     modifie: function () { return S.modifie; },
+    fusionner: fusionner,
     /* position (monde du schéma) et fonction de chaque patte : { REF: { type, val, p: { nom: { x, y, f } } } } */
     pattesSchema: function () {
       var r = {};
-      S.comps.forEach(function (c) {
+      tousComps().forEach(function (c) {
         var o;
         if (c.type === 'PWR') return;
         o = r[c.ref] = { type: c.type, val: c.val || '', p: {} };
@@ -6903,24 +7286,30 @@ function traduire(s) {
     },
     /* liste [{ ref, action: 'suppr' | 'valeur', val }] ; symboles d'alimentation devenus isolés retirés ; un seul Ctrl+Z */
     appliquerDecouplage: function (l) {
-      var n = 0, pwr = {};
+      var n = 0, pwr = {}, m = planchesDesComps();
       if (!l.length) return 0;
       empiler();
       l.forEach(function (a) {
-        var c = S.comps.filter(function (x) { return x.ref === a.ref; })[0];
+        var c = tousComps().filter(function (x) { return x.ref === a.ref; })[0];
         if (!c) return;
         if (a.action === 'valeur') { c.val = a.val; n++; return; }
-        S.fils.forEach(function (fl) {
-          var o = fl.a.c === c.id ? fl.b : (fl.b.c === c.id ? fl.a : null), k = o ? compParId(o.c) : null;
-          if (k && k.type === 'PWR') pwr[k.id] = true;
+        avecPlanche(m[c.id], function () {
+          S.fils.forEach(function (fl) {
+            var o = fl.a.c === c.id ? fl.b : (fl.b.c === c.id ? fl.a : null), k = o ? compParId(o.c) : null;
+            if (k && k.type === 'PWR') pwr[k.id] = true;
+          });
+          purger(c.id); S.comps.splice(S.comps.indexOf(c), 1);
         });
-        purger(c.id); S.comps.splice(S.comps.indexOf(c), 1);
         if (S.sel === c) S.sel = null;
         n++;
       });
-      S.comps = S.comps.filter(function (c) {
-        if (!pwr[c.id]) return true;
-        return S.fils.some(function (fl) { return fl.a.c === c.id || fl.b.c === c.id; }) || S.bus.some(function (b) { return b.a.concat(b.b).some(function (e) { return e.c === c.id; }); });
+      S.planches.forEach(function (p, k) {
+        avecPlanche(k, function () {
+          S.comps = S.comps.filter(function (c) {
+            if (!pwr[c.id]) return true;
+            return tousFils().some(function (fl) { return fl.a.c === c.id || fl.b.c === c.id; }) || S.bus.some(function (b) { return b.a.concat(b.b).some(function (e) { return e.c === c.id; }); });
+          });
+        });
       });
       toutRafraichir();
       return n;
@@ -6941,7 +7330,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-17
- Version    : 1.49.0
+ Version    : 1.54.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -7568,6 +7957,55 @@ function traduire(s) {
                       la haute densité PCBCart + 30 % (piste, via, isolement) ;
                       pistes et vias déjà tracées inchangées ; aucune question si
                       le projet est déjà à ces valeurs
+   1.54.0 2026-11-18  Composant fin : pas par défaut 1,27 mm (SOIC compris) ; routeur :
+                      aucune via entre deux pattes voisines ; Re-router : tracé gardé
+                      s'il passe moins souvent entre les pattes (pistes et vias), même
+                      plus long, sinon s'il n'est pas plus long ; contrôle final :
+                      piste ou via entre les pattes = défaut, cuivre remis en chevelu
+   1.53.0 2026-11-18  Centrer entre les voisines : segment de bout tenu par une via,
+                      la via glisse avec lui si elle est libre, sinon attaque décalée
+                      à 45° ; Re-router se termine par un contrôle d'isolement de tout
+                      le cuivre (défaut = morceau de cuivre remis en chevelu, 50 Ω
+                      signalée seulement) ; Arrondir : sortie droite dans l'axe d'une
+                      pastille d'IC (demi-pastille + une largeur) puis l'arc ;
+                      pondérations « passage entre pattes fines » (20) et « pas d'un
+                      composant fin » (0,65 mm) : deux vias et passage dessous ou à
+                      côté préférés
+   1.52.1 2026-11-18  Boîte du projet (Recentrer, contour, coins) : boîte exacte des
+                      textes libres (largeur × hauteur, rotation) au lieu d'un carré
+                      de la longueur du texte, et textes des composants comptés
+   1.52.0 2026-11-18  Recentrer le contour (format imposé) : centré sur tout le projet
+                      (cuivre, ponts d'irrigation, textes), plus seulement sur les
+                      composants ; Vider la couche : équipotentielles non déplacées,
+                      plan coupé et pistes restantes affichés dans le panneau ;
+                      clic droit sur une ligne 50 Ω courte : sa largeur 50 Ω en tête ;
+                      clic droit sur toute piste : Arrondir (arc unique à sa largeur) ;
+                      panneau de droite : Couches et Pondérations en mode Router,
+                      Circuit, Sérigraphie et Contour en mode Placer ; tronçon gardé
+                      seulement si l'équipotentielle entière ne s'allonge pas
+   1.51.1 2026-11-18  Pondérations du routage… en tête du menu Optimiser ; menu
+                      défilant quand il dépasse la hauteur de la fenêtre
+   1.51.0 2026-11-18  Optimiser ▸ Pondérations du routage… : distance, couche signal,
+                      couche d'alimentation, via simple, passage sous une ligne 50 Ω,
+                      dessin dans une couche d'alimentation ; valeurs par défaut
+                      1 / 2 / 20 / 1 / 50 / 20 ; enregistrées dans le .brd.dxf (POIDS=)
+   1.50.3 2026-11-18  Re-router : tracé gardé si sa longueur réelle est égale ou
+                      inférieure, quel que soit le nombre de vias (fin de la longueur
+                      pondérée par couche, qui faisait garder un détour en face du
+                      dessus contre un tracé court en couche interne, passe après
+                      passe) ; « via dans la pastille » pour une pastille CMS
+   1.50.2 2026-11-18  Re-router : piste supprimée (hors 50 Ω) puis refaite au plus court,
+                      gardée seulement si longueur réelle et vias égales ou inférieures
+                      (plus de détour accepté pour retirer un passage interdit) ;
+                      optRetirerPassage remet à zéro tous les axes de sortie retirés
+   1.50.1 2026-11-18  Re-router : couloirs interdits entre pattes voisines de tout
+                      composant portant une ligne 50 Ω (comptés en passages)
+   1.50.0 2026-11-17  Module fusionné : à la mise à jour, composants routés du projet
+                      fusionné (pistes, vias, textes) en un groupe qui suit la souris,
+                      clic = posé, éléments indépendants ; pistes et vias renommées
+                      d'après l'équipotentielle du projet ; ponts et vias de couture
+                      du module non repris ; pistes sur des couches internes
+                      absentes signalées. Noms Gerber et nomenclature : « _ » → « - »
 
  À faire :
    - Option automatique : supprimer les îlots artificiels d'une couche
@@ -7668,7 +8106,7 @@ function traduire(s) {
   #avDecision{margin-top:6px; padding-top:5px; border-top:1px solid #d5dbe3; white-space:pre-line; max-height:38vh; overflow:auto; line-height:1.45}
   #avAide{margin-top:5px; color:var(--discret); font-size:11px}
   #avDecision:empty, #avAide:empty{display:none}
-  #menu{position:fixed; display:none; z-index:30; background:#fff; border:1px solid var(--bord); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.18); padding:4px 0; min-width:150px}
+  #menu{position:fixed; display:none; z-index:30; background:#fff; border:1px solid var(--bord); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.18); padding:4px 0; min-width:150px; max-height:calc(100vh - 70px); overflow-y:auto}
   #menu .titre{padding:4px 12px 6px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--discret); border-bottom:1px solid var(--bord); margin-bottom:3px}
   #menu .option{padding:3px 12px; cursor:pointer}
   #menu .option:hover{background:var(--accentClair)}
@@ -7703,7 +8141,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.49.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.54.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -7855,7 +8293,7 @@ var TRAD_EN = [
   ['Optimiser ▾', 'Optimize ▾'], ['Re-router au plus court, ligne par ligne, puis tout', 'Re-route shortest, net by net, then everything'], ['Re-routage : passe', 'Re-routing: pass'],
   ['équipotentielle(s) re-routée(s)', 'net(s) re-routed'], ['mm gagnés', 'mm saved'],
   ['Rapprocher les LED, résistances et condensateurs de liaison', 'Move LEDs, resistors and coupling capacitors closer'], ['Rapprochement des composants', 'Moving components closer'], ['LED, résistances, condensateurs de liaison', 'LEDs, resistors, coupling capacitors'],
-  ['Tronçon ', 'Segment '], [' (via de la bille)', ' (ball via)'], ['jonction (', 'junction ('],
+  ['Tronçon ', 'Segment '], [' (via de la bille)', ' (ball via)'], [' (via dans la pastille)', ' (via in pad)'], ['jonction (', 'junction ('],
   ['bout (', 'end ('], [', couche ', ', layer '], [' : déjà traité à ', ': already processed at '],
   [' : modifié par le tronçon précédent, repris plus loin', ': changed by the previous segment, taken up later'], [' via(s) intermédiaire(s)) : ', ' intermediate via(s)): '], ['Piste en boucle sur cette patte : rien à retracer', 'Looped track on this pin: nothing to redraw'],
   ['tronçon(s) raccourci(s)', 'segment(s) shortened'], ['aucune sortie libre depuis ', 'no free exit from '], ['aucune arrivée libre sur ', 'no free entry on '],
@@ -7866,7 +8304,7 @@ var TRAD_EN = [
   ['ligne 50 Ω', '50 Ω line'], ['aucune piste', 'no track'], ['via-pastille ', 'via pad '],
   [' sur l\'équipotentielle', ' on the net'], ['équipotentielle d\'un plan', 'plane net'], ['masse reliée à une face remplie', 'ground connected to a filled side'],
   ['une seule patte', 'single pin'], ['équipotentielle incomplète : ses pattes ne sont pas toutes reliées par le cuivre (chevelu restant)', 'incomplete net: its pins are not all connected by copper (ratsnest left)'], ['connexité modifiée par le nouveau tracé : annulé', 'connectivity changed by the new route: cancelled'],
-  ['passage entre pattes à frein thermique ou sortie de pastille hors axe en plus (', 'extra passage between thermal-relief pins or off-axis pad exit ('], ['le plus court trouvé n\'est pas plus court : ', 'the shortest found is not shorter: '], [' via(s) contre ', ' via(s) versus '],
+  ['passage entre pattes (frein thermique, composant 50 Ω) ou sortie de pastille hors axe en plus (', 'extra passage between thermal-relief pins or off-axis pad exit ('], ['le plus court trouvé n\'est pas plus court : ', 'the shortest found is not shorter: '], ['le tracé trouvé est plus long : ', 'the trace found is longer: '], [' via(s) contre ', ' via(s) versus '],
   [' via(s) actuels', ' via(s) now'], [' mm et ', ' mm and '], [' (aussi à ', ' (also at '],
   [' mm de large)', ' mm wide)'], ['aucun tracé trouvé', 'no route found'], ['calcul interrompu : ', 'computation aborted: '],
   ['raccourcie : ', 'shortened: '], ['retracée : passages interdits ', 'redrawn: forbidden passages '], ['déjà au plus court : le plus court trouvé a la même longueur (', 'already shortest: the shortest found has the same length ('],
@@ -7978,7 +8416,7 @@ var TRAD_EN = [
   ['Clic sur un pont (ligne, via ou texte) puis glisser · Suppr : supprimer · Échap : désélectionner', 'Click a bridge (line, via or text) then drag · Del: delete · Esc: deselect'],
   ['Couches', 'Layers'], ['traverse ', 'crosses '], ['plan d\'alimentation coupé', 'supply plane split'], ['Irrigation ▸ Placer', 'Feed ▸ Place'], ['Étape 0/3 · lignes 50 Ω', 'Step 0/3 · 50 Ω lines'],
   ['Zone(s) non irriguée(s) en rouge', 'Unfed zone(s) in red'], ['Contrôle des plans d\'alimentation', 'Checking supply planes'], ['vias non irriguées', 'vias not fed'], ['zones non reliées', 'unconnected zones'], ['ATTENTION', 'WARNING'], ['pont(s) sur le circuit', 'bridge(s) on the board'], ['Longueur', 'Length'], ['Supprimer (Suppr)', 'Delete (Del)'],
-  ['Réglages de routage', 'Routing settings'], ['Projet', 'Project'], ['Haute densité PCBCart + 30 %', 'High density PCBCart + 30 %'], ['Largeur de piste', 'Track width'], ['Via (perçage / cuivre)', 'Via (drill / copper)'], ['Les pistes et vias déjà tracées ne changent pas.', 'Tracks and vias already drawn are not changed.'], ['Réglages du projet', 'Project settings'], ['Réglages du projet gardés', 'Project settings kept'], ['Réglages haute densité PCBCart + 30 % : piste ', 'High density settings PCBCart + 30 %: track '], [', isolement ', ', clearance '], [' · pistes et vias tracées inchangées', ' · drawn tracks and vias unchanged'],
+  ['Réglages de routage', 'Routing settings'], [' · passe entre les pattes de ', ' · runs between the pins of '], [' · via entre les pattes de ', ' · via between the pins of '], ['le tracé trouvé passe plus souvent entre les pattes d\'un composant fin (', 'the trace found runs more often between the pins of a fine-pitch part ('], ['retracée hors des pattes du composant fin : passages et vias entre pattes ', 'redrawn away from the fine-pitch pins: crossings and vias between pins '], ['Passage entre pattes fines', 'Crossing between fine-pitch pins'], ['coût fixe par passage entre deux pattes voisines (hors billes et composants à 2 pattes)', 'fixed cost per crossing between two neighbouring pins (balls and 2-pin parts excluded)'], ['Pas d\'un composant fin', 'Fine-pitch component pitch'], ['mm : pas entre pattes voisines égal ou inférieur', 'mm: pitch between neighbouring pins equal or below'], ['Contrôle d\'isolement : aucun défaut', 'Clearance check: no defect'], ['Contrôle d\'isolement : ', 'Clearance check: '], [' défaut(s), cuivre remis en chevelu (', ' defect(s), copper returned to ratsnest ('], [' élément(s))', ' item(s))'], [' défaut(s), cuivre remis en chevelu', ' defect(s), copper returned to ratsnest'], [' sur une ligne 50 Ω, laissée en place', ' on a 50 Ω line, left in place'], [' (ligne 50 Ω, laissée en place)', ' (50 Ω line, left in place)'], [' · trop près du bord de carte (', ' · too close to the board edge ('], [' · isolement non tenu près de (', ' · clearance not met near ('], [' · via trop près du bord de carte (', ' · via too close to the board edge ('], [' · via, isolement non tenu (', ' · via, clearance not met ('], [' mm (ligne 50 Ω)', ' mm (50 Ω line)'], ['Arrondir : un seul arc sur toute la piste de cette largeur', 'Round: a single arc over the whole track at this width'], ['Non déplacées :', 'Not moved:'], [' piste(s) de signal restent sur la couche ', ' signal track(s) remain on layer '], ['Pondérations du routage…', 'Routing weights…'], ['Pondérations du routage', 'Routing weights'], ['Coût', 'Cost'], ['Valeur', 'Value'], ['Défaut', 'Default'], ['Unité', 'Unit'], ['Distance', 'Distance'], ['× par mm parcouru', '× per mm travelled'], ['Couche signal', 'Signal layer'], ['facteur par couche en profondeur : dessus ×1, puis ×f, ×f²…', 'factor per layer depth: top ×1, then ×f, ×f²…'], ['Couche d\'alimentation', 'Power layer'], ['facteur × (Re-router, dernier espoir : plans VCC ouverts)', 'factor × (Re-route, last resort: VCC planes open)'], ['Via simple', 'Plain via'], ['× diamètre de la via', '× via diameter'], ['Passage sous une ligne 50 Ω', 'Crossing under a 50 Ω line'], ['coût fixe par passage (en mm équivalents)', 'fixed cost per crossing (equivalent mm)'], ['Dessin dans une couche d\'alimentation', 'Drawing in a power layer'], ['surcoût par mm (Router le chevelu)', 'extra cost per mm (Route ratsnest)'], ['Les pondérations guident la recherche du tracé. Re-router garde un tracé si sa longueur réelle est égale ou inférieure.', 'Weights guide the trace search. Re-route keeps a trace if its real length is equal or shorter.'], ['Valeurs par défaut', 'Defaults'], ['Annuler', 'Cancel'], ['Appliquer', 'Apply'], ['Pondération invalide : ', 'Invalid weight: '], ['Pondérations du routage : ', 'Routing weights: '], [' · enregistrées avec le circuit', ' · saved with the board'], [' (minimum ', ' (minimum '], ['Projet', 'Project'], ['Haute densité PCBCart + 30 %', 'High density PCBCart + 30 %'], ['Largeur de piste', 'Track width'], ['Via (perçage / cuivre)', 'Via (drill / copper)'], ['Les pistes et vias déjà tracées ne changent pas.', 'Tracks and vias already drawn are not changed.'], ['Réglages du projet', 'Project settings'], ['Réglages du projet gardés', 'Project settings kept'], ['Réglages haute densité PCBCart + 30 % : piste ', 'High density settings PCBCart + 30 %: track '], [', isolement ', ', clearance '], [' · pistes et vias tracées inchangées', ' · drawn tracks and vias unchanged'],
   ['Vider la couche ', 'Empty layer '], ['Vider', 'Empty'], ['libre', 'free'], ['ponts seulement (', 'bridges only ('], ['piste(s) de signal dans le plan', 'signal track(s) in the plane'], ['plan seul', 'plane only'], ['piste(s) de signal', 'signal track(s)'], ['pont(s)', 'bridge(s)'],
   ['Pistes re-routées sur les autres couches signal (×1, ×2, ×4…, VCC en dernier espoir, GND jamais), lignes de pont retirées', 'Tracks re-routed on the other signal layers (×1, ×2, ×4…, VCC as last hope, GND never), bridge lines removed'],
   ['équipotentielle(s) déplacée(s)', 'net(s) moved'], ['équipotentielle(s) re-routée(s) ailleurs', 'net(s) re-routed elsewhere'], ['ligne(s) de pont retirée(s)', 'bridge line(s) removed'], ['non déplacées : ', 'not moved: '], ['piste(s) de signal restent', 'signal track(s) remain'],
@@ -8146,7 +8584,8 @@ function traduire(s) {
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 0.1, via: { perc: 0.2, diam: 0.4 },
     substrat: 0.8, isolement: 0.1, nc: 6, reglesAuto: false, planVcc: '', plansAl: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
-    textes: [], selT: -1, selPont: 0, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }, serig: { h: 1.0, contenu: 'ref', orient: 0 }
+    textes: [], selT: -1, selPont: 0, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }, serig: { h: 1.0, contenu: 'ref', orient: 0 },
+    poids: null
   };
   var $ = function (id) { return document.getElementById(id); };
   var cv = $('cv'), ctx = cv.getContext('2d');
@@ -9501,7 +9940,7 @@ function traduire(s) {
      Import du schéma
      ====================================================================== */
   function importerSchema(texte, nom) {
-    var r = lireSchema(texte), i, c, n = 0, avant;
+    var r = lireSchema(texte), i, c, n = 0, avant, mods = [];
     if (!r.comps.length) { message('Aucun schéma azs-cad dans ' + nom, true); return; }
     if (B.comps.length && !confirm('Remplacer le placement actuel par le contenu de ' + nom + ' ?')) return;
     avant = instantane();
@@ -9510,12 +9949,16 @@ function traduire(s) {
     for (i = 0; i < r.comps.length; i++) {
       c = r.comps[i];
       if (c.type === 'PWR') continue;
+      if (B.module && B.module.par[c.id]) { mods.push(compModule(c, 0)); continue; }
       c = { id: n + 1, sid: c.id, type: c.type, ref: c.ref, val: c.val, pol: c.pol, gab: '', x: c.x, y: c.y, rot: normAng(c.rot), dessous: false, tx: 0, ty: 0, th: B.serig.h, trot: B.serig.orient, ta: true };
       c.gab = gabaritParDefaut(c);
       B.comps.push(c); n++;
     }
-    B.comps.sort(function (a, b2) { return triNat(a.ref, b2.ref); });
     prePlacer();
+    /* module fusionné : posé en groupe à la souris */
+    mods.forEach(function (m) { m.id = ++n; B.comps.push(m); });
+    if (B.module) placerModule(B.nets);
+    B.comps.sort(function (a, b2) { return triNat(a.ref, b2.ref); });
     ajusterTextes();
     delete B.contour.x0; delete B.contour.y0; figerContour();
     B.schNom = nom; B.libAttendue = r.lib;
@@ -9581,7 +10024,6 @@ function traduire(s) {
       b.appendChild(E('div', 'stat', 'Dessous : ' + B.comps.filter(function (x) { return x.dessous; }).length));
       bs = E('div', 'boutons'); b.appendChild(bs);
       bt = E('button', '', 'Tous les passifs en 0805'); bt.addEventListener('click', function () { tousPassifsEn('0805'); }); bs.appendChild(bt);
-      blocCouches(f);
       blocSerigraphie(f);
       blocContour(f);
       return;
@@ -9786,7 +10228,10 @@ function traduire(s) {
       cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
       if (np) { try { irr = optReIrriguer(null, false); } catch (e) { irr = { ko: [] }; } OPT = null; }
       if (ok || np) empiler(avant);
-      avancementFin(titre, ok + ' équipotentielle(s) déplacée(s) · ' + Math.round((Date.now() - t0) / 1000) + ' s', ko.length > 0);
+      avancementFin(titre, ok + ' équipotentielle(s) déplacée(s) · ' + Math.round((Date.now() - t0) / 1000) + ' s', ko.length > 0 || irr.ko.length > 0);
+      $('avDecision').textContent = (ko.length ? 'Non déplacées :\n' + ko.map(function (x) { return '· ' + x; }).join('\n') : '') +
+        (irr.ko.length ? (ko.length ? '\n' : '') + 'ATTENTION plan d\'alimentation coupé : ' + irr.ko.join(', ') + ' — Irrigation ▸ Placer' : '') +
+        (rest ? (ko.length || irr.ko.length ? '\n' : '') + rest + ' piste(s) de signal restent sur la couche ' + n : '');
       message('Couche ' + n + ' : ' + (rest ? rest + ' piste(s) de signal restent' : 'libre') + ' · ' + ok + ' équipotentielle(s) re-routée(s) ailleurs' + (np ? ' · ' + np + ' ligne(s) de pont retirée(s)' : '') +
         (ko.length ? ' · non déplacées : ' + ko.join(', ') : '') + (irr.ko.length ? ' · ATTENTION plan d\'alimentation coupé : ' + irr.ko.join(', ') + ' — Irrigation ▸ Placer' : ''), ko.length > 0 || irr.ko.length > 0);
       toutRafraichir();
@@ -9958,6 +10403,7 @@ function traduire(s) {
   cv.addEventListener('mousedown', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), c, t, s;
     ev.preventDefault();
+    if (B.groupe && ev.button === 0) { deplacerGroupe(w); poserGroupe(); return; }
     B.tDown2 = B.tDown1 || 0; B.tDown1 = Date.now();
     if (B.outilCoupe) { if (ev.button === 2) finirCoupe(); else if (ev.button === 0) pointCoupe(w); return; }
     if (ev.button === 0 && !B.route && B.selPont) { B.selPont = 0; fiche(); dessiner(); }
@@ -10079,6 +10525,7 @@ function traduire(s) {
   window.addEventListener('mousemove', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), d = B.drag, p, n, bl = $('bulle');
     if (B.pan) { B.ox = B.pan.ox + m.x - B.pan.x; B.oy = B.pan.oy + m.y - B.pan.y; dessiner(); return; }
+    if (B.groupe) { if (ev.target === cv) deplacerGroupe(w); return; }
     if (d && d.pont) { glisserPont(d, w); dessiner(); return; }
     if (d && d.seg) { glisserSegment(d, w); dessiner(); return; }
     if (d && d.via !== undefined) { glisserVia(d, w); dessiner(); return; }
@@ -10950,6 +11397,9 @@ function traduire(s) {
     inp = champ(b, 'Isolement', E('input')); inp.value = B.isolement;
     inp.addEventListener('change', function () { var v = lireNb(this.value); if (v && v < MINI.isolement) refusMini('Isolement', MINI.isolement); else if (v) { B.isolement = arr(v); marquer(); fiche(); return; } this.value = B.isolement; });
     b.appendChild(E('div', 'stat', 'Liaisons restant à router : ' + chevelu().length));
+    inp = E('div', 'boutons'); b.appendChild(inp);
+    sel = E('button', '', 'Pondérations du routage…'); sel.addEventListener('click', dialoguePoids); inp.appendChild(sel);
+    blocCouches(f);
   }
 
 
@@ -11154,13 +11604,19 @@ function traduire(s) {
       m.appendChild(o);
     }
     else {
+      if (n && n.type === 'rf') {
+        o = E('div', 'option' + (Math.abs(largeur50() - t.w) < 1e-6 ? ' actuel' : ''), String(largeur50()).replace('.', ',') + ' mm (ligne 50 Ω)');
+        o._v = largeur50();
+        o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); appliquerLargeur(t, this._v); });
+        m.appendChild(o);
+      }
       for (j = 0; j < LARGEURS.length; j++) {
         o = E('div', 'option' + (Math.abs(LARGEURS[j] - t.w) < 1e-6 ? ' actuel' : ''), String(LARGEURS[j]).replace('.', ',') + ' mm');
         o._v = LARGEURS[j];
         o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); appliquerLargeur(t, this._v); });
         m.appendChild(o);
       }
-      saisie = E('input'); saisie.placeholder = 'Autre (mm)'; saisie.value = LARGEURS.indexOf(t.w) < 0 ? t.w : '';
+      saisie = E('input'); saisie.placeholder = 'Autre (mm)'; saisie.value = LARGEURS.indexOf(t.w) < 0 && Math.abs(t.w - largeur50()) > 1e-6 ? t.w : '';
       saisie.addEventListener('mousedown', function (e2) { e2.stopPropagation(); });
       saisie.addEventListener('keydown', function (e2) {
         e2.stopPropagation();
@@ -11171,21 +11627,25 @@ function traduire(s) {
       o = E('div', 'option', 'Centrer entre les voisines');
       o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); B.selV = null; B.selP = { i: i, k: 0 }; optimiser('milieu'); });
       m.appendChild(o);
+      o = E('div', 'option', 'Arrondir : un seul arc sur toute la piste de cette largeur');
+      o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); arrondir50(t.net, t.w); });
+      m.appendChild(o);
     }
     m.style.display = 'block';
     m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 8) + 'px';
     m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 8) + 'px';
     B.selP = null;
   }
-  /* Arrondir une ligne 50 Ω épaisse : chaque tronçon pleine largeur (pistes jointes bout à bout, jonction sans via ni
+  /* Arrondir une ligne 50 Ω épaisse (ou toute piste, à sa largeur : wx ; bout sur une pastille de circuit intégré :
+     sortie droite dans l'axe, demi-pastille plus une largeur de piste, puis l'arc) : chaque tronçon pleine largeur (pistes jointes bout à bout, jonction sans via ni
      pastille ni troisième piste) devient un seul arc de cercle entre ses deux bouts, passant par le point situé au
      milieu (en longueur) du tracé d'origine ; si l'isolement sur la couche de la ligne ou le bord de carte l'interdit,
      la flèche est ajustée (ARC_FLECHES), sinon le tronçon reste tel quel. Arc : piste à part (arc : centre, rayon,
      angle de départ, balayage), pas de ARC_PAS degrés et ARC_CORDE mm au plus. Puis les signaux (hors masse) qui
      passent sous la ligne arrondie sont dé-routés (retour au chevelu) ; un seul Ctrl+Z */
   var ARC_PAS = 3, ARC_CORDE = 1, ARC_FLECHES = [1, 0.9, 1.1, 0.8, 1.2, 0.7, 1.3, 0.6, 1.4, 0.5, 1.5, 0.4, 0.3, 0.2, 0.1];
-  function arrondir50(net) {
-    var W = largeur50(), avant = instantane(), nArc = 0, nKo = 0, nDroit = 0, rayons = [], f, rac = {}, noms = {}, nd = 0, ligne, l = [];
+  function arrondir50(net, wx) {
+    var W = wx || largeur50(), avant = instantane(), nArc = 0, nKo = 0, nDroit = 0, rayons = [], f, rac = {}, noms = {}, nd = 0, ligne, l = [];
     function epaisse(t) { return t.net === net && !t.arc && Math.abs(t.w - W) < 1e-3; }
     if (B.route) terminerRoute();
     optDebut();
@@ -11237,33 +11697,53 @@ function traduire(s) {
       pts[0] = optPt(S.x, S.y); pts[m] = optPt(E.x, E.y);
       return { pts: pts, arc: { x: arr(C.x), y: arr(C.y), r: arr(R), a0: Math.round(a0 * 1e6) / 1e6, da: Math.round(da * 1e6) / 1e6 } };
     }
+    /* bout sur une pastille de circuit intégré : sortie droite dans l'axe de la pastille le plus proche du départ du
+       tracé, sur la demi-pastille plus une largeur de piste ; l'arc commence au bout de cette sortie */
+    function sortieIC(Q, Qn, t) {
+      var i = optPadSous(Q, t.couche, net), c, C, l, vx, vy, best = null, bs = -2;
+      if (i < 0) return null;
+      c = compParRef(OPT.pads[i].ref);
+      if (!c || c.type !== 'IC') return null;
+      C = optCentre(i); l = dist(Q, Qn); if (l < 1e-6) return null;
+      vx = (Qn.x - Q.x) / l; vy = (Qn.y - Q.y) / l;
+      optAxes(i).forEach(function (A) { var sc = A.d[0] * vx + A.d[1] * vy; if (sc > bs) { bs = sc; best = A; } });
+      return best ? { c: C, s: optPt(C.x + best.d[0] * (best.L0 + t.w), C.y + best.d[1] * (best.L0 + t.w)) } : null;
+    }
     B.pistes.filter(epaisse).forEach(function (t) {
-      var P = optNettoyer(t.pts), n = P.length, Lt = optLong(P), d = 0, k, M = null, S = P[0], E = P[n - 1], ux, uy, c, fl0, A = null, j, q, ok;
+      var P = optNettoyer(t.pts), n = P.length, Lt = optLong(P), d = 0, k, M = null, S = P[0], E = P[n - 1], ux, uy, c, fl0, A = null, j, q, ok, s0, s1, S2, E2, morceaux;
       if (n < 3) { nDroit++; return; }
       for (k = 0; k + 1 < n && !M; k++) {
         q = dist(P[k], P[k + 1]);
         if (d + q >= Lt / 2) M = { x: P[k].x + (P[k + 1].x - P[k].x) * (Lt / 2 - d) / q, y: P[k].y + (P[k + 1].y - P[k].y) * (Lt / 2 - d) / q };
         d += q;
       }
-      ux = E.x - S.x; uy = E.y - S.y; c = Math.sqrt(ux * ux + uy * uy);
-      if (c < 1e-6) { nKo++; return; }
-      fl0 = (ux * (M.y - S.y) - uy * (M.x - S.x)) / c;
+      s0 = sortieIC(S, P[1], t); s1 = sortieIC(E, P[n - 2], t);
+      S2 = s0 ? s0.s : S; E2 = s1 ? s1.s : E;
+      if (s0) S = s0.c; if (s1) E = s1.c;
+      ux = E2.x - S2.x; uy = E2.y - S2.y; c = Math.sqrt(ux * ux + uy * uy);
+      if (c < 0.2) { nKo++; return; }
+      fl0 = (ux * (M.y - S2.y) - uy * (M.x - S2.x)) / c;
       if (Math.abs(fl0) < 0.01) { nDroit++; return; }
+      if ((s0 && !libre(S, S2, t.couche)) || (s1 && !libre(E2, E, t.couche))) { nKo++; return; }
       for (j = 0; j < ARC_FLECHES.length && !A; j++) {
-        A = arcSE(S, E, fl0 * ARC_FLECHES[j]); ok = true;
+        A = arcSE(S2, E2, fl0 * ARC_FLECHES[j]); ok = true;
         for (k = 0; k + 1 < A.pts.length && ok; k++) ok = libre(A.pts[k], A.pts[k + 1], t.couche);
         if (!ok) A = null;
       }
       if (!A) { nKo++; return; }
-      B.pistes.splice(B.pistes.indexOf(t), 1, { couche: t.couche, w: t.w, net: net, pts: A.pts, arc: A.arc });
+      morceaux = [];
+      if (s0) morceaux.push({ couche: t.couche, w: t.w, net: net, pts: [optPt(S.x, S.y), S2] });
+      morceaux.push({ couche: t.couche, w: t.w, net: net, pts: A.pts, arc: A.arc });
+      if (s1) morceaux.push({ couche: t.couche, w: t.w, net: net, pts: [E2, optPt(E.x, E.y)] });
+      Array.prototype.splice.apply(B.pistes, [B.pistes.indexOf(t), 1].concat(morceaux));
       nArc++; rayons.push(mmTxt(A.arc.r));
     });
-    /* signaux sous la ligne (couches 2 à dessous, hors masse) : dé-routés */
+    /* signaux sous la ligne 50 Ω (couches 2 à dessous, hors masse) : dé-routés ; piste ordinaire : rien sous elle */
     ligne = B.pistes.filter(function (t) { return t.net === net && t.w >= W - 1e-3; });
     f = groupesCuivre();
     B.pistes.forEach(function (t, i) {
       var k, j, q, x;
-      if (t.net === net || t.couche <= 1 || estMasseNom(t.net) || estPont(t)) return;
+      if (!optRf(net) || rfCourt(net) || t.net === net || t.couche <= 1 || estMasseNom(t.net) || estPont(t)) return;
       for (k = 0; k + 1 < t.pts.length; k++) for (q = 0; q < ligne.length; q++) for (j = 0; j + 1 < ligne[q].pts.length; j++) {
         x = distSegSeg(t.pts[k], t.pts[k + 1], ligne[q].pts[j], ligne[q].pts[j + 1]).d;
         if (x < t.w / 2 + ligne[q].w / 2 + couloir50() + B.isolement - 1e-6) { rac[f('T' + i)] = true; noms[t.net] = true; return; }
@@ -11316,6 +11796,66 @@ function traduire(s) {
   function cleNet(n, refVersSid) {
     return n.pins.map(function (p) { var k = p.split(':'); return refVersSid[k[0]] + ':' + k[1]; }).sort().join(',') + '|' + n.type;
   }
+  /* ======================================================================
+     Module fusionné : le circuit routé d'un projet fusionné arrive à la mise à jour suivante en un groupe
+     (composants, pistes, vias, textes) qui suit la souris ; un clic le pose, ses éléments redeviennent
+     indépendants. Pistes et vias prennent le nom de l'équipotentielle du projet ; ponts d'irrigation et vias
+     de couture du module ne sont pas repris
+     ====================================================================== */
+  function preparerModule(texte, ids, base) {
+    var r = lireBrd(texte), par = {};
+    if (!r.ok || !r.comps.length) { B.module = null; return; }
+    r.comps.forEach(function (c) { if (ids[c.sid] !== undefined) par[ids[c.sid]] = c; });
+    B.module = { r: r, par: par, base: base };
+    message('Module ' + base + ' : « Mettre à jour le circuit », puis clic pour le poser');
+  }
+  function compModule(sc, id) {
+    var k = B.module.par[sc.id], c = { id: id, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: k.gab, x: k.x, y: k.y, rot: k.rot, dessous: k.dessous, tx: k.tx, ty: k.ty, th: k.th, trot: k.trot, ta: k.ta, _mod: k.ref };
+    if (k.plein) c.plein = k.plein;
+    if (!pkgParNom(c.gab)) c.gab = gabaritParDefaut(c);
+    return c;
+  }
+  function placerModule(nouv) {
+    var M = B.module, r = M.r, g = { comps: [], pistes: [], vias: [], textes: [] }, renom = {}, refN = {}, b = [1e9, 1e9, -1e9, -1e9], i, l;
+    B.module = null;
+    B.comps.forEach(function (c) { if (c._mod) { refN[c._mod] = c.ref; g.comps.push(c); delete c._mod; } });
+    if (!g.comps.length) return;
+    /* équipotentielle du module -> équipotentielle du projet, par une patte qui existe encore */
+    r.nets.forEach(function (n) {
+      var j, q, ref, pin, k;
+      for (j = 0; j < n.pins.length && !renom[n.nom]; j++) {
+        q = n.pins[j].indexOf(':'); ref = refN[n.pins[j].slice(0, q)]; pin = n.pins[j].slice(q + 1);
+        if (!ref) continue;
+        for (k = 0; k < nouv.length; k++) if (nouv[k].pins.indexOf(ref + ':' + pin) >= 0) { renom[n.nom] = nouv[k].nom; break; }
+      }
+    });
+    function couche(n) { if (n === (r.nc || 2)) return bas(); return n >= 1 && n < bas() ? n : 0; }
+    g.horsCouche = 0; g.nc = r.nc || 2;
+    r.pistes.forEach(function (t) { var c = couche(t.couche); if (t.pont !== undefined || !renom[t.net]) return; if (!c) { g.horsCouche++; return; } t.couche = c; t.net = renom[t.net]; B.pistes.push(t); g.pistes.push(t); });
+    r.vias.forEach(function (v) { if (v.pont !== undefined || v.couture || !renom[v.net]) return; v.net = renom[v.net]; B.vias.push(v); g.vias.push(v); });
+    r.textes.forEach(function (t) { if (t.pont !== undefined) return; B.textes.push(t); g.textes.push(t); });
+    for (i = 0; i < g.comps.length; i++) { l = bboxMonde(g.comps[i]); b = [Math.min(b[0], l[0]), Math.min(b[1], l[1]), Math.max(b[2], l[2]), Math.max(b[3], l[3])]; }
+    g.ax = accroche((b[0] + b[2]) / 2); g.ay = accroche((b[1] + b[3]) / 2); g.base = M.base;
+    B.groupe = g;
+  }
+  function deplacerGroupe(w) {
+    var g = B.groupe, dx = accroche(w.x) - g.ax, dy = accroche(w.y) - g.ay;
+    if (!dx && !dy) return;
+    g.comps.forEach(function (c) { c.x = arr(c.x + dx); c.y = arr(c.y + dy); });
+    g.pistes.forEach(function (t) { t.pts.forEach(function (q) { q.x = arr(q.x + dx); q.y = arr(q.y + dy); }); if (t.arc) { t.arc.x = arr(t.arc.x + dx); t.arc.y = arr(t.arc.y + dy); } });
+    g.vias.concat(g.textes).forEach(function (o) { o.x = arr(o.x + dx); o.y = arr(o.y + dy); });
+    g.ax += dx; g.ay += dy;
+    OPT = null;
+    dessiner();
+  }
+  function poserGroupe() {
+    var g = B.groupe;
+    B.groupe = null; OPT = null;
+    ajusterTextes(); figerContour();
+    message('Module ' + g.base + ' posé : ' + g.comps.length + ' composant(s), ' + g.pistes.length + ' piste(s), ' + g.vias.length + ' via(s) · éléments indépendants' +
+      (g.horsCouche ? ' · ' + g.horsCouche + ' piste(s) du module sur des couches internes absentes ici (module en ' + g.nc + ' couches, circuit en ' + B.nc + ') : en chevelu' : ''), g.horsCouche > 0);
+    toutRafraichir();
+  }
   function fusionnerSchema(texte, nom, discret) {
     var r = lireSchema(texte), avant, nouv, ancRef = {}, nouvRef = {}, parSid = {}, vus = {}, cles = {}, renom = {}, i, c, sc, b, nb = { a: 0, s: 0, c: 0 }, k, n, l, x, ok, avantCuivre, sigAvant;
     if (!r.comps.length) { message('Aucun schéma azs-cad dans ' + nom, true); return; }
@@ -11335,6 +11875,7 @@ function traduire(s) {
       sc = r.comps[i];
       if (sc.type === 'PWR') continue;
       c = parSid[sc.id]; vus[sc.id] = true;
+      if (!c && B.module && B.module.par[sc.id]) { B.nets = nouv; B.comps.push(compModule(sc, 0)); nb.a++; continue; }
       if (!c) {
         c = { id: 0, sid: sc.id, type: sc.type, ref: sc.ref, val: sc.val, pol: sc.pol, gab: '', x: 0, y: 0, rot: normAng(sc.rot), dessous: false, tx: 0, ty: 0, th: B.serig.h, trot: B.serig.orient, ta: true };
         B.nets = nouv; c.gab = gabaritParDefaut(c);
@@ -11361,6 +11902,7 @@ function traduire(s) {
     B.pistes = B.pistes.filter(function (t) { n = renom[t.net]; if (!n) return false; t.net = n; return true; });
     B.vias = B.vias.filter(function (v) { n = renom[v.net]; if (!n) return false; v.net = n; return true; });
     B.nets = nouv;
+    if (B.module) placerModule(nouv);
     for (i = 0, k = 0; i < B.comps.length; i++) k = Math.max(k, B.comps[i].id || 0);
     for (i = 0; i < B.comps.length; i++) if (!B.comps[i].id) B.comps[i].id = ++k;
     B.comps.sort(function (a, b2) { return triNat(a.ref, b2.ref); });
@@ -11514,7 +12056,8 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) { m = bboxMonde(B.comps[i]); aj(m[0], m[1], m[2], m[3]); }
     for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; for (j = 0; j < t.pts.length; j++) aj(t.pts[j].x - t.w / 2, t.pts[j].y - t.w / 2, t.pts[j].x + t.w / 2, t.pts[j].y + t.w / 2); }
     for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!v.couture) aj(v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2); }
-    for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; aj(t.x - m, t.y - m, t.x + m, t.y + m); }
+    for (i = 0; i < B.textes.length; i++) { m = boiteLibre(B.textes[i]); aj(m[0], m[1], m[2], m[3]); }
+    for (i = 0; i < B.comps.length; i++) if (texteSerig(B.comps[i])) { m = boiteComp(B.comps[i]); aj(m[0], m[1], m[2], m[3]); }
     return b[0] > b[2] ? null : b;
   }
   /* --- Bord de carte : marge (B.contour.marge, 1 mm au moins), coins droits, arrondis convexes (arc de rayon R
@@ -11562,7 +12105,8 @@ function traduire(s) {
     for (i = 0; i < B.comps.length; i++) l.push(bboxMonde(B.comps[i]));
     for (i = 0; i < B.pistes.length; i++) { t = B.pistes[i]; for (j = 0; j < t.pts.length; j++) l.push([t.pts[j].x - t.w / 2, t.pts[j].y - t.w / 2, t.pts[j].x + t.w / 2, t.pts[j].y + t.w / 2]); }
     for (i = 0; i < B.vias.length; i++) { v = B.vias[i]; if (!v.couture) l.push([v.x - v.diam / 2, v.y - v.diam / 2, v.x + v.diam / 2, v.y + v.diam / 2]); }
-    for (i = 0; i < B.textes.length; i++) { t = B.textes[i]; m = Math.max(t.h, t.txt.length * t.h * 5 / 6) / 2; l.push([t.x - m, t.y - m, t.x + m, t.y + m]); }
+    for (i = 0; i < B.textes.length; i++) l.push(boiteLibre(B.textes[i]));
+    for (i = 0; i < B.comps.length; i++) if (texteSerig(B.comps[i])) l.push(boiteComp(B.comps[i]));
     return l;
   }
   function distRect(b, x, y) { var dx = Math.max(b[0] - x, 0, x - b[2]), dy = Math.max(b[1] - y, 0, y - b[3]); return Math.sqrt(dx * dx + dy * dy); }
@@ -11586,12 +12130,13 @@ function traduire(s) {
      Auto : toujours centré sur la boîte englobante des composants, taille étendue
      symétriquement à tout le cuivre et aux textes, puis agrandie (pas de 0,5 mm) tant qu'un élément empiète
      sur un coin (mire, arrondi, encoche) ou sur « AZS ». Formats imposés et Personnalisé : figé (B.contour.x0,
-     y0 : coin bas-gauche), sinon (premier calcul, Recentrer) centré ; empiètement = ne tient pas */
+     y0 : coin bas-gauche), sinon (premier calcul, Recentrer) centré sur tout le projet (composants, cuivre, ponts
+     d'irrigation, textes) ; empiètement = ne tient pas */
   function calculerContour() {
     var b = bboxProjet(), bc, w, h, cx, cy, l = 0, ht = 0, nom = '', tient = true, k, f, cands, i, fige = B.contour.type !== 'auto' && typeof B.contour.x0 === 'number', dehors = false,
         mg = margeContour(), rects, ct, essai;
     if (!b) return null;
-    bc = bboxComposants() || b;
+    bc = B.contour.type === 'auto' ? (bboxComposants() || b) : b;
     cx = (bc[0] + bc[2]) / 2; cy = (bc[1] + bc[3]) / 2;
     if (fige) {
       w = b[2] + mg - B.contour.x0; h = b[3] + mg - B.contour.y0;
@@ -12148,10 +12693,10 @@ function traduire(s) {
     if (B.route) terminerRoute();
     calculerConflits();
     ex = couchesExistantes(); ILOTS = {}; ZONES = {}; ZONES_VUE = {}; RAYONS_NULS = {};
-    base = ascii($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_');
+    base = ascii($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/[\s_]+/g, '-');
     toutesCouches().forEach(function (n) {
       if (n === 1) f.push([base + '-cuivre1.gtl', gerberCuivre(1, ct)]);
-      else if (ex.cuivre[n]) f.push([base + '-cuivre' + n + (netRemp(n) ? '-' + netRemp(n).replace(/[^A-Za-z0-9+._-]/g, '_') : '') + (n === bas() ? '.gbl' : '.g' + n + 'l'), gerberCuivre(n, ct)]);
+      else if (ex.cuivre[n]) f.push([base + '-cuivre' + n + (netRemp(n) ? '-' + netRemp(n).replace(/[^A-Za-z0-9+.-]/g, '-') : '') + (n === bas() ? '.gbl' : '.g' + n + 'l'), gerberCuivre(n, ct)]);
     });
     f.push([base + '-vernis-dessus.gts', gerberVernis(false, ct)]);
     if (ex.vernisDessous) f.push([base + '-vernis-dessous.gbs', gerberVernis(true, ct)]);
@@ -12199,6 +12744,7 @@ function traduire(s) {
       return optBoite(o);
     });
     OPT.regles = optCouloirs();
+    OPT.fins = optFins();
   }
   /* Règle : aucune piste ne passe entre deux pattes voisines d'un composant quand l'une au moins est à frein
      thermique (pastille reliée par rayons à une face remplie). Chaque couloir est un segment interdit, tendu du bord
@@ -12223,6 +12769,69 @@ function traduire(s) {
           a = demi(i, ux, uy); b = d - demi(j, ux, uy) - marge;
           if (b <= a) return;
           l.push(optBoite({ k: 's', a: { x: p.e.x + ux * a, y: p.e.y + uy * a }, b: { x: p.e.x + ux * b, y: p.e.y + uy * b }, r: 0, couches: [n], net: net, regle: true }));
+        });
+      });
+    });
+    /* Composant qui porte une ligne 50 Ω : aucune autre équipotentielle ne passe entre deux pattes voisines, sur les
+       couches communes aux deux pattes (même tracé de couloir, dans les deux sens ; l'équipotentielle de la patte de
+       départ reste libre). Gap trop étroit pour le couloir : segment réduit au milieu de l'entre-pattes */
+    Object.keys(parRef).forEach(function (ref) {
+      var v = parRef[ref];
+      if (!v.some(function (i) { return OPT.cuPads[i].net && optRf(OPT.cuPads[i].net) && !OPT.pads[i].e.via; })) return;
+      v.forEach(function (i) {
+        var p = OPT.pads[i], dmin = Infinity;
+        if (p.e.via) return;
+        v.forEach(function (j) { if (j !== i) dmin = Math.min(dmin, dist(p.e, OPT.pads[j].e)); });
+        v.forEach(function (j) {
+          var q = OPT.pads[j], d, ux, uy, a, b;
+          if (j === i || q.e.via) return;
+          d = dist(p.e, q.e);
+          if (d < 1e-6 || d > 1.6 * dmin) return;
+          ux = (q.e.x - p.e.x) / d; uy = (q.e.y - p.e.y) / d;
+          a = demi(i, ux, uy); b = d - demi(j, ux, uy) - marge;
+          if (b <= a) { a = d / 2; b = d / 2; }
+          p.couches.forEach(function (n) {
+            if (q.couches.indexOf(n) < 0) return;
+            l.push(optBoite({ k: 's', a: { x: p.e.x + ux * a, y: p.e.y + uy * a }, b: { x: p.e.x + ux * b, y: p.e.y + uy * b }, r: 0, couches: [n], net: OPT.cuPads[i].net, regle: true }));
+          });
+        });
+      });
+    });
+    return l;
+  }
+  /* Entre-pattes des composants fins (au moins 3 pattes, pas entre voisines ≤ pondération « pas d'un composant
+     fin », billes exclues) : segment du bord d'une patte au bord de sa voisine, sur leurs couches communes ; le
+     routeur fait payer chaque passage (pondération « passage entre pattes fines ») ; refus du vernis et bavure à la
+     refusion évités : deux vias et passage dessous ou à côté sont préférés */
+  /* Distance d'un point à l'entre-pattes sg (rectangle : du bord d'une patte au bord de la voisine, sur la largeur des pattes) */
+  function distEntrePattes(x, y, sg) {
+    var L = dist(sg.a, sg.b), ux, uy, s2, v, ds, dv;
+    if (L < 1e-6) { ux = 1; uy = 0; } else { ux = (sg.b.x - sg.a.x) / L; uy = (sg.b.y - sg.a.y) / L; }
+    s2 = (x - sg.a.x) * ux + (y - sg.a.y) * uy; v = Math.abs(-(x - sg.a.x) * uy + (y - sg.a.y) * ux);
+    ds = Math.max(0, -s2, s2 - L); dv = Math.max(0, v - (sg.hw || 0));
+    return Math.sqrt(ds * ds + dv * dv);
+  }
+  function optFins() {
+    var l = [], parRef = {}, pf = poids().pasFin + 1e-6;
+    function demi(i, ux, uy) { var bx = OPT.cuPads[i].bx; return Math.min(Math.abs(ux) > 1e-6 ? (bx[2] - bx[0]) / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-6 ? (bx[3] - bx[1]) / 2 / Math.abs(uy) : Infinity); }
+    if (!(poids().fin > 0)) return l;
+    OPT.pads.forEach(function (p, i) { if (!p.e.via && !p.e.passage && !estBille(p)) (parRef[p.ref] = parRef[p.ref] || []).push(i); });
+    Object.keys(parRef).forEach(function (ref) {
+      var v = parRef[ref], dm = Infinity;
+      if (v.length < 3) return;
+      v.forEach(function (i) { v.forEach(function (j) { if (j > i) dm = Math.min(dm, dist(OPT.pads[i].e, OPT.pads[j].e)); }); });
+      if (dm > pf || dm < 1e-6) return;
+      v.forEach(function (i) {
+        v.forEach(function (j) {
+          var p = OPT.pads[i], q = OPT.pads[j], d, ux, uy, a, b, cs;
+          if (j <= i) return;
+          d = dist(p.e, q.e);
+          if (d > 1.6 * dm) return;
+          ux = (q.e.x - p.e.x) / d; uy = (q.e.y - p.e.y) / d;
+          a = demi(i, ux, uy); b = d - demi(j, ux, uy);
+          if (b <= a) { a = d / 2; b = d / 2; }
+          cs = p.couches.filter(function (n) { return q.couches.indexOf(n) >= 0; });
+          if (cs.length) l.push({ a: { x: p.e.x + ux * a, y: p.e.y + uy * a }, b: { x: p.e.x + ux * b, y: p.e.y + uy * b }, couches: cs, na: OPT.cuPads[i].net, nb: OPT.cuPads[j].net, ref: ref, hw: Math.min(demi(i, -uy, ux), demi(j, -uy, ux)) });
         });
       });
     });
@@ -12750,7 +13359,8 @@ function traduire(s) {
   /* --- Centrer entre les voisines (clic droit sur une piste, ou Optimiser) : chaque segment intérieur glisse
          perpendiculairement jusqu'à mi-distance du cuivre étranger trouvé de chaque côté (pistes, pastilles, vias,
          bord de carte) ; ses deux voisins gardent leur direction ; rien ne bouge s'il n'y a du cuivre que d'un
-         côté ; les voisines ne sont pas touchées ; hors « Tout » --- */
+         côté ; les voisines ne sont pas touchées ; segment de bout tenu par une via : la via glisse avec lui si elle
+         est libre, sinon elle reste et l'attaque est décalée (raccord à 45°) ; hors « Tout » --- */
   function optMilieu(seule) {
     var n = 0, i, t, k, a, b, l, nx, ny, h, att, np, passe, change, pas = Math.min(B.grille / 4, 0.1), M = Math.ceil(2.54 / pas), lo, hi, m, d, fin, sg, lib;
     /* le segment décalé de m pas est-il à l'isolement de tout cuivre étranger ? */
@@ -12791,12 +13401,64 @@ function traduire(s) {
             if (np && optPisteOk(i, np, att)) { t.pts = np; n++; change = true; OPT.obs = {}; break; }
           }
         }
+        /* segments de bout tenus par une via : la via glisse avec le segment si elle le peut, sinon elle reste et
+           l'attaque est décalée (court raccord à 45° au départ de la via) */
+        for (k = 0; k < 2 && t.pts.length >= 3; k++) {
+          var P = k ? t.pts.slice().reverse() : t.pts.slice(), jv = -1, q, ux, uy, o, bp, J, nv;
+          a = P[0]; b = P[1]; l = dist(a, b);
+          if (l < 0.4 || optPadSous(a, t.couche, t.net) >= 0) continue;
+          for (q = 0; q < B.vias.length; q++) if (B.vias[q].net === t.net && optEg(B.vias[q], a)) jv = q;
+          if (jv < 0) continue;
+          nx = -(b.y - a.y) / l; ny = (b.x - a.x) / l; ux = (b.x - a.x) / l; uy = (b.y - a.y) / l; lib = [];
+          if (!libre(0)) continue;
+          for (hi = 0; hi < M && libre(hi + 1); hi++) { /* */ }
+          for (lo = 0; lo > -M && libre(lo - 1); lo--) { /* */ }
+          if (hi >= M || lo <= -M) continue;
+          d = Math.trunc((lo + hi) / 2);
+          sg = d > 0 ? 1 : -1;
+          for (; d !== 0; d -= sg) {
+            o = pas * d;
+            bp = optInter(P[1], P[2], { x: a.x + nx * o, y: a.y + ny * o }, { x: b.x + nx * o, y: b.y + ny * o });
+            if (!bp) continue;
+            /* la via glisse avec le segment */
+            nv = optGlisserVia(i, jv, optPt(a.x + nx * o, a.y + ny * o), [bp].concat(P.slice(2)), k);
+            if (nv) { n++; change = true; OPT.obs = {}; break; }
+            /* la via reste : attaque à 45° puis le segment décalé */
+            J = optPt(a.x + ux * Math.abs(o) + nx * o, a.y + uy * Math.abs(o) + ny * o);
+            if (dist(J, bp) < 0.2 || (bp.x - J.x) * ux + (bp.y - J.y) * uy <= 0) continue;
+            np = [a, J, bp].concat(P.slice(2));
+            if (k) np.reverse();
+            if (optPisteOk(i, np, optAttaches(i))) { t.pts = np; n++; change = true; OPT.obs = {}; break; }
+          }
+        }
       }
       if (!change) break;
     }
     return n;
   }
 
+  /* Via jv glissée en V (piste i : son bout côté via devient V, suivi de « suite » ; fin : bout de fin de la piste) ;
+     les autres pistes posées sur la via suivent leur bout ; refusée si la via n'est pas libre (isolement, pastille,
+     bord) ou si une piste ne tient plus ; renvoie true si fait */
+  function optGlisserVia(i, jv, V, suite, fin) {
+    var v = B.vias[jv], t = B.pistes[i], aut = [], ok = true, np, j, u, e0, e1, nps = [];
+    if (v.couture || v.thermique || estPont(v) || optViaSurPastille(v, 0)) return false;
+    if (!optDansCarte(V, v.diam / 2) || optViaSurPastille(V, B.isolement + v.diam / 2)) return false;
+    if (optJeu(V, V, v.diam / 2, 0, v.net, B.isolement) < B.isolement - 1e-6) return false;
+    for (j = 0; j < B.pistes.length && ok; j++) {
+      u = B.pistes[j];
+      if (j === i || optDistPoly(v, u.pts) > Math.max(u.w / 2, v.diam / 2)) continue;
+      e0 = optEg(u.pts[0], v); e1 = optEg(u.pts[u.pts.length - 1], v);
+      if (!e0 && !e1) { ok = false; break; }
+      np = u.pts.map(copieObj); if (e0) np[0] = V; if (e1) np[np.length - 1] = V;
+      if (!optPisteOk(j, np, optAttaches(j, jv))) ok = false; else aut.push([j, np]);
+    }
+    if (!ok) return false;
+    np = [V].concat(suite); if (fin) np.reverse();
+    if (!optPisteOk(i, np, optAttaches(i, jv))) return false;
+    t.pts = np; aut.forEach(function (x) { B.pistes[x[0]].pts = x[1]; }); v.x = V.x; v.y = V.y;
+    return true;
+  }
   /* --- 4. Arrivées centrées : le bout de piste est ramené au centre de sa pastille ou de sa via ;
          le dernier segment garde sa direction (le précédent s'ajuste), sinon trajet à 45° --- */
   function optCentrer(seule) {
@@ -12989,7 +13651,7 @@ function traduire(s) {
     if (neck) for (i = 0; i < nl; i++) blkN.push(new Uint8Array(N));
     vb = new Uint8Array(N);
     /* couloirs 50 Ω traversables (dernier recours) : nœud de couloir (cz) et directions permises, perpendiculaires à la ligne (cm) */
-    var cz = null, cm = null, crOk = false, CROISE_COUT = 50, gp = null, CROISE_GROUPE = 0.8, GROUPE_50 = 3;
+    var cz = null, cm = null, crOk = false, CROISE_COUT = poids().croise, WD = poids().dist, WV = poids().via, gp = null, CROISE_GROUPE = 0.8, GROUPE_50 = 3;
     /* arc : directions permises dans l'axe du rayon passant par la cellule */
     function masqueRadial(q, A) {
       var vx = q.x - A.x, vy = q.y - A.y, lv = Math.sqrt(vx * vx + vy * vy), m2 = 0, d3;
@@ -13107,6 +13769,27 @@ function traduire(s) {
         for (iy = iy0; iy <= iy1; iy++) for (ix = ix0; ix <= ix1; ix++) cher[z][iy * nx + ix] = 1;
       }
     });
+    /* entre-pattes des composants fins : aucune via (mouillage et bavure à la refusion), quelle que soit son équipotentielle */
+    (OPT.fins || []).forEach(function (sgf) {
+      var mv2 = vd / 2 + 0.05, ix, iy, ix0, ix1, iy0, iy1;
+      ix0 = Math.max(0, Math.floor((Math.min(sgf.a.x, sgf.b.x) - mv2 - X0) / r)); ix1 = Math.min(nx - 1, Math.ceil((Math.max(sgf.a.x, sgf.b.x) + mv2 - X0) / r));
+      iy0 = Math.max(0, Math.floor((Math.min(sgf.a.y, sgf.b.y) - mv2 - Y0) / r)); iy1 = Math.min(ny - 1, Math.ceil((Math.max(sgf.a.y, sgf.b.y) + mv2 - Y0) / r));
+      ix0 = Math.max(0, ix0 - Math.ceil(sgf.hw / r)); ix1 = Math.min(nx - 1, ix1 + Math.ceil(sgf.hw / r)); iy0 = Math.max(0, iy0 - Math.ceil(sgf.hw / r)); iy1 = Math.min(ny - 1, iy1 + Math.ceil(sgf.hw / r));
+      for (iy = iy0; iy <= iy1; iy++) for (ix = ix0; ix <= ix1; ix++) if (distEntrePattes(X0 + ix * r, Y0 + iy * r, sgf) <= mv2) vb[iy * nx + ix] = 1;
+    });
+    /* entre-pattes des composants fins : chaque passage coûte la pondération « passage entre pattes fines » */
+    var fin = [], WF = poids().fin;
+    for (i = 0; i < nl; i++) fin.push(null);
+    if (WF > 0) (OPT.fins || []).forEach(function (sgf) {
+      var mf = r * 0.75, z, ix, iy, ix0, ix1, iy0, iy1;
+      if (sgf.na === net || sgf.nb === net) return;
+      ix0 = Math.max(0, Math.floor((Math.min(sgf.a.x, sgf.b.x) - mf - X0) / r)); ix1 = Math.min(nx - 1, Math.ceil((Math.max(sgf.a.x, sgf.b.x) + mf - X0) / r));
+      iy0 = Math.max(0, Math.floor((Math.min(sgf.a.y, sgf.b.y) - mf - Y0) / r)); iy1 = Math.min(ny - 1, Math.ceil((Math.max(sgf.a.y, sgf.b.y) + mf - Y0) / r));
+      for (z = 0; z < nl; z++) {
+        if (sgf.couches.indexOf(L[z]) < 0) continue;
+        for (iy = iy0; iy <= iy1; iy++) for (ix = ix0; ix <= ix1; ix++) if (distSeg(X0 + ix * r, Y0 + iy * r, sgf.a, sgf.b) <= mf) { fin[z] = fin[z] || new Uint8Array(N); fin[z][iy * nx + ix] = 1; }
+      }
+    });
     OPT.pz.forEach(function (q) { marquer(optBoite({ k: 'p', pts: [{ x: q[0], y: q[1] }, { x: q[2], y: q[1] }, { x: q[2], y: q[3] }, { x: q[0], y: q[3] }], tout: true, couches: [] }), false); });
     /* Ligne 50 Ω : autour de chaque patte plus fine que la ligne, les nœuds sont libres selon la largeur rétrécie */
     if (neck) {
@@ -13217,12 +13900,12 @@ function traduire(s) {
          les couches internes davantage) ; passe stricte : la couche prioritaire seule, sans via */
       if (passe) {
         clr = [];
-        for (i = 0; i < nl; i++) clr.push(r * (L[i] === bas() ? PASSE_BAS : netRemp(L[i]) ? PASSE_PLAN : L[i] === passe.couche ? 0 : L[i] === 1 ? PASSE_FACE : PASSE_INTERNE));
+        for (i = 0; i < nl; i++) clr.push(r * (L[i] === bas() ? PASSE_BAS : netRemp(L[i]) ? poids().passePlan : L[i] === passe.couche ? 0 : L[i] === 1 ? PASSE_FACE : PASSE_INTERNE));
       }
     }
     /* Re-routage (hors passes du routeur) : coût de pas multiplié par la profondeur de la couche signal (dessus ×1,
        couche signal suivante ×2, puis ×4…) ; passage 1 : GND (dessous) et couches de plan interdits ; passage 2
-       (dernier espoir) : plans VCC ouverts à coût ×RR_PLAN, GND toujours interdit (routage à la main seulement).
+       (dernier espoir) : plans VCC ouverts à coût × pondération « couche d'alimentation », GND toujours interdit (routage à la main seulement).
        Couche interdite : seuls restent ouverts les abords des pastilles CMS du réseau posées sur elle (sortie par via) */
     if (!passe && RR_COUCHES) {
       fcl = [];
@@ -13278,7 +13961,7 @@ function traduire(s) {
         if (!deja && optJeu(pv, pv, vd / 2, 0, net, iso) < iso - 1e-6) return;
         for (z = 0; z < nl; z++) {
           if (pd.couches.indexOf(L[z]) >= 0 || blk[z][kc] || (cz && cz[z] && cz[z][kc])) continue;
-          vus.push({ k: kc, li: z, c: deja ? 0 : vd + LARGE_VIA_BILLE, lead: null, bille: !deja });
+          vus.push({ k: kc, li: z, c: deja ? 0 : vd * WV + LARGE_VIA_BILLE, lead: null, bille: !deja });
         }
       })();
       return vus;
@@ -13290,7 +13973,7 @@ function traduire(s) {
     var rfDroit = optRf(net);
     function chercher(src, cibles, but) {
       var lg = kl || 1, tas = optTas(), estCible = {}, deSrc = {}, e, s, g, node, k2, li, ix, iy, dir, dd, nd, nk, ns, c, z, q, hx, bx = (but.x - X0) / r, by = (but.y - Y0) / r, tours = 0, chemin, v;
-      function heur(ax, ay) { var ddx = Math.abs(ax - bx), ddy = Math.abs(ay - by); return hk * lg * r * (Math.max(ddx, ddy) + 0.41421356 * Math.min(ddx, ddy)); }
+      function heur(ax, ay) { var ddx = Math.abs(ax - bx), ddy = Math.abs(ay - by); return hk * lg * WD * r * (Math.max(ddx, ddy) + 0.41421356 * Math.min(ddx, ddy)); }
       gs.fill(Infinity); par.fill(-1); ferme.fill(0);
       /* direction (0 à 7) d'un vecteur ; un départ de pastille garde la direction de son amorce (pas de coude
          à 90° juste après), une arrivée sur pastille n'est acceptée que dans l'axe de son amorce, à 45° près */
@@ -13328,17 +14011,17 @@ function traduire(s) {
             if (cz[li][nk] && (!crOk || !((cm[li][nk] >> nd) & 1))) continue;
             if (cz[li][k2] && dd !== 0) continue;
           }
-          c = g + (cz && cz[li] && cz[li][nk] && !cz[li][k2] ? CROISE_COUT * (gp && gp[nk] ? CROISE_GROUPE : 1) : 0) + (nd & 1 ? r * 1.41421356 : r) * lg * (fcl ? fcl[li] : 1) + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0) + (kl ? larg[li][nk] : 0) + (clr ? clr[li] : 0); ns = (li * N + nk) * 8 + nd;
+          c = g + (cz && cz[li] && cz[li][nk] && !cz[li][k2] ? CROISE_COUT * (gp && gp[nk] ? CROISE_GROUPE : 1) : 0) + (nd & 1 ? r * 1.41421356 : r) * lg * WD * (fcl ? fcl[li] : 1) + PEN[Math.abs(dd)] + (cher[li] && cher[li][nk] ? 1.5 : 0) + (fin[li] && fin[li][nk] && !fin[li][k2] ? WF : 0) + (kl ? larg[li][nk] : 0) + (clr ? clr[li] : 0); ns = (li * N + nk) * 8 + nd;
           if (!ferme[ns] && c < gs[ns] - 1e-6) { gs[ns] = c; par[ns] = s; tas.mettre(ns, c + heur(q, z)); }
         }
         if (crOk && sauts && sauts[node]) sauts[node].forEach(function (sj) {
-          var nk3 = li * N + sj.k, ns4 = nk3 * 8 + sj.d, c4 = g + sj.l * lg * (fcl ? fcl[li] : 1) + CROISE_COUT * (gp && gp[sj.k] ? CROISE_GROUPE : 1);
+          var nk3 = li * N + sj.k, ns4 = nk3 * 8 + sj.d, c4 = g + sj.l * lg * WD * (fcl ? fcl[li] : 1) + CROISE_COUT * (gp && gp[sj.k] ? CROISE_GROUPE : 1);
           if (!ferme[ns4] && c4 < gs[ns4] - 1e-6) { gs[ns4] = c4; par[ns4] = s; tas.mettre(ns4, c4 + heur(sj.k % nx, Math.floor(sj.k / nx))); }
         });
         if (!vb[k2] && !strict && !(cz && cz.some(function (a3) { return a3 && a3[k2]; }))) for (z = 0; z < nl; z++) {
           if (z === li || blk[z][k2]) continue;
           /* tracé large : une via coûte plus cher, et bien plus dans le halo d'une pastille étrangère (quelle que soit la couche) */
-          c = g + vd + (lv ? LARGE_VIA + lv[k2] * LARGE_VIA_HALO : 0); hx = heur(ix, iy);
+          c = g + vd * WV + (lv ? LARGE_VIA + lv[k2] * LARGE_VIA_HALO : 0); hx = heur(ix, iy);
           for (nd = 0; nd < 8; nd++) { ns = (z * N + k2) * 8 + nd; if (!ferme[ns] && c < gs[ns] - 1e-6) { gs[ns] = c; par[ns] = s; tas.mettre(ns, c + hx); } }
         }
       }
@@ -13395,13 +14078,28 @@ function traduire(s) {
   }
   var OPT_REDUITES = {}, OPT_RAISON = '';
   /* --- Re-routage : couches hiérarchisées et deux passages --- */
-  var RR_COUCHES = 0, RR_PLAN = 20;
-  /* Facteur de coût d'une couche : signaux ×1, ×2, ×4… du dessus vers la profondeur ; plans VCC et GND ×RR_PLAN */
+  var RR_COUCHES = 0;
+  /* Pondérations du routage (Optimiser ▸ Pondérations du routage…, enregistrées dans le circuit) : distance (× par mm),
+     couche signal (facteur par rang de profondeur), couche d'alimentation (facteur du re-routage, dernier espoir), via
+     simple (× diamètre), passage sous une ligne 50 Ω (coût fixe), dessin dans une couche d'alimentation (Router, par mm).
+     Elles guident la recherche du tracé ; le re-routage garde un tracé si sa longueur réelle est égale ou inférieure */
+  var POIDS_DEF = { dist: 1, signal: 2, plan: 20, via: 1, croise: 50, passePlan: 20, fin: 20, pasFin: 1.27 };
+  var POIDS_CLES = ['dist', 'signal', 'plan', 'via', 'croise', 'passePlan', 'fin', 'pasFin'];
+  function poids() { return B.poids || POIDS_DEF; }
+  function poidsTxt(p) { return POIDS_CLES.map(function (k) { return String(p[k]); }).join('/'); }
+  function poidsLus(t) {
+    var v = String(t || '').split('/').map(parseFloat), p = {};
+    if (!t || v.length > POIDS_CLES.length || !v.every(function (x) { return isFinite(x) && x >= 0; })) return null;
+    POIDS_CLES.forEach(function (k, i) { p[k] = i < v.length ? v[i] : POIDS_DEF[k]; });
+    return p;
+  }
+  /* Facteur de coût d'une couche : signaux ×1, ×f, ×f²… du dessus vers la profondeur (f : pondération « couche signal ») ;
+     plans VCC et GND × pondération « couche d'alimentation » */
   function facteurCouche(n) {
     var rang = 0, k;
-    if (n === bas() || (n !== 1 && netRemp(n))) return RR_PLAN;
+    if (n === bas() || (n !== 1 && netRemp(n))) return poids().plan;
     for (k = 1; k < n; k++) if (!(k !== 1 && netRemp(k))) rang++;
-    return Math.pow(2, rang);
+    return Math.pow(poids().signal, rang);
   }
   /* Tracé de re-routage : passage 1 sur les couches signal seules ; s'il échoue, passage 2 (dernier espoir) avec les
      plans VCC ouverts ; GND jamais */
@@ -13460,21 +14158,38 @@ function traduire(s) {
     B.nets.forEach(function (n) { if ((seul === null || seul === n.nom) && !optRaisonNet(n.nom, pads, f)) l.push(n.nom); });
     return l.sort(function (a, b) { return classeNet(a) - classeNet(b) || optCoutNet(a) - optCoutNet(b); });
   }
+  /* Passages d'une équipotentielle entre deux pattes voisines d'un composant fin (pistes d'une autre équipotentielle que
+     les deux pattes) et vias posées entre deux pattes ; liste : détail pour le contrôle d'isolement */
+  function optEntrePattes(net, liste) {
+    var n = 0;
+    (OPT.fins || []).forEach(function (sg) {
+      B.pistes.forEach(function (t) {
+        var k;
+        if ((net && t.net !== net) || estPont(t) || t.net === sg.na || t.net === sg.nb || sg.couches.indexOf(t.couche) < 0) return;
+        for (k = 0; k + 1 < t.pts.length; k++) if (distSegSeg(t.pts[k], t.pts[k + 1], sg.a, sg.b).d < t.w / 2 - 1e-6) { n++; if (liste) liste.push({ t: t, ref: sg.ref }); return; }
+      });
+      B.vias.forEach(function (v) {
+        if ((net && v.net !== net) || v.couture || estPont(v)) return;
+        if (distEntrePattes(v.x, v.y, sg) < v.diam / 2 - 1e-6) { n++; if (liste) liste.push({ v: v, ref: sg.ref }); }
+      });
+    });
+    return n;
+  }
   function optLongNet(net) { var l = 0; B.pistes.forEach(function (t) { if (t.net === net) l += optLong(t.pts); }); return l; }
   function optNbVias(net) { return B.vias.filter(function (v) { return v.net === net && !v.couture; }).length; }
   function mmTxt(v) { return String(Math.round(v * 100) / 100).replace('.', ','); }
   /* Raison du refus d'un tracé trouvé (det rempli par optRerouterNet / optRelier) */
   function optRaisonRefus(det, sigOk) {
     if (!sigOk) return 'connexité modifiée par le nouveau tracé : annulé';
-    if (det.v1 > det.v0) return 'passage entre pattes à frein thermique ou sortie de pastille hors axe en plus (' + det.v0 + ' → ' + det.v1 + ')';
-    return 'le tracé trouvé n\'est pas meilleur (longueur pondérée par couche : signaux ×1, ×2, ×4…, plans ×' + RR_PLAN + ') : ' + mmTxt(det.l1) + ' mm et ' + det.nv1 + ' via(s) contre ' + mmTxt(det.l0) + ' mm et ' + det.nv0 + ' via(s) actuels';
+    if (det.ep1 > det.ep0) return 'le tracé trouvé passe plus souvent entre les pattes d\'un composant fin (' + det.ep0 + ' → ' + det.ep1 + ')';
+    return 'le tracé trouvé est plus long : ' + mmTxt(det.l1) + ' mm et ' + det.nv1 + ' via(s) contre ' + mmTxt(det.l0) + ' mm et ' + det.nv0 + ' via(s) actuels';
   }
   /* Une équipotentielle : libérée, retracée, tendue ; gardée si plus courte et si la connexité est intacte ;
      det (facultatif) reçoit longueurs, vias, passages avant/après, verdict et raison */
   function optRerouterNet(net, sig, det) {
     var etat = { pistes: B.pistes, vias: B.vias }, c0 = optCoutNet(net), lg = {}, w = 0, m = 0, res, i, n0, v0, v1, rs, sigOk;
     det = det || {};
-    optDebut(); v0 = optViolations(net);
+    optDebut(); v0 = optViolations(net); det.ep0 = optEntrePattes(net);
     det.l0 = optLongNet(net); det.nv0 = optNbVias(net); det.v0 = v0; det.garde = false; det.raison = '';
     B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
     Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
@@ -13489,18 +14204,19 @@ function traduire(s) {
         n0 = B.pistes.length;
         B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
         for (i = n0; i < B.pistes.length; i++) optTendre(i);
-        /* gardé s'il supprime des passages entre pattes à frein thermique, ou, à passages égaux, s'il n'est pas plus
-           long (égal compris : une piste mal dessinée est redessinée même sans gain de longueur) */
+        /* gardé si la longueur réelle est égale ou inférieure, vias comprises si le tracé en a besoin (égal compris :
+           une piste mal dessinée est redessinée même sans gain de longueur) */
         v1 = optViolations(net);
-        det.l1 = optLongNet(net); det.nv1 = optNbVias(net); det.v1 = v1; sigOk = optSignature() === sig;
-        if ((det.force || v1 < v0 || (v1 === v0 && optCoutNet(net) <= c0 + 1e-6)) && sigOk) { det.garde = true; return Math.max(c0 - optCoutNet(net), 0.001); }
+        det.l1 = optLongNet(net); det.nv1 = optNbVias(net); det.v1 = v1; sigOk = optSignature() === sig; optDebut(); det.ep1 = optEntrePattes(net);
+        if ((det.force || det.ep1 < det.ep0 || (det.ep1 === det.ep0 && det.l1 <= det.l0 + 1e-6)) && sigOk) { det.garde = true; return Math.max(c0 - optCoutNet(net), 0.001); }
         det.raison = optRaisonRefus(det, sigOk);
       } else det.raison = rs || 'aucun tracé trouvé';
     } catch (e) { det.raison = 'calcul interrompu : ' + ((e && e.message) || e); }
     B.pistes = etat.pistes; B.vias = etat.vias;
     return 0;
   }
-  /* --- Re-routage patte par patte : IC1 patte 1, 2, 3… puis IC2…, puis les autres composants par référence
+  /* --- Re-routage patte par patte (puis Tout, puis contrôle d'isolement : défaut = cuivre remis en chevelu) :
+         IC1 patte 1, 2, 3… puis IC2…, puis les autres composants par référence
          (C1, C2…, D1…, R1…), pattes dans l'ordre naturel (1…384, A1, A2… B1…). Pour chaque patte : équipotentielle
          exclue (50 Ω, patch, plan, masse remplie) → pistes en rouge et règle affichée ; sinon chaque tronçon qui part de
          la patte (jusqu'à une patte, une via de bille, une jonction en T ou un bout) est défait puis retracé entre ses
@@ -13508,6 +14224,62 @@ function traduire(s) {
          Espace : automatique ⇄ pas à pas ; → patte suivante, ← patte précédente (sa décision, rien n'est défait) ;
          Échap : arrêt (ce qui est fait est gardé). Un seul Ctrl+Z annule tout, à la fin --- */
   var RR = null, ROUGE = [], MARQUE = null;
+  /* Contrôle d'isolement de tout le cuivre routé : chaque segment de piste et chaque via contre le cuivre des autres
+     équipotentielles (pastilles, pistes, vias) et le bord de carte, toutes couches ; piste qui passe entre deux pattes
+     voisines d'un composant fin, via posée entre deux pattes ; un défaut, dans le doute, remet son morceau de cuivre
+     en chevelu (hors lignes 50 Ω et ponts, signalés seulement) */
+  function optControleIsolement() {
+    var iso = B.isolement - 1e-6, l = [], rac = {}, f, nrf = 0, n = 0, res;
+    optDebut(); f = groupesCuivre();
+    OPT.fins = optFins();
+    /* cuivre seul : pastilles, segments de piste, vias, avec leur équipotentielle (ni couloirs ni règles) */
+    var cu = OPT.cuPads.filter(function (o, i) { return !OPT.pads[i].e.passage; }).slice();
+    B.pistes.forEach(function (t) { var k; for (k = 0; k + 1 < t.pts.length; k++) cu.push(optBoite({ k: 's', a: t.pts[k], b: t.pts[k + 1], r: t.w / 2, couches: [t.couche], net: t.net })); });
+    B.vias.forEach(function (v) { cu.push(optBoite({ k: 'd', c: { x: v.x, y: v.y }, r: v.diam / 2, couches: toutesCouches(), net: v.net })); });
+    function jeuCuivre(a, b, h, couche, net) {
+      var i, o, m = h + B.isolement, x0 = Math.min(a.x, b.x) - m, x1 = Math.max(a.x, b.x) + m, y0 = Math.min(a.y, b.y) - m, y1 = Math.max(a.y, b.y) + m, d, j = Infinity;
+      for (i = 0; i < cu.length; i++) {
+        o = cu[i];
+        if (o.net && o.net === net) continue;
+        if (o.bx[0] > x1 || o.bx[2] < x0 || o.bx[1] > y1 || o.bx[3] < y0) continue;
+        if (couche && o.couches.indexOf(couche) < 0) continue;
+        d = ecart(a, b, h, o).d;
+        if (d < j) j = d;
+      }
+      return j;
+    }
+    function defaut(cle, net, txt) {
+      n++;
+      if (optRf(net)) { nrf++; l.push(txt + ' (ligne 50 Ω, laissée en place)'); return; }
+      rac[f(cle)] = true; l.push(txt);
+    }
+    B.pistes.forEach(function (t, i) {
+      var k, a, b;
+      if (estPont(t)) return;
+      for (k = 0; k + 1 < t.pts.length; k++) {
+        a = t.pts[k]; b = t.pts[k + 1];
+        if (!optDansCarte(a, t.w / 2) || !optDansCarte(b, t.w / 2)) { defaut('T' + i, t.net, t.net + ' · couche ' + t.couche + ' · trop près du bord de carte (' + mmTxt(a.x) + ' ; ' + mmTxt(a.y) + ')'); return; }
+        if (jeuCuivre(a, b, t.w / 2, t.couche, t.net) < iso) { defaut('T' + i, t.net, t.net + ' · couche ' + t.couche + ' · isolement non tenu près de (' + mmTxt((a.x + b.x) / 2) + ' ; ' + mmTxt((a.y + b.y) / 2) + ')'); return; }
+      }
+    });
+    B.vias.forEach(function (v, i) {
+      if (v.couture || estPont(v)) return;
+      if (!optDansCarte(v, v.diam / 2)) { defaut('V' + i, v.net, v.net + ' · via trop près du bord de carte (' + mmTxt(v.x) + ' ; ' + mmTxt(v.y) + ')'); return; }
+      if (jeuCuivre(v, v, v.diam / 2, 0, v.net) < iso) defaut('V' + i, v.net, v.net + ' · via, isolement non tenu (' + mmTxt(v.x) + ' ; ' + mmTxt(v.y) + ')');
+    });
+    (function () {
+      var ep = [], vus = {};
+      optEntrePattes(null, ep);
+      ep.forEach(function (x) {
+        var i, cle;
+        if (x.t) { i = B.pistes.indexOf(x.t); cle = 'T' + i; if (vus[cle]) return; vus[cle] = true; defaut(cle, x.t.net, x.t.net + ' · couche ' + x.t.couche + ' · passe entre les pattes de ' + x.ref); }
+        else { i = B.vias.indexOf(x.v); cle = 'V' + i; if (vus[cle]) return; vus[cle] = true; defaut(cle, x.v.net, x.v.net + ' · via entre les pattes de ' + x.ref + ' (' + mmTxt(x.v.x) + ' ; ' + mmTxt(x.v.y) + ')'); }
+      });
+    })();
+    res = { n: n, rf: nrf, l: l, retires: Object.keys(rac).length ? retirerGroupes(f, rac) : 0 };
+    OPT = null;
+    return res;
+  }
   function optOrdrePattes(selNet) {
     var l = [], cs = B.comps.slice().sort(function (a, b) { return ((a.type === 'IC' ? 0 : 1) - (b.type === 'IC' ? 0 : 1)) || triNat(a.ref, b.ref); });
     cs.forEach(function (c) {
@@ -13525,6 +14297,7 @@ function traduire(s) {
   function optVerdict(det) {
     if (det.garde) {
       if (det.l1 < det.l0 - 0.005 || det.nv1 < det.nv0) return 'raccourcie : ' + mmTxt(det.l0) + ' → ' + mmTxt(det.l1) + ' mm' + (det.nv0 || det.nv1 ? ', vias ' + det.nv0 + ' → ' + det.nv1 : '');
+      if (det.ep1 < det.ep0) return 'retracée hors des pattes du composant fin : passages et vias entre pattes ' + det.ep0 + ' → ' + det.ep1 + ', ' + mmTxt(det.l0) + ' → ' + mmTxt(det.l1) + ' mm';
       if (det.v1 < det.v0) return 'retracée : passages interdits ' + det.v0 + ' → ' + det.v1 + ', ' + mmTxt(det.l0) + ' → ' + mmTxt(det.l1) + ' mm';
       return 'déjà au plus court : le plus court trouvé a la même longueur (' + mmTxt(det.l0) + ' mm, ' + det.nv0 + ' via(s)), rien à gagner';
     }
@@ -13551,6 +14324,15 @@ function traduire(s) {
         (red.length ? ' · largeur ramenée à ' + String(B.largeur).replace('.', ',') + ' mm (trop large pour passer) : ' + red.join(', ') : '') +
         (v ? (n ? ' · ' : '') + v + ' passage(s) entre pattes à frein thermique restant(s)' : '') +
         (so ? (n || v ? ' · ' : '') + so + ' sortie(s) de pastille hors axe restante(s)' : ''), !(n || nl));
+      (function () {
+        var r = optControleIsolement();
+        if (!r.n) { $('avDecision').textContent = 'Contrôle d\'isolement : aucun défaut'; return; }
+        if (B.annul[B.annul.length - 1] !== avant) empiler(avant);
+        $('avDecision').textContent = 'Contrôle d\'isolement : ' + r.n + ' défaut(s), cuivre remis en chevelu (' + r.retires + ' élément(s))\n' + r.l.map(function (x) { return '· ' + x; }).join('\n');
+        $('avancement').className = 'visible alerte'; $('avEtape').textContent = 'Terminé, avec alerte';
+        message('Contrôle d\'isolement : ' + r.n + ' défaut(s), cuivre remis en chevelu' + (r.rf ? ' · ' + r.rf + ' sur une ligne 50 Ω, laissée en place' : ''), true);
+        toutRafraichir();
+      })();
     }
     function terminer() {
       if (st.fini) return;
@@ -13604,7 +14386,7 @@ function traduire(s) {
         if (!tr.pistes.every(function (t) { return B.pistes.indexOf(t) >= 0; })) { d.lignes.push(lib + ' : modifié par le tronçon précédent, repris plus loin'); return; }
         st.lienVu[cle] = d.id;
         try { r = optRelierTroncon(tr, st.sig, det); } catch (e) { r = null; det.raison = 'calcul interrompu : ' + ((e && e.message) || e); }
-        court = !!r && (det.l1 < det.l0 - 0.005 || det.nv1 < det.nv0);
+        court = !!r && (det.l1 < det.l0 - 0.005 || det.nv1 < det.nv0 || det.ep1 < det.ep0);
         if (r) { nouv = nouv.concat(r.nouveau); if (court) { st.nl++; st.gl += r.gain; garde = true; } }
         else nouv = nouv.concat(tr.pistes);
         d.lignes.push(lib + ' (' + tr.pistes.length + ' piste(s), ' + tr.vias.length + ' via(s) intermédiaire(s)) : ' + optVerdict(det));
@@ -13721,7 +14503,7 @@ function traduire(s) {
     function padDeVia(v) { var i; for (i = 0; i < OPT.pads.length; i++) if (!OPT.pads[i].e.via && !OPT.pads[i].e.passage && OPT.cuPads[i].net === net && optDansPad(i, v.x, v.y, tol)) return i; return -1; }
     function cle(x, y) { return Math.round(x * 100) + ',' + Math.round(y * 100); }
     function nPad(i) { return { k: 'pad', q: i, x: OPT.pads[i].e.x, y: OPT.pads[i].e.y, nom: optNomPad(i), cle: optNomPad(i) }; }
-    function nVia(v, i) { return { k: 'via', v: v, x: v.x, y: v.y, couches: L.slice(), nom: i >= 0 ? optNomPad(i) + ' (via de la bille)' : 'via (' + mmTxt(v.x) + ' ; ' + mmTxt(v.y) + ')', cle: 'v' + cle(v.x, v.y) }; }
+    function nVia(v, i) { return { k: 'via', v: v, x: v.x, y: v.y, couches: L.slice(), nom: i >= 0 ? optNomPad(i) + (estBille(OPT.pads[i]) ? ' (via de la bille)' : ' (via dans la pastille)') : 'via (' + mmTxt(v.x) + ' ; ' + mmTxt(v.y) + ')', cle: 'v' + cle(v.x, v.y) }; }
     function nPt(e, couche, k) { return { k: k, x: e.x, y: e.y, couches: [couche], nom: k + ' (' + mmTxt(e.x) + ' ; ' + mmTxt(e.y) + ', couche ' + couche + ')', cle: k.charAt(0) + cle(e.x, e.y) + ':' + couche }; }
     function autreBout(u, e) { var b = bouts(u); return dist(b[0], e) <= dist(b[1], e) ? b[1] : b[0]; }
     T.forEach(function (t) { bouts(t).forEach(function (e, k) { if (optPadSous(e, t.couche, net) === q) departs.push({ t: t, e: bouts(t)[1 - k], n: nPad(q) }); }); });
@@ -13788,7 +14570,7 @@ function traduire(s) {
   function optRelierTroncon(tr, sig, det) {
     var etat = { pistes: B.pistes, vias: B.vias }, net = tr.net, lg = {}, w = 0, m = 0, c0, v0, c1, v1, res, n0, nv, i, couche = tr.pistes[0].couche, rs, sigOk, nouv;
     det = det || {};
-    optDebut(); c0 = optCoutNet(net); v0 = optViolations(net);
+    optDebut(); c0 = optCoutNet(net); v0 = optViolations(net); det.ln0 = optLongNet(net); det.ep0 = optEntrePattes(net);
     det.l0 = 0; tr.pistes.forEach(function (t) { det.l0 += optLong(t.pts); }); det.nv0 = tr.vias.length; det.v0 = v0; det.garde = false; det.raison = '';
     tr.pistes.forEach(function (t) { lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
     Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
@@ -13817,7 +14599,8 @@ function traduire(s) {
         optDebut(); c1 = optCoutNet(net); v1 = optViolations(net);
         nouv = B.pistes.slice(n0); det.l1 = 0; nouv.forEach(function (t) { det.l1 += optLong(t.pts); }); det.nv1 = nv.length; det.v1 = v1;
         sigOk = optSignature() === sig;
-        if ((v1 < v0 || (v1 === v0 && c1 <= c0 + 1e-6)) && sigOk) { det.garde = true; return { gain: Math.max(c0 - c1, 0), nouveau: nouv }; }
+        det.ln1 = optLongNet(net); det.ep1 = optEntrePattes(net);
+        if ((det.ep1 < det.ep0 || (det.ep1 === det.ep0 && det.l1 <= det.l0 + 1e-6 && det.ln1 <= det.ln0 + 1e-6)) && sigOk) { det.garde = true; return { gain: Math.max(c0 - c1, 0), nouveau: nouv }; }
         det.raison = optRaisonRefus(det, sigOk);
       } else det.raison = rs || 'aucun tracé trouvé';
     } catch (e) { det.raison = 'calcul interrompu : ' + ((e && e.message) || e); }
@@ -14660,7 +15443,7 @@ function traduire(s) {
     OPT.cuPads.push(o);
     return i;
   }
-  function optRetirerPassage(i) { OPT.pads.length = i; OPT.formes.length = i; OPT.cuPads.length = i; if (OPT.axes) delete OPT.axes[i]; }
+  function optRetirerPassage(i) { OPT.pads.length = i; OPT.formes.length = i; OPT.cuPads.length = i; if (OPT.axes) Object.keys(OPT.axes).forEach(function (k) { if (+k >= i) delete OPT.axes[k]; }); }
   /* Point libre (sur la grille du circuit) au plus près du milieu de a et b, avec la place d'un départ de piste autour */
   function optPointPassage(net, w, couche, a, b) {
     var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2, h = 2 * w + 0.5, g = B.grille, k, j, q;
@@ -15109,6 +15892,7 @@ function traduire(s) {
     document.body.appendChild(fond);
   }
   function optimiser(quoi) {
+    if (quoi === 'poids') { dialoguePoids(); return; }
     if (B.route) terminerRoute();
     if (quoi === 'decouplage') { revueDecouplages(); return; }
     if (quoi === 'placerdec') { message('Placement des découplages…'); cv.style.cursor = 'progress'; requestAnimationFrame(function () { setTimeout(function () { try { placerDecouplages(); } finally { cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default'; } }, 0); }); return; }
@@ -15170,7 +15954,7 @@ function traduire(s) {
     var m = $('menu'), r = $('btOptimiser').getBoundingClientRect(), cible = B.selV !== null ? 'via sélectionnée' : (B.selP ? 'piste sélectionnée' : 'tout le circuit');
     m.textContent = '';
     m.appendChild(E('div', 'titre', 'Optimiser · ' + cible));
-    [['chevelu', 'Router le chevelu (liaisons non routées)'], ['decouplage', 'Revue des découplages (propositions, appliquées au schéma)'], ['placerdec', 'Placer les découplages (au plus près de leur patte)'], ['rerouter', 'Re-router au plus court, ligne par ligne, puis tout'], ['rapprocher', 'Rapprocher les LED, résistances et condensateurs de liaison'], ['tout', 'Tout, dans cet ordre de priorité'], ['vias', '1 · Vias : au plus court, inutiles supprimées'], ['coudes', '2 · Coudes à 45° au lieu de 90°'],
+    [['poids', 'Pondérations du routage…'], ['chevelu', 'Router le chevelu (liaisons non routées)'], ['decouplage', 'Revue des découplages (propositions, appliquées au schéma)'], ['placerdec', 'Placer les découplages (au plus près de leur patte)'], ['rerouter', 'Re-router au plus court, ligne par ligne, puis tout'], ['rapprocher', 'Rapprocher les LED, résistances et condensateurs de liaison'], ['tout', 'Tout, dans cet ordre de priorité'], ['vias', '1 · Vias : au plus court, inutiles supprimées'], ['coudes', '2 · Coudes à 45° au lieu de 90°'],
      ['ecarter', '3 · Écarter les pistes qui se longent'], ['centrer', '4 · Arrivées centrées, dans l\'axe des pastilles'], ['grille', '5 · Aligner sur la grille'], ['milieu', 'Centrer entre les voisines (hors « Tout »)']].forEach(function (x) {
       var o = E('div', 'option', x[1]);
       o.addEventListener('mousedown', function (e2) { e2.preventDefault(); e2.stopPropagation(); fermerMenu(); optimiser(x[0]); });
@@ -15231,7 +16015,7 @@ function traduire(s) {
   }
   function champCsv(v) { v = String(v); return /[;"\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function echXml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '&#10;'); }
-  function nomBaseBom() { return ($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/\s+/g, '_'); }
+  function nomBaseBom() { return ($('nomBrd').value || 'circuit').replace(/\.brd\.dxf$/i, '').replace(/\.dxf$/i, '').replace(/[\s_]+/g, '-'); }
   function telechargerBom(nom, contenu, type) {
     var url = URL.createObjectURL(new Blob([contenu], { type: type })), a = document.createElement('a');
     a.href = url; a.download = nom;
@@ -15680,7 +16464,7 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'SERIG=' + B.serig.h + '/' + B.serig.contenu + '/' + B.serig.orient, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : ''), 'BORD=' + margeContour() + '/' + coinsContour() + '/' + rayonCoin()]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'POIDS=' + poidsTxt(poids()), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'SERIG=' + B.serig.h + '/' + B.serig.contenu + '/' + B.serig.orient, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : ''), 'BORD=' + margeContour() + '/' + coinsContour() + '/' + rayonCoin()]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
@@ -15750,6 +16534,7 @@ function traduire(s) {
         if (lireNb(k.SUBSTRAT)) r.substrat = lireNb(k.SUBSTRAT);
         if (lireNb(k.ISOLEMENT)) r.isolement = lireNb(k.ISOLEMENT);
         r.reglesAuto = k.REGLESAUTO === '1';
+        r.poids = poidsLus(k.POIDS);
         if ([2, 4, 6, 8].indexOf(parseInt(k.COUCHES, 10)) >= 0) r.nc = parseInt(k.COUCHES, 10);
         r.planVcc = k.PLANVCC || ''; r.plansAl = k.PLANSAL || ''; r.grille = k.GRILLE === 'auto' || !k.GRILLE ? 'auto' : lireNb(k.GRILLE);
         if (lireNb(k.DEGPLAN)) r.degPlan = lireNb(k.DEGPLAN);
@@ -15791,7 +16576,7 @@ function traduire(s) {
     var r = lireBrd(texte);
     if (!r.ok) { message('Aucun circuit azs-cad dans ' + nom, true); return; }
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
-    B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement; B.reglesAuto = false;
+    B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement; B.reglesAuto = false; B.poids = r.poids || null;
     B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour; B.serig = r.serig || { h: 1.0, contenu: 'ref', orient: 0 };
     B.planVcc = r.planVcc; B.plansAl = r.plansAl || ''; B.degPlan = r.degPlan; B.hDiel = r.hDiel; B.coupe = r.coupe || null; B.outilCoupe = null; B.remp = r.remp || '';
     if (r.nc) B.nc = r.nc;
@@ -15894,6 +16679,65 @@ function traduire(s) {
   /* Ouverture d'un circuit : réglages du projet ou haute densité PCBCart + 30 % (minimums de fabrication) ;
      les pistes et vias déjà tracées ne changent pas ; pas de question si le projet est déjà à ces valeurs */
   function reglagesHD() { return { largeur: MINI.piste, perc: MINI.percage, diam: arr(MINI.percage + 2 * MINI.couronne), iso: MINI.isolement }; }
+  /* Optimiser ▸ Pondérations du routage… : une ligne par coût, valeur du circuit et valeur par défaut ; Appliquer les
+     enregistre dans le circuit (Ctrl+S), Valeurs par défaut les remet dans les champs */
+  function dialoguePoids() {
+    var anc = document.getElementById('dlgPoids'), fond, boite, tb, bs, bt, ch = {}, p = poids(),
+        L = [['dist', 'Distance', '× par mm parcouru', 0.01],
+             ['signal', 'Couche signal', 'facteur par couche en profondeur : dessus ×1, puis ×f, ×f²…', 1],
+             ['plan', 'Couche d\'alimentation', 'facteur × (Re-router, dernier espoir : plans VCC ouverts)', 1],
+             ['via', 'Via simple', '× diamètre de la via', 0],
+             ['croise', 'Passage sous une ligne 50 Ω', 'coût fixe par passage (en mm équivalents)', 0],
+             ['passePlan', 'Dessin dans une couche d\'alimentation', 'surcoût par mm (Router le chevelu)', 0],
+             ['fin', 'Passage entre pattes fines', 'coût fixe par passage entre deux pattes voisines (hors billes et composants à 2 pattes)', 0],
+             ['pasFin', 'Pas d\'un composant fin', 'mm : pas entre pattes voisines égal ou inférieur', 0]];
+    if (anc) anc.parentNode.removeChild(anc);
+    function fermer() { if (fond.parentNode) fond.parentNode.removeChild(fond); }
+    fond = E('div'); fond.id = 'dlgPoids';
+    fond.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+    boite = E('div'); boite.style.cssText = 'background:#fff;color:#1f2328;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);padding:16px 18px;max-width:min(680px,94vw);font-size:13px';
+    fond.appendChild(boite);
+    boite.appendChild(E('h3', '', 'Pondérations du routage'));
+    boite.lastChild.style.margin = '0 0 8px';
+    tb = E('table'); tb.style.cssText = 'border-collapse:collapse;margin:4px 0 10px;width:100%';
+    (function () {
+      var tr = E('tr');
+      ['Coût', 'Valeur', 'Défaut', 'Unité'].forEach(function (t) { var c = E('th', '', t); c.style.cssText = 'text-align:left;padding:3px 8px;border-bottom:1px solid #ddd'; tr.appendChild(c); });
+      tb.appendChild(tr);
+    })();
+    L.forEach(function (l) {
+      var tr = E('tr'), c, inp;
+      c = E('td', '', l[1]); tr.appendChild(c);
+      c = E('td'); inp = E('input'); inp.type = 'number'; inp.step = 'any'; inp.min = String(l[3]); inp.value = String(p[l[0]]); inp.style.cssText = 'width:80px';
+      ch[l[0]] = inp; c.appendChild(inp); tr.appendChild(c);
+      c = E('td', '', String(POIDS_DEF[l[0]]).replace('.', ',')); tr.appendChild(c);
+      c = E('td', '', l[2]); c.style.color = '#57606a'; tr.appendChild(c);
+      Array.prototype.forEach.call(tr.children, function (x) { x.style.padding = '3px 8px'; x.style.borderBottom = '1px solid #eee'; });
+      tb.appendChild(tr);
+    });
+    boite.appendChild(tb);
+    boite.appendChild(E('div', 'stat', 'Les pondérations guident la recherche du tracé. Re-router garde un tracé si sa longueur réelle est égale ou inférieure.'));
+    bs = E('div'); bs.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:12px';
+    bt = E('button', '', 'Valeurs par défaut');
+    bt.addEventListener('click', function () { L.forEach(function (l) { ch[l[0]].value = String(POIDS_DEF[l[0]]); }); });
+    bs.appendChild(bt);
+    bt = E('button', '', 'Annuler');
+    bt.addEventListener('click', fermer);
+    bs.appendChild(bt);
+    bt = E('button', 'principal', 'Appliquer');
+    bt.addEventListener('click', function () {
+      var n = {}, ko = [];
+      L.forEach(function (l) { var v = parseFloat(String(ch[l[0]].value).replace(',', '.')); if (!isFinite(v) || v < l[3]) ko.push(l[1] + ' (minimum ' + String(l[3]).replace('.', ',') + ')'); else n[l[0]] = v; });
+      if (ko.length) { message('Pondération invalide : ' + ko.join(', '), true); return; }
+      fermer();
+      B.poids = POIDS_CLES.every(function (k) { return n[k] === POIDS_DEF[k]; }) ? null : n;
+      marquer();
+      message('Pondérations du routage : ' + POIDS_CLES.map(function (k) { return String(n[k]).replace('.', ','); }).join(' / ') + ' · enregistrées avec le circuit');
+    });
+    bs.appendChild(bt);
+    boite.appendChild(bs);
+    document.body.appendChild(fond);
+  }
   function choixReglages() {
     var h = reglagesHD(), fond, boite, tb, bt, bs, anc = document.getElementById('choixReglages');
     if (anc) anc.parentNode.removeChild(anc);
@@ -15936,6 +16780,7 @@ function traduire(s) {
     chargerLib: function (texte, nom) { LIB = lireLib(texte).lib; B.libNom = nom; PAS_GAB = {}; MAT_GAB = {}; sources(); toutRafraichir(); },
     ouvrirBrd: ouvrirBrd,
     recevoirSchema: recevoirSchema,
+    preparerModule: preparerModule,
     differeDuSchema: function (t) { try { return differeDuSchema(t); } catch (e) { return true; } },
     nommer: function (n) { $('nomBrd').value = n; },
     enregistrer: enregistrerBrd,
@@ -15960,7 +16805,10 @@ function traduire(s) {
     'Le schéma a changé': 'The schematic has changed', 'Mettre à jour le circuit': 'Update the board',
     'Circuit vide': 'Empty board', 'Importer le schéma': 'Import the schematic',
     'CAO de circuits imprimés': 'Printed circuit board CAD', 'Créer un projet': 'Create a project', 'Créer': 'Create',
-    'Nom du projet (ex. dvb)': 'Project name (e.g. dvb)', 'Ouvrir un projet': 'Open a project', 'Ouvrir un projet…': 'Open a project…',
+    'Nom du projet (ex. dvb)': 'Project name (e.g. dvb)',
+    'Remplacer le projet': 'Replace the project', 'Fusionner dans le projet': 'Merge into the project', 'Annuler': 'Cancel', 'projet en cours': 'current project',
+    'Fusionner : ses planches s\'ajoutent au schéma, composants renumérotés à la suite, revue des noms de réseau communs.': 'Merge: its sheets are added to the schematic, components renumbered after the existing ones, review of the shared net names.',
+    'Aucun schéma à fusionner dans ce fichier.': 'No schematic to merge in this file.', 'Ouvrir un projet': 'Open a project', 'Ouvrir un projet…': 'Open a project…',
     'On commence par l\'onglet Bibliothèque : cocher les composants utiles au projet.': 'Start with the Library tab: check the components the project needs.',
     'Choisir le fichier .azs.zip du projet (ancien projet : ensemble son .lib, son .sch.dxf et son .brd.dxf).': 'Choose the project .azs.zip file (older project: select together its .lib, .sch.dxf and .brd.dxf).',
     'Archive zip illisible': 'Unreadable zip archive', 'Décompression zip non prise en charge par ce navigateur.': 'Zip decompression not supported by this browser.',
@@ -16025,7 +16873,7 @@ function traduire(s) {
   }
 
   /* --- Projet --- */
-  function nomBase(n) { return String(n || '').replace(/^\s+|\s+$/g, '').replace(/\.lib$/i, '').replace(/\s+/g, '_'); }
+  function nomBase(n) { return String(n || '').replace(/^\s+|\s+$/g, '').replace(/\.lib$/i, '').replace(/[\s_]+/g, '-'); }
   function nommer(base) {
     P.projet = { base: base, fichier: base + '.lib' };
     $('nomProjet').textContent = base;
@@ -16141,7 +16989,7 @@ function traduire(s) {
       cacherAccueil();
       progression(2, 'modules');
       monter(function () {
-        var f = lib.nom;
+        var f = base + '.lib';
         P.projet.fichier = f;
         etapes([
           ['bibliothèque', function () { api('lib').chargerProjet(lib.texte, f); api('sch').chargerLib(lib.texte, f); api('brd').chargerLib(lib.texte, f); }],
@@ -16166,6 +17014,37 @@ function traduire(s) {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
+  /* Ouvrir alors qu'un projet est ouvert : Remplacer ou Fusionner */
+  function choisirOuverture(l) {
+    var fond = document.createElement('div'), b = document.createElement('div'), h, p, d;
+    function bouton(t, cl, fn) { var x = document.createElement('button'); x.textContent = T(t); if (cl) x.className = cl; x.addEventListener('click', function () { document.body.removeChild(fond); fn(); }); d.appendChild(x); }
+    fond.style.cssText = 'position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+    b.style.cssText = 'background:#fff;color:#1f2328;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.4);padding:16px 18px;max-width:min(520px,94vw);font-size:13px';
+    h = document.createElement('h3'); h.textContent = T('Ouvrir un projet'); h.style.margin = '0 0 8px'; b.appendChild(h);
+    p = document.createElement('div'); p.textContent = l.map(function (f) { return f.name; }).join(', ') + ' · ' + T('projet en cours') + ' : ' + P.projet.base; b.appendChild(p);
+    p = document.createElement('div'); p.style.cssText = 'margin-top:6px;color:#5b6573'; p.textContent = T('Fusionner : ses planches s\'ajoutent au schéma, composants renumérotés à la suite, revue des noms de réseau communs.'); b.appendChild(p);
+    d = document.createElement('div'); d.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:14px';
+    bouton('Annuler', '', function () {});
+    bouton('Remplacer le projet', '', function () { if (abandonOk()) ouvrirFichiers(l); });
+    bouton('Fusionner dans le projet', 'principal', function () { fusionnerFichiers(l); });
+    b.appendChild(d); fond.appendChild(b); document.body.appendChild(fond);
+  }
+  function fusionnerFichiers(fs) {
+    Promise.all(fs.map(lire)).then(function (paquets) {
+      var lus = [].concat.apply([], paquets), lib = lus.filter(function (x) { return /\.(lib|txt)$/i.test(x.nom); })[0], sch = null, brd = null, base;
+      lus.forEach(function (x) {
+        if (!/\.dxf$/i.test(x.nom)) return;
+        if (/\.sch\.dxf$/i.test(x.nom) || (!/\.brd\.dxf$/i.test(x.nom) && /^SCHEMA\s*$/m.test(x.texte))) sch = x; else brd = x;
+      });
+      if (!sch) { alert(T('Aucun schéma à fusionner dans ce fichier.')); return; }
+      base = nomBase((lib ? lib.nom : sch.nom).replace(/\.txt$/i, '').replace(/\.sch\.dxf$/i, ''));
+      if (lib) { api('lib').fusionnerProjet(lib.texte); window.AZS.projetChange(); }
+      montrer('sch');
+      var res = api('sch').fusionner(sch.texte, base);
+      if (res && brd) api('brd').preparerModule(brd.texte, res.ids, base);
+      majBandeau();
+    }, function (e) { alert(T('Lecture impossible') + (e && e.message ? ' : ' + e.message : '')); });
+  }
   function abandonOk() { return !modifie() || confirm(T('Abandonner les modifications du projet en cours ?')); }
   function afficherAccueil() {
     $('erreurAccueil').textContent = '';
@@ -16188,7 +17067,8 @@ function traduire(s) {
     majCircuit: majCircuit,
     enregistrerProjet: enregistrerProjet,
     nouveauProjet: function () { if (abandonOk()) afficherAccueil(); },
-    ouvrirProjet: function () { if (abandonOk()) $('fichiersProjet').click(); }
+    /* projet ouvert : le fichier choisi remplace le projet ou y est fusionné (planches à part) */
+    ouvrirProjet: function () { P.choix = !!P.projet; $('fichiersProjet').click(); }
   };
 
   /* --- Événements --- */
@@ -16199,7 +17079,12 @@ function traduire(s) {
   $('btCreer').addEventListener('click', creerProjet);
   $('nomNouveau').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') creerProjet(); });
   $('btOuvrir').addEventListener('click', function () { $('fichiersProjet').click(); });
-  $('fichiersProjet').addEventListener('change', function () { var l = this.files; ouvrirFichiers(l); this.value = ''; });
+  $('fichiersProjet').addEventListener('change', function () {
+    var l = Array.prototype.slice.call(this.files || []), c = P.choix;
+    this.value = ''; P.choix = false;
+    if (!l.length) return;
+    if (c && P.projet) choisirOuverture(l); else ouvrirFichiers(l);
+  });
   $('btAnnulerAccueil').addEventListener('click', cacherAccueil);
   setInterval(function () {
     var m = modifie();

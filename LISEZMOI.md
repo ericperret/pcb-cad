@@ -1,6 +1,6 @@
 # azs-cad
 
-Une CAO de circuits imprimés qui tourne dans un navigateur : **une seule page HTML, `azs-cad.html`**, en HTML, CSS et JavaScript natifs, sans librairie ni dépendance, utilisable hors ligne. Dans l'esprit d'Eagle 4.01 (bibliothèque, schéma, circuit), sans en être un clone. L'interface est en français ou en anglais selon le navigateur. Version actuelle : **1.50.1**.
+Une CAO de circuits imprimés qui tourne dans un navigateur : **une seule page HTML, `azs-cad.html`**, en HTML, CSS et JavaScript natifs, sans librairie ni dépendance, utilisable hors ligne. Dans l'esprit d'Eagle 4.01 (bibliothèque, schéma, circuit), sans en être un clone. L'interface est en français ou en anglais selon le navigateur. Version actuelle : **1.63.0**.
 
 ![Schéma](azs-schema.png)
 
@@ -21,15 +21,20 @@ Un seul projet est ouvert à la fois, partagé en mémoire par les trois modules
 - **Empilage** : une masse unique au dessous, un plan par alimentation secondaire (tensions identiques regroupées sur une même couche), signaux partout. Panneau *Plans d'alimentation* : réseau par réseau, auto / sans plan / couche interne choisie.
 - **Minimums de fabrication** PCBCart + 33 % ; seuls la largeur de piste et le perçage des vias se règlent, le Ø de cuivre en découle.
 - **Router le chevelu** : routage automatique par priorité (lignes 50 Ω, signaux, alimentations, masses), en spirale horaire depuis l'IC le plus dense, passe dessus puis dessous.
-- **Re-router** : un tracé n'est remplacé que s'il n'est pas plus long ; patte par patte, tronçon par tronçon, pas à pas (Espace, flèches, Échap), décision et raison affichées.
-- **Optimiser** : vias, coudes à 45°, pistes qui se longent espacées, pistes centrées entre voisines, LED, résistances et condensateurs de liaison rapprochés de leurs pattes.
+- **Re-router** : chaque piste (hors 50 Ω) est défaite puis refaite au plus court ; le nouveau tracé n'est gardé que si sa longueur réelle est égale ou inférieure, ou s'il passe moins souvent entre les pattes d'un composant fin ; patte par patte, tronçon par tronçon, pas à pas (Espace, flèches, Échap), décision et raison affichées. Un **contrôle d'isolement** termine : piste ou via trop près du cuivre voisin ou du bord, ou posée entre deux pattes, son cuivre repart en chevelu.
+- **Composants fins** (pas de 1,27 mm ou moins, SOIC compris) : ni piste ni via entre deux pattes voisines ; deux vias et passage dessous ou à côté sont préférés.
+- **Pondérations du routage** (Optimiser) : distance, couche signal, couche d'alimentation, via, passage sous une ligne 50 Ω, dessin dans une couche d'alimentation, passage entre pattes fines ; enregistrées dans le circuit.
+- **Optimiser** : vias, coudes à 45°, pistes qui se longent espacées, pistes centrées entre voisines (une via suit la piste, ou son attaque est décalée à 45°), LED, résistances et condensateurs de liaison rapprochés de leurs pattes.
+- **Clic droit sur une piste** : largeur, centrage, **Arrondir** (un seul arc ; sur une pastille de circuit intégré, sortie droite dans l'axe puis l'arc).
+- **Contour** : format au choix, marge, coins droits, convexes ou concaves ; *Recentrer* donne des marges égales haut / bas et gauche / droite.
+- **Couches** : *Vider* une couche interne re-route ses équipotentielles ailleurs et liste ce qui reste.
 - **Pont d'irrigation** : un plan d'alimentation coupé en îlots est ré-alimenté par une ligne de 1 mm × 5 mm sur les couches internes de signal, quatre vias façon DIL et une sérigraphie (IRRIGATION réseau).
 - **Découplages** : la *Revue* propose, par patte d'alimentation d'IC, un 100 nF et un condensateur de réservoir, et supprime les redondants (appliqué aussi au schéma). *Placer* pose chaque condensateur dans la place libre la plus proche de la patte servie, en spirale.
 
 ## RF 50 Ω
 
 - La largeur de ligne suit l'épaisseur du substrat.
-- Clic droit sur une ligne 50 Ω : longueur, **Arrondir** (un seul arc sur toute la ligne pleine largeur).
+- Clic droit sur une ligne 50 Ω : longueur, **Arrondir** (un seul arc sur toute la ligne pleine largeur) ; ligne de moins de 1 cm : largeur 50 Ω proposée en tête.
 - Le routeur ne laisse passer un autre signal sous une ligne 50 Ω épaisse qu'en dernier recours : couche interne, à 90°, droit, longueur fixe, compté dans le bilan.
 - Motifs de 400 à 3000 MHz : diviseur Wilkinson 2 voies, diviseur en T 2/4/8 sorties, coupleur directionnel 15/20/30 dB, filtres passe-bas et passe-bande, antenne patch rectangulaire, monopôle λ/4.
 
