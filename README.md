@@ -1,6 +1,6 @@
 # azs-cad
 
-A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-cad.html`**, plain HTML, CSS and JavaScript, no library, no dependency, works offline. Inspired by the spirit of Eagle 4.01 (library, schematic, board), not a clone. The interface is French or English depending on the browser. Current version: **1.63.0**.
+A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-cad.html`**, plain HTML, CSS and JavaScript, no library, no dependency, works offline. Inspired by the spirit of Eagle 4.01 (library, schematic, board), not a clone. The interface is French or English depending on the browser. Current version: **1.73.1**.
 
 ![Schematic](azs-schematic.png)
 
@@ -13,17 +13,24 @@ A printed circuit board CAD that runs in a web browser: **one HTML page, `azs-ca
 One project is open at a time and shared in memory by the three modules (nothing is stored in the browser).
 
 - **Library**: common THT and SMD footprints, pin names, standard footprints after IPC-7351 (SSOP, TSSOP, MSOP, TQFP up to 208 pins, QFN up to 64 pins, DFN/SON, BGA, FBGA, uBGA/CSP, WLCSP, SOT, D2PAK, crystals, SMD 0201 to 1812, tantalum A to D; `internal.lib` loads them all), import of manufacturer footprints (`.zip` or `.lbr`).
-- **Schematic**: passives, integrated circuits (logic symbol), connectors, buses, supplies, 50 ohm lines, multifunction pin choice. Optimize: placement, 45 degree wires, spaced wires, net labels instead of overlong wires, supply ranking, **decoupling review**.
+- **Schematic**: passives, integrated circuits (logic symbol), connectors, buses (Ctrl+click on several wires ▸ Bus, editable name, buses across sheets), supplies (right click on a pin: grounds, common voltages or free name), 50 ohm lines, multifunction pin choice. Automatic, hidden grid at the pin pitch of the finest part: when placing, moving or rotating, pin 1 lands on the grid. Smooth editing even on a large schematic (one drawing per frame, only what is visible is drawn, provisional wires while dragging). Optimize: placement, 45 degree wires, spaced wires, net labels instead of overlong wires, supply ranking, **decoupling review**.
 - **Board**: 2 to 8 layers, ground and supply planes, manual routing at 45 degrees, automatic vias, via in pad for ball grid packages, clearance checks, silkscreen, optimization and automatic routing.
 
 ## Board
 
 - **Stack-up**: one ground plane below, one plane per secondary supply (same voltages grouped on one layer), signals everywhere. Panel *Supply planes*: per net, auto / no plane / chosen inner layer.
 - **Fabrication minimums** from PCBCart + 33 %; only track width and via drill are set, the copper diameter follows.
-- **Route the ratsnest**: automatic routing by priority (50 ohm lines, signals, supplies, grounds), clockwise spiral from the densest IC, top then bottom pass.
-- **Re-route**: every track (50 ohm excepted) is undone and redrawn at shortest; the new trace is kept only if its real length is equal or shorter, or if it runs less often between the pins of a fine-pitch part; pin by pin, segment by segment, step by step (Space, arrows, Esc) with the decision and its reason displayed. A **clearance check** ends it: a track or via too close to foreign copper or to the edge, or lying between two pins, goes back to the ratsnest.
+- **Route the ratsnest**: automatic routing by priority (50 ohm lines, signals, supplies, grounds), clockwise spiral from the densest IC, top then bottom pass. A net that has a plane is never drawn as tracks: its pins reach the plane through their via.
+- **Re-route**, three modes (50 ohm lines, patches, planes and filled faces excepted), progress shown in yellow, Esc to stop, a single Ctrl+Z:
+  - *shortest*: every track is undone and redrawn; the new trace is kept only if its cost (length + vias) does not rise, or if it runs less often between the pins of a fine-pitch part; pin by pin, segment by segment, step by step (Space, arrows, Esc) with the decision and its reason displayed. A **clearance check** ends it: a track or via too close to foreign copper or to the edge, or lying between two pins, goes back to the ratsnest;
+  - *at any cost*: every net is undone and redrawn, supplies routed as tracks first then from shortest to longest, kept even if longer; length and via report before / after;
+  - *negotiated* (PathFinder method): nets compete for room at a congestion cost that rises at each iteration; order no longer decides; the result is kept only without conflict, with connectivity intact and a lower total cost, then refined net by net.
+- **Router cost model**: no penalty for deeper layers; only crossing a plane layer stays expensive; a via counts as a layer change (1.5 mm by default); the via of an SMD pin sits at the exact centre of its pad, never stuck beside it; pad too thin for a via: the via moves away along the pad axis; vias between the pads of one part or too close to a foreign pad are penalised.
+- **Vias**: a via already in the pad is reused; duplicates and useless layer hops (short track between two vias, same layer on both sides) are removed by Optimize ▸ Vias and at the end of re-routing.
 - **Fine-pitch parts** (pitch 1.27 mm or less, SOIC included): no track and no via between two neighbouring pins; two vias and a pass underneath or beside are preferred.
-- **Routing weights** (Optimize): distance, signal layer, power layer, via, crossing under a 50 ohm line, drawing in a power layer, crossing between fine pins; saved with the board.
+- **Routing weights** (Optimize): distance, power layer, via (mm per layer change), crossing under a 50 ohm line, drawing in a power layer, crossing between fine pins; saved with the board.
+- **Grid and mesh**: board grid always automatic (finest IC pitch); routing mesh independent, dividing the ball pitch (via in every ball); under a ball grid package, inner layers keep their copper bridges between vias.
+- **Group selection**: Ctrl + rectangle(s), release Ctrl: parts, tracks, vias and texts of the area follow the mouse, click to drop; tracks cut by the area edge go back to the ratsnest.
 - **Optimize**: vias, 45 degree corners, parallel tracks spaced, tracks centered between neighbours (a via follows the track, or its entry is shifted at 45 degrees), LEDs / resistors / coupling capacitors moved close to their pins.
 - **Right click on a track**: width, centering, **Round** (one single arc; on an integrated circuit pad, straight exit along the pad axis, then the arc).
 - **Outline**: format of choice, margin, square, convex or concave corners; *Recenter* gives equal margins top / bottom and left / right.
