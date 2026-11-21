@@ -6,13 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-20
- Version    : 1.73.1
+ Version    : 1.75.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.4.0, Schéma 1.20.0, Circuit 1.59.1 (cartouche et
+ Modules    : Bibliothèque 1.4.0, Schéma 1.21.0, Circuit 1.60.0 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -356,6 +356,11 @@
                       vias en double et remontées inutiles supprimées, négociation corrigée,
                       équipotentielles de plan jamais routées en pistes par le chevelu
    1.73.1 2026-11-20  Circuit 1.59.1 : via d'une patte CMS toujours au centre de sa pastille
+   1.74.0 2026-11-20  Circuit 1.60.0 : négociation sur toutes les couches de routage quand les
+                      couches signal ne suffisent pas ; passage sous une ligne 50 Ω gardé
+   1.75.0 2026-11-20  Schéma 1.21.0 : fusion patte à patte, une patte de connecteur du projet
+                      ajouté se relie par son nom à la patte de même fonction du projet, même
+                      nue (reliée à rien) ; NC et RESERVED jamais ; réseau relié préféré
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -434,7 +439,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.69.1</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.75.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -3751,7 +3756,7 @@ function traduire(s) {
  Objet      : Saisie de schéma : pose des composants R, C, D, L et IC
  Auteur     : Eric PERRET
  Date       : 2026-11-20
- Version    : 1.20.0
+ Version    : 1.21.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrée     : bibliothèque .lib produite par bibliotheque.html
  Fichier    : <nom>.sch.dxf (AutoCAD R12, AC1009)
@@ -3973,6 +3978,9 @@ function traduire(s) {
                       sans réglage : pas des pattes du composant le plus fin (2,54 mm au plus) ;
                       pose, glisser, rotation : la patte 1 tombe sur la grille (seuil de 3 px
                       avant de déplacer). Optimiser garde son pas de 2,54 mm
+   1.21.0 2026-11-20  Fusion patte à patte : une patte de connecteur du projet ajouté, nue ou
+                      reliée, se relie par sa fonction à la patte de même fonction du projet,
+                      nue ou reliée (réseau relié préféré) ; NC, N.C. et RESERVED jamais
 
  Conventions des symboles (unités mm, grille 2,54) — R, C, D, L : pattes à ±2,54 :
    R  zigzag              patte 1 à gauche, patte 2 à droite
@@ -4085,7 +4093,7 @@ function traduire(s) {
   .boite .pied{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--bord); background:#fafbfc}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Schéma 1.20.0</span></span>
+  <span class="titre">azs-cad<span>Schéma 1.21.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierSch" accept=".dxf">
   <input type="file" id="fichierLib" accept=".lib,.txt">
@@ -7219,10 +7227,12 @@ function traduire(s) {
     revueNoms(ancien);
     return { n: P.length, ids: ids };
   }
-  /* Noms de réseau d'un côté (composants de ce côté) : réseaux reliés seulement, nom donné à la main, fonction d'une
-     patte d'IC ou de connecteur, valeur d'une pastille PAD ; un réseau qui touche une alimentation est déjà réuni */
-  function nomsCote(net, dedans) {
-    var r = {}, rang = {}, lies = {}, o = {};
+  /* Noms de réseau d'un côté (composants de ce côté) : réseaux reliés, nom donné à la main, fonction d'une
+     patte d'IC ou de connecteur, valeur d'une pastille PAD ; un réseau qui touche une alimentation est déjà réuni.
+     nus(c) vrai : les pattes nues (reliées à rien) de c comptent aussi par leur fonction, après les réseaux reliés
+     de même nom (fusion patte à patte) ; NC, N.C. et RESERVED jamais */
+  function nomsCote(net, dedans, nus) {
+    var r = {}, rang = {}, lies = {}, nu = {}, o = {};
     tousFils().forEach(function (f) {
       if (!dedans(f.a) && !dedans(f.b)) return;
       lies[net(f.a)] = true;
@@ -7234,13 +7244,14 @@ function traduire(s) {
       pattesMonde(c).forEach(function (p) {
         var k = net({ c: c.id, p: p.nom }), v, q;
         if (c.type === 'PWR') { rang[k] = 9; r[k] = null; return; }
-        if (c.type === 'IC' && p.f) { v = p.f; q = estConnecteur(c) ? 2 : 3; }
+        if (c.type === 'IC' && p.f) { v = p.f; q = estConnecteur(c) ? 2 : 3; if (nus && nus(c) && !/^(NC|N\.C\.|RESERVED)$/i.test(v)) nu[k] = true; }
         else if (c.type === 'PAD' && c.val) { v = c.val; q = 4; }
         else return;
         if (!rang[k] || q > rang[k]) { rang[k] = q; r[k] = v; }
       });
     });
     Object.keys(r).forEach(function (k) { if (r[k] && lies[k]) (o[r[k]] = o[r[k]] || []).push(k); });
+    Object.keys(r).forEach(function (k) { if (r[k] && !lies[k] && nu[k]) (o[r[k]] = o[r[k]] || []).push(k); });
     return o;
   }
   function pattesDuNet(net, k, dedans) {
@@ -7253,7 +7264,7 @@ function traduire(s) {
   }
   function revueNoms(ancien) {
     var net = equipotentielles(), estA = function (e) { return e.libre ? false : !!ancien[e.c]; }, estN = function (e) { return e.libre ? false : !ancien[e.c] && !!compParId(e.c); },
-        nA = nomsCote(net, estA), nN = nomsCote(net, estN), lignes = [], fond, boite, tb, bs, bt;
+        nA = nomsCote(net, estA, function (c) { return c.type === 'IC'; }), nN = nomsCote(net, estN, estConnecteur), lignes = [], fond, boite, tb, bs, bt;
     Object.keys(nN).sort(triNat).forEach(function (nom) {
       var ka, kn, pa, pn;
       if (!nA[nom]) return;
@@ -7771,7 +7782,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-20
- Version    : 1.59.1
+ Version    : 1.60.0
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -8398,6 +8409,15 @@ function traduire(s) {
                       la haute densité PCBCart + 30 % (piste, via, isolement) ;
                       pistes et vias déjà tracées inchangées ; aucune question si
                       le projet est déjà à ces valeurs
+   1.60.0 2026-11-20  Re-router par négociation : étage 1 sur les couches signal ; conflits restants après
+                      12 itérations : étage 2, plans VCC ouverts (pondération « couche d'alimentation »),
+                      congestion et historique gardés, équipotentielles en conflit ou restées sans tracé
+                      retracées ; GND jamais. Légalisation : cuivre de toutes les équipotentielles en
+                      conflit retiré d'abord, retracées des plus contraintes (billes) aux autres, ancien
+                      tracé remis s'il tient. Tension des pistes négociées sans passage sur le cuivre
+                      des autres. Connexité finale : aucune nouvelle liaison ni coupure ; un
+                      court-circuit d'avant supprimé est permis (compté au bilan). Négociation et re-routage : une équipotentielle
+                      qui passe déjà sous une ligne 50 Ω épaisse garde le droit d'y passer (à 90°)
    1.59.1 2026-11-20  Via d'une patte CMS (bille, circuit, passif) : au centre exact de sa pastille, dans
                       tous les tracés (re-routage, tronçons, forcé, négocié, chevelu) ; la piste interne
                       part de cette via ; via déjà dans la pastille reprise ; plus aucune via posée à
@@ -8639,7 +8659,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.59.1</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.60.0</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -8788,7 +8808,7 @@ var TRAD_EN = [
   ['Pastille non reliée à un plan ni à une face remplie.', 'Pad not connected to a plane or a filled face.'], ['en plein', 'solidly connected'], ['en frein thermique', 'with thermal relief'],
   ['Aucune équipotentielle GND : le plan GND reste isolé.', 'No GND net: the GND plane stays unconnected.'],
   ['touche', 'key'], ['en routage : via vers le plan', 'while routing: via to the plane'], ['microruban', 'microstrip'], ['Exporter la nomenclature (.csv)', 'Export the bill of materials (.csv)'], ['Exporter la nomenclature (.xls)', 'Export the bill of materials (.xls)'],
-  ['Optimiser ▾', 'Optimize ▾'], ['Re-router au plus court, ligne par ligne, puis tout', 'Re-route shortest, net by net, then everything'], ['Re-router quoi qu\'il en coûte (hors 50 Ω), gardé même plus long', 'Re-route at any cost (except 50 Ω), kept even if longer'], ['Re-routage forcé', 'Forced re-routing'], ['Re-router par négociation (optimum global, hors 50 Ω)', 'Negotiated re-routing (global optimum, except 50 Ω)'], ['Re-routage négocié', 'Negotiated re-routing'], ['Laissées comme avant :', 'Left as before:'], ['Re-routage : passe', 'Re-routing: pass'],
+  ['Optimiser ▾', 'Optimize ▾'], ['Re-router au plus court, ligne par ligne, puis tout', 'Re-route shortest, net by net, then everything'], ['Re-router quoi qu\'il en coûte (hors 50 Ω), gardé même plus long', 'Re-route at any cost (except 50 Ω), kept even if longer'], ['Re-routage forcé', 'Forced re-routing'], ['Re-router par négociation (optimum global, hors 50 Ω)', 'Negotiated re-routing (global optimum, except 50 Ω)'], ['Re-routage négocié', 'Negotiated re-routing'], [' · couches signal', ' · signal layers'], ['plans VCC ouverts', 'VCC planes open'], [' court(s)-circuit(s) supprimé(s)', ' short(s) removed'], ['Laissées comme avant :', 'Left as before:'], ['Re-routage : passe', 'Re-routing: pass'],
   ['équipotentielle(s) re-routée(s)', 'net(s) re-routed'], ['mm gagnés', 'mm saved'],
   ['Rapprocher les LED, résistances et condensateurs de liaison', 'Move LEDs, resistors and coupling capacitors closer'], ['Rapprochement des composants', 'Moving components closer'], ['LED, résistances, condensateurs de liaison', 'LEDs, resistors, coupling capacitors'],
   ['Tronçon ', 'Segment '], [' (via de la bille)', ' (ball via)'], [' (via dans la pastille)', ' (via in pad)'], ['jonction (', 'junction ('],
@@ -14930,13 +14950,18 @@ function traduire(s) {
     det.l0 = optLongNet(net); det.nv0 = optNbVias(net); det.v0 = v0; det.garde = false; det.raison = '';
     B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
     Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
+    /* équipotentielle qui passe déjà sous une ligne 50 Ω épaisse : elle garde le droit d'y passer (dernier recours, à 90°) */
+    var sous = optSous50(B.pistes.filter(function (t) { return t.net === net && !estPont(t); }));
     try {
       B.pistes = B.pistes.filter(function (t) { return t.net !== net || estPont(t); });
       B.vias = B.vias.filter(function (v) { return v.net !== net || v.couture || estPont(v); });
       optDebut();
-      res = optRetrace(net, w); rs = OPT_RAISON;
-      /* tracé impossible à cette largeur (piste trop large pour passer là où il faut) : essai à la largeur courante du circuit */
-      if (!res && B.largeur < w - 1e-6) { res = optRetrace(net, B.largeur); if (res) OPT_REDUITES[net] = B.largeur; else rs += ' (aussi à ' + mmTxt(B.largeur) + ' mm de large)'; }
+      CROISE_PERMIS = sous ? net : null;
+      try {
+        res = optRetrace(net, w); rs = OPT_RAISON;
+        /* tracé impossible à cette largeur (piste trop large pour passer là où il faut) : essai à la largeur courante du circuit */
+        if (!res && B.largeur < w - 1e-6) { res = optRetrace(net, B.largeur); if (res) OPT_REDUITES[net] = B.largeur; else rs += ' (aussi à ' + mmTxt(B.largeur) + ' mm de large)'; }
+      } finally { CROISE_PERMIS = null; }
       if (res) {
         n0 = B.pistes.length;
         B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
@@ -15227,30 +15252,45 @@ function traduire(s) {
          retracée en ayant le droit de passer sur le cuivre des autres re-routables (cuivre « souple »), à un coût :
          présent (pres × nombre d'occupants du nœud), multiplié à chaque itération, plus un historique accumulé là où
          les conflits reviennent. Itération 1 : toutes ; puis seulement celles en conflit, jusqu'à NEG_ITER. Conflits
-         restants : retracés sans droit de passage (légalisation). Gardé seulement sans conflit, connexité intacte et
+         restants : étage 2, plans VCC ouverts, 12 itérations encore ; puis retracés sans droit de passage (légalisation). Gardé seulement sans conflit, connexité intacte et
          coût total (longueur × couche + vias) plus bas ; sinon tout est remis --- */
   var NEG = null, NEG_ITER = 12, NEG_PRES = 0.5, NEG_FACT = 1.6, NEG_HIST = 0.5; /* congestion et historique : facteurs sans unité */
-  /* Une équipotentielle défaite puis retracée (souple : passage permis sur le cuivre des autres re-routables) */
-  function negRouter(net, souple) {
-    var lg = {}, w = 0, m = 0, res = null, i, n0, avP = B.pistes, avV = B.vias;
-    B.pistes.forEach(function (t) { if (t.net === net && !estPont(t)) lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
+  /* Tracé de négociation : étage 1, couches signal seules (plans VCC si aucun chemin) ; étage 2, plans VCC ouverts
+     d'emblée (pondération « couche d'alimentation ») ; GND jamais */
+  function negRetrace(net, w) {
+    var av = RR_COUCHES;
+    if (NEG.etage !== 2) return optRetrace(net, w);
+    try { RR_COUCHES = 2; return optRouterNet(net, w, null, null); } finally { RR_COUCHES = av; }
+  }
+  /* Une équipotentielle défaite puis retracée (souple : passage permis sur le cuivre des autres re-routables) ;
+     celle qui passe déjà sous une ligne 50 Ω épaisse garde le droit d'y passer (dernier recours, à 90°) */
+  /* Largeur dominante et passage sous une ligne 50 Ω d'une équipotentielle, d'après son cuivre actuel */
+  function negProfil(net) {
+    var lg = {}, w = 0, m = 0, l = B.pistes.filter(function (t) { return t.net === net && !estPont(t); });
+    l.forEach(function (t) { lg[t.w] = (lg[t.w] || 0) + optLong(t.pts); });
     Object.keys(lg).forEach(function (k) { if (lg[k] > m) { m = lg[k]; w = parseFloat(k); } });
-    if (!w) w = B.largeur;
-    NEG.ignorer = souple;
+    return { w: w || B.largeur, sous: optSous50(l) };
+  }
+  function negRouter(net, souple, pf) {
+    var res = null, i, n0, avP = B.pistes, avV = B.vias, w, sous;
+    pf = pf || negProfil(net); w = pf.w; sous = pf.sous;
+    NEG.ignorer = souple; CROISE_PERMIS = sous ? net : null;
     try {
       B.pistes = B.pistes.filter(function (t) { return t.net !== net || estPont(t); });
       B.vias = B.vias.filter(function (v) { return v.net !== net || v.couture || estPont(v); });
       optDebut();
-      res = optRetrace(net, w);
-      if (!res && B.largeur < w - 1e-6) res = optRetrace(net, B.largeur);
+      res = negRetrace(net, w);
+      if (!res && B.largeur < w - 1e-6) res = negRetrace(net, B.largeur);
       if (!res || !res.pistes.length) { B.pistes = avP; B.vias = avV; return false; }
       n0 = B.pistes.length;
       B.pistes = B.pistes.concat(res.pistes); B.vias = B.vias.concat(res.vias);
-      optDebut();
+      /* tension sans droit de passage : elle ne raccourcit que là où le cuivre des autres est libre (sinon elle
+         recrée les conflits que la recherche a payés pour éviter) */
+      NEG.ignorer = false; optDebut();
       for (i = n0; i < B.pistes.length; i++) optTendre(i);
       return true;
     } catch (e) { B.pistes = avP; B.vias = avV; return false; }
-    finally { NEG.ignorer = false; OPT = null; }
+    finally { NEG.ignorer = false; CROISE_PERMIS = null; OPT = null; }
   }
   /* Conflits : segments et vias qui touchent le cuivre souple d'une autre re-routable (tenus sans lui, refusés avec
      lui) ; les nœuds en conflit voient leur historique monter ; renvoie les équipotentielles en conflit */
@@ -15288,9 +15328,31 @@ function traduire(s) {
     OPT = null;
     return nets.filter(function (n) { return l[n]; });
   }
+  /* Connexité après négociation comparée à celle d'avant (signatures optSignature) : aucune nouvelle fusion de groupes
+     de cuivre, aucune équipotentielle plus morcelée, chevelu pas plus long ; un court-circuit d'avant (groupe qui
+     réunit plusieurs équipotentielles) peut disparaître : compté dans « courts » */
+  function negConnexiteOk(s0, s1) {
+    function lire(s) { var p = s.split('#'); return { g: p[0] ? p[0].split('|').map(function (x) { return x.split(','); }) : [], ch: +p[1] || 0 }; }
+    function netP(id) { var n = netDe(id); return n ? n.nom : id; }
+    var A = lire(s0), Z = lire(s1), ga = {}, na = {}, nz = {}, ok = Z.ch <= A.ch, courts = 0;
+    A.g.forEach(function (g, i) { var vu = {}; g.forEach(function (id) { ga[id] = i; vu[netP(id)] = 1; }); Object.keys(vu).forEach(function (n) { na[n] = (na[n] || 0) + 1; }); });
+    Z.g.forEach(function (g) {
+      var vu = {};
+      if (g.some(function (id) { return ga[id] !== ga[g[0]]; })) ok = false;
+      g.forEach(function (id) { vu[netP(id)] = 1; });
+      Object.keys(vu).forEach(function (n) { nz[n] = (nz[n] || 0) + 1; });
+    });
+    Object.keys(nz).forEach(function (n) { if (nz[n] > (na[n] || 0)) ok = false; });
+    A.g.forEach(function (g) {
+      var vu = {};
+      g.forEach(function (id) { vu[netP(id)] = 1; });
+      if (Object.keys(vu).length > 1 && !Z.g.some(function (h) { return h.length === g.length && h.join(',') === g.join(','); })) courts++;
+    });
+    return { ok: ok, courts: courts };
+  }
   function optNegocier(selNet) {
     var avant = instantane(), t0 = Date.now(), titre = 'Re-routage négocié' + (selNet !== null ? ' · ' + selNet : ''), nets, sig, c0 = 0, l0 = 0, v0 = 0,
-        it = 1, file, k = 0, arret = false, echecs = [], nConf = [], legal = false;
+        it = 1, itTot = 1, file, k = 0, arret = false, echecs = [], nConf = [], legal = false, sigA = null, courts = 0;
     function bilan() { var c = 0, l = 0, v = 0; nets.forEach(function (n) { c += optCoutNet(n); l += optLongNet(n); v += optNbVias(n); }); return { c: c, l: l, v: v }; }
     B.selP = null; B.selV = null; OPT_REDUITES = {};
     optDebut(); sig = optSignature();
@@ -15298,13 +15360,13 @@ function traduire(s) {
     OPT = null;
     if (!nets.length) { cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default'; message('Re-routage négocié : aucune équipotentielle re-routable', true); return; }
     (function () { var b0 = bilan(); c0 = b0.c; l0 = b0.l; v0 = b0.v; })();
-    NEG = { nets: {}, ignorer: false, pres: NEG_PRES, hist: {} };
+    NEG = { nets: {}, ignorer: false, pres: NEG_PRES, hist: {}, etage: 1 };
     nets.forEach(function (n) { NEG.nets[n] = 1; });
     file = nets.slice();
     function fin(ok, raison) {
       var b1 = null, d = '';
       RR = null; JAUNE = []; MARQUE = null;
-      if (ok) { optDebut(); if (optSignature() !== sig) { ok = false; raison = 'connexité modifiée'; } OPT = null; }
+      if (ok) { optDebut(); if (!negConnexiteOk(sig, optSignature()).ok) { ok = false; raison = 'connexité modifiée'; } OPT = null; }
       if (ok) { b1 = bilan(); if (b1.c >= c0 - 1e-6) { ok = false; raison = 'pas de gain (coût ' + mmTxt(c0) + ' → ' + mmTxt(b1.c) + ')'; } }
       NEG = null;
       if (!ok) { B.pistes = avant.pistes; B.vias = avant.vias; }
@@ -15312,7 +15374,8 @@ function traduire(s) {
       cv.style.cursor = B.mode === 'router' ? 'crosshair' : 'default';
       d = ok ? 'coût ' + mmTxt(c0) + ' → ' + mmTxt(b1.c) + ' · longueur ' + mmTxt(l0) + ' → ' + mmTxt(b1.l) + ' mm · vias ' + v0 + ' → ' + b1.v
              : 'rien changé — ' + raison;
-      d += ' · ' + it + ' itération(s) · conflits ' + (nConf.length ? nConf.join(' → ') : '0') + (legal ? ' · légalisation' : '') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s';
+      if (ok && courts) d += ' · ' + courts + ' court(s)-circuit(s) supprimé(s)';
+      d += ' · ' + itTot + ' itération(s) · conflits ' + (nConf.length ? nConf.join(' → ') : '0') + (legal ? ' · légalisation' : '') + ' · ' + Math.round((Date.now() - t0) / 1000) + ' s';
       avancementFin(titre, d, !ok);
       $('avDecision').textContent = echecs.length ? 'Sans tracé (laissées comme avant) :\n' + echecs.map(function (x) { return '· ' + x; }).join('\n') : '';
       message(titre + ' : ' + d + (ok ? ' · Ctrl+Z annule' : ''), !ok);
@@ -15321,18 +15384,22 @@ function traduire(s) {
     /* affinage : chaque équipotentielle retracée sans droit de passage, gardée seulement si son coût baisse ; puis
        doublons de vias et remontées inutiles */
     function affiner() {
-      var j = 0;
+      var j = 0, cx;
+      /* connexité de référence de l'affinage : celle du résultat négocié (courts-circuits d'avant supprimés) */
+      optDebut(); sigA = optSignature(); OPT = null;
+      cx = negConnexiteOk(sig, sigA); courts = cx.courts;
+      if (!cx.ok) { fin(false, 'connexité modifiée'); return; }
       function suite() {
         var net;
         if (arret) { fin(false, 'arrêté (Échap)'); return; }
-        if (j >= nets.length) { optNettoyerVias(sig); fin(true); return; }
+        if (j >= nets.length) { optNettoyerVias(sigA); fin(true); return; }
         net = nets[j++];
         JAUNE = B.pistes.filter(function (t) { return t.net === net; });
-        avancement(titre, 'Affinage · ' + net, j, nets.length, 'sans conflit après ' + it + ' itération(s) · gardé si le coût baisse');
+        avancement(titre, 'Affinage · ' + net, j, nets.length, 'sans conflit après ' + itTot + ' itération(s) · gardé si le coût baisse');
         $('avDecision').textContent = 'Traitement…'; dessiner();
         requestAnimationFrame(function () { setTimeout(function () {
           var det = {};
-          try { optRerouterNet(net, sig, det); } catch (e) { /* tracé gardé tel quel */ }
+          try { optRerouterNet(net, sigA, det); } catch (e) { /* tracé gardé tel quel */ }
           OPT = null;
           JAUNE = B.pistes.filter(function (t) { return t.net === net; });
           $('avDecision').textContent = net + ' : ' + (det.garde ? 'affinée' : 'gardée telle quelle');
@@ -15342,21 +15409,51 @@ function traduire(s) {
       }
       suite();
     }
-    /* légalisation : les équipotentielles encore en conflit, retracées sans droit de passage */
+    /* légalisation : le cuivre de toutes les équipotentielles encore en conflit est retiré d'abord, puis chacune est
+       retracée sans droit de passage (toutes les couches de routage) ; sans tracé, son cuivre d'avant la négociation
+       est remis s'il tient sans conflit ; sinon rien n'est changé */
     function legaliser(conf) {
-      var j = 0;
+      var j = 0, pf = {}, ko = [];
       legal = true;
+      conf.forEach(function (n) { pf[n] = negProfil(n); });
+      /* les plus contraintes d'abord : équipotentielles d'un boîtier à billes, puis celles qui ont le plus de pattes */
+      (function () {
+        var nb = {}, bi = {};
+        optDebut();
+        OPT.pads.forEach(function (p, q) { var n = OPT.cuPads[q].net; if (conf.indexOf(n) < 0) return; nb[n] = (nb[n] || 0) + 1; if (estBille(p)) bi[n] = 1; });
+        OPT = null;
+        conf = conf.slice().sort(function (a, b) { return (bi[b] || 0) - (bi[a] || 0) || (nb[b] || 0) - (nb[a] || 0); });
+      })();
+      B.pistes = B.pistes.filter(function (t) { return conf.indexOf(t.net) < 0 || estPont(t); });
+      B.vias = B.vias.filter(function (v) { return conf.indexOf(v.net) < 0 || v.couture || estPont(v); });
+      function remettre(net) {
+        var p = avant.pistes.filter(function (t) { return t.net === net && !estPont(t); }).map(copiePiste),
+            v = avant.vias.filter(function (x) { return x.net === net && !x.couture && !estPont(x); }).map(copieObj), ok = true, iso = B.isolement;
+        NEG.ignorer = false; optDebut();
+        p.forEach(function (t) { var k; for (k = 0; ok && k + 1 < t.pts.length; k++) ok = optLibre(t.pts[k], t.pts[k + 1], t.w / 2, t.couche, net); });
+        v.forEach(function (x) { if (ok) ok = optJeu(x, x, x.diam / 2, 0, net, iso) >= iso - 1e-6; });
+        OPT = null;
+        if (ok) { B.pistes = B.pistes.concat(p); B.vias = B.vias.concat(v); }
+        return ok;
+      }
       function suite() {
         var net;
         if (arret) { fin(false, 'arrêté (Échap)'); return; }
-        if (j >= conf.length) { if (negConflits(nets).length) fin(false, 'conflits restants après légalisation'); else affiner(); return; }
+        if (j >= conf.length) {
+          if (ko.length) fin(false, ko.join(', ') + ' : aucun tracé sans conflit');
+          else if (negConflits(nets).length) fin(false, 'conflits restants après légalisation');
+          else affiner();
+          return;
+        }
         net = conf[j++];
-        JAUNE = B.pistes.filter(function (t) { return t.net === net; });
-        avancement(titre, 'Légalisation · ' + net, j, conf.length, conf.length + ' équipotentielle(s) en conflit');
+        avancement(titre, 'Légalisation · ' + net, j, conf.length, conf.length + ' équipotentielle(s) en conflit' + (ko.length ? ' · sans tracé : ' + ko.join(', ') : ''));
         $('avDecision').textContent = 'Retracée sans passage sur le cuivre des autres'; dessiner();
         requestAnimationFrame(function () { setTimeout(function () {
-          if (!negRouter(net, false)) { fin(false, net + ' : aucun tracé sans conflit'); return; }
-          JAUNE = B.pistes.filter(function (t) { return t.net === net; }); dessiner();
+          var ok = negRouter(net, false, pf[net]);
+          if (!ok) ok = remettre(net);
+          if (!ok) ko.push(net);
+          JAUNE = B.pistes.filter(function (t) { return t.net === net; });
+          $('avDecision').textContent = net + ' : ' + (ok ? 'sans conflit' : 'aucun tracé sans conflit'); dessiner();
           setTimeout(suite, 0);
         }, 0); });
       }
@@ -15368,12 +15465,18 @@ function traduire(s) {
       if (k >= file.length) {
         conf = negConflits(nets); nConf.push(conf.length);
         if (!conf.length) { affiner(); return; }
-        if (it >= NEG_ITER) { legaliser(conf); return; }
-        it++; NEG.pres *= NEG_FACT; file = conf; k = 0;
+        /* étage 1 sans issue : étage 2, toutes les couches de routage (plans VCC ouverts), congestion et historique
+           gardés (la congestion atteinte rend les plans VCC aussitôt intéressants là où les couches signal sont
+           saturées) ; les équipotentielles en conflit et celles restées sans tracé sont retracées */
+        if (it >= NEG_ITER && NEG.etage !== 2) {
+          NEG.etage = 2; it = 1; itTot++; nConf.push('plans VCC ouverts');
+          file = conf.concat(echecs.filter(function (n) { return conf.indexOf(n) < 0; })); echecs = []; k = 0;
+        } else if (it >= NEG_ITER) { legaliser(conf); return; }
+        else { it++; itTot++; NEG.pres *= NEG_FACT; file = conf; k = 0; }
       }
       net = file[k++];
       JAUNE = B.pistes.filter(function (t) { return t.net === net; }); MARQUE = null;
-      avancement(titre, 'Itération ' + it + '/' + NEG_ITER + ' · ' + net, k, file.length,
+      avancement(titre, 'Itération ' + it + '/' + NEG_ITER + (NEG.etage === 2 ? ' · plans VCC ouverts' : ' · couches signal') + ' · ' + net, k, file.length,
         (nConf.length ? 'conflits ' + nConf.join(' → ') : 'première itération : toutes les équipotentielles') + ' · congestion × ' + mmTxt(NEG.pres));
       $('avDecision').textContent = 'Traitement…'; $('avAide').textContent = 'Automatique · Échap : arrêter (rien n\'est changé)';
       dessiner();
