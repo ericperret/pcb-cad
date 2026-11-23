@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-20
- Version    : 1.75.0
+ Date       : 2026-11-23
+ Version    : 1.76.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.4.0, Schéma 1.21.0, Circuit 1.60.0 (cartouche et
+ Modules    : Bibliothèque 1.4.0, Schéma 1.21.0, Circuit 1.61.2 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -361,6 +361,16 @@
    1.75.0 2026-11-20  Schéma 1.21.0 : fusion patte à patte, une patte de connecteur du projet
                       ajouté se relie par son nom à la patte de même fonction du projet, même
                       nue (reliée à rien) ; NC et RESERVED jamais ; réseau relié préféré
+   1.76.0 2026-11-23  Circuit 1.61.0 : alignement d'un groupe Ctrl+rectangle : clic droit
+                      = rangée gauche-droite (même Y, espaces égaux) ou colonne haut-bas (même X,
+                      espaces égaux), extrémités fixes ; bloc incohérent : refusé, rien ne bouge ;
+                      pistes et vias de la zone remis en chevelu
+   1.76.1 2026-11-23  Circuit 1.61.1 : alignement refondu : zone verticale = colonne (espaces égaux du haut
+                      vers le bas, bords collés à gauche ou à droite), zone horizontale = rangée (bords en haut ou
+                      en bas) ; bord retenu = celui que partagent le plus de composants, les autres s'y alignent ;
+                      à égalité, mouvement de la souris, sinon gauche / haut ; extrémités fixes
+   1.76.2 2026-11-23  Circuit 1.61.2 : clic droit aussi pendant que Ctrl est encore enfoncé (zone dessinée) ;
+                      consignes en tête du message (la barre d'état coupait la fin) ; essai sur tvp5150-essai
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -439,7 +449,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.75.0</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.76.2</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -7781,8 +7791,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-20
- Version    : 1.60.0
+ Date       : 2026-11-23
+ Version    : 1.61.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -8418,6 +8428,14 @@ function traduire(s) {
                       des autres. Connexité finale : aucune nouvelle liaison ni coupure ; un
                       court-circuit d'avant supprimé est permis (compté au bilan). Négociation et re-routage : une équipotentielle
                       qui passe déjà sous une ligne 50 Ω épaisse garde le droit d'y passer (à 90°)
+   1.61.0 2026-11-23  Alignement d'un groupe Ctrl+rectangle : clic droit = rangée gauche-droite
+                      (centres sur un même Y, espaces égaux entre corps) ou colonne haut-bas (même X) ;
+                      sens : mouvement de la souris depuis l'armement du groupe, sinon la forme du bloc ;
+                      composants des extrémités fixes ; bloc incohérent (faces mêlées, plusieurs rangées,
+                      décalage trop grand, espace insuffisant, collision) : message, rien ne bouge ;
+                      pistes et vias de la zone, et cuivre des pattes déplacées, remis en chevelu
+   1.61.1 2026-11-23  Alignement refondu : sens = forme de la zone, bord commun = majorité (voir 1.76.1)
+   1.61.2 2026-11-23  Clic droit possible Ctrl enfoncé ; consignes en tête du message
    1.59.1 2026-11-20  Via d'une patte CMS (bille, circuit, passif) : au centre exact de sa pastille, dans
                       tous les tracés (re-routage, tronçons, forcé, négocié, chevelu) ; la piste interne
                       part de cette via ; via déjà dans la pastille reprise ; plus aucune via posée à
@@ -8659,7 +8677,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.60.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.61.2</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -10942,7 +10960,13 @@ function traduire(s) {
   cv.addEventListener('mousedown', function (ev) {
     var m = pos(ev), w = versMonde(m.x, m.y), c, t, s;
     ev.preventDefault();
-    if (B.groupe && B.groupe.user && ev.button === 2) { annulerGroupe(); return; }
+    if (B.groupe && B.groupe.user && ev.button === 2) { alignerOuAnnuler(w); return; }
+    if (!B.groupe && ev.button === 2 && (B.cadre || (B.cadres && B.cadres.length))) {
+      if (B.cadre) { B.cadre.x1 = w.x; B.cadre.y1 = w.y; finCadre({ ctrlKey: true }); }
+      B.armerApres = false;
+      if (B.cadres && B.cadres.length) { armerGroupe(); if (B.groupe && B.groupe.user) alignerOuAnnuler(w); }
+      return;
+    }
     if (B.groupe && ev.button === 0) { deplacerGroupe(w); poserGroupe(); return; }
     if (ev.button === 0 && (ev.ctrlKey || ev.metaKey) && !B.route && !B.outilCoupe) { B.cadre = { x0: w.x, y0: w.y, x1: w.x, y1: w.y }; return; }
     B.tDown2 = B.tDown1 || 0; B.tDown1 = Date.now();
@@ -12403,7 +12427,7 @@ function traduire(s) {
   function finCadre(ev) {
     var c = B.cadre, r = { x0: Math.min(c.x0, c.x1), y0: Math.min(c.y0, c.y1), x1: Math.max(c.x0, c.x1), y1: Math.max(c.y0, c.y1) };
     B.cadre = null;
-    if (r.x1 - r.x0 > 3 / B.z || r.y1 - r.y0 > 3 / B.z) { B.cadres = (B.cadres || []).concat([r]); message(B.cadres.length + ' zone(s) · relâcher Ctrl pour former le groupe · Échap annule'); }
+    if (r.x1 - r.x0 > 3 / B.z || r.y1 - r.y0 > 3 / B.z) { B.cadres = (B.cadres || []).concat([r]); message(B.cadres.length + ' zone(s) · clic droit : aligner · relâcher Ctrl : déplacer · Échap annule'); }
     if (B.armerApres || !(ev.ctrlKey || ev.metaKey)) { if (B.cadres && B.cadres.length) armerGroupe(); }
     B.armerApres = false;
     dessiner();
@@ -12425,10 +12449,10 @@ function traduire(s) {
     if (!g.comps.length && !g.pistes.length && !g.vias.length && !g.textes.length) { message('Rien dans la zone.', true); dessiner(); return; }
     g.retires.forEach(function (t) { var k = B.pistes.indexOf(t); if (k >= 0) B.pistes.splice(k, 1); });
     p = B.curs || { x: (R[0].x0 + R[0].x1) / 2, y: (R[0].y0 + R[0].y1) / 2 };
-    g.ax = accroche(p.x); g.ay = accroche(p.y); g.ax0 = g.ax; g.ay0 = g.ay;
+    g.ax = accroche(p.x); g.ay = accroche(p.y); g.ax0 = g.ax; g.ay0 = g.ay; g.cx0 = p.x; g.cy0 = p.y; g.R = R;
     B.groupe = g; B.sel = null; B.selT = -1; B.selP = null; B.selV = null;
     n = g.retires.length;
-    message('Groupe : ' + g.comps.length + ' composant(s), ' + g.pistes.length + ' piste(s), ' + g.vias.length + ' via(s), ' + g.textes.length + ' texte(s)' + (n ? ' · ' + n + ' piste(s) coupée(s) par le bord remise(s) en chevelu' : '') + ' · clic : poser · Échap ou clic droit : annuler');
+    message('Clic gauche : poser · clic droit : aligner · Échap : annuler · Groupe : ' + g.comps.length + ' composant(s), ' + g.pistes.length + ' piste(s), ' + g.vias.length + ' via(s), ' + g.textes.length + ' texte(s)' + (n ? ' · ' + n + ' piste(s) coupée(s) par le bord remise(s) en chevelu' : ''));
     dessiner();
   }
   function annulerGroupe() {
@@ -12450,11 +12474,127 @@ function traduire(s) {
       ctx.strokeStyle = COUL.sel; ctx.lineWidth = 1; ctx.setLineDash([5, 3]); ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y); ctx.setLineDash([]);
     }
   }
+  /* Alignement du groupe (clic droit). Zone verticale : colonne, espaces égaux du haut vers le bas, bords collés à
+     gauche ou à droite ; zone horizontale : rangée, espaces égaux de gauche à droite, bords collés en haut ou en bas.
+     Le bord retenu est celui que partagent le plus de composants (les autres s'y alignent) ; à égalité, le moindre
+     mouvement de la souris depuis l'armement, sinon gauche / haut. Les deux composants des extrémités ne bougent pas
+     dans le sens de la rangée. Bloc incohérent : on le dit, rien n'est changé. Accepté : pistes et vias de la zone,
+     et cuivre des pattes des composants, remis en chevelu. Renvoie false si moins de deux composants */
+  function alignerGroupe(g, w) {
+    var C = g.comps, n = C.length, R = g.R || [], bb, ax, q, nom, cote, lng, ep, cc, ordre, i, j, k, o, bo, nb, pos, esp, tot, mini, maxi, motif = '', dep = [], nbCuivre = 0, avP, gapMin, bouge = false, dx, dy, sx, sy, zx0, zy0, zx1, zy1, ref, cand = [], cl, tol = 0.05, nbRamenes = 0, cible, mem, nomCote;
+    function restituer() { g.retires.forEach(function (t) { B.pistes.push(t); }); }
+    function refuser(m) { restituer(); message('Alignement ' + nom + ' refusé : ' + m + ' · rien n\'est modifié', true); toutRafraichir(); return true; }
+    function dans(x, y) { return R.some(function (r) { return x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1; }); }
+    function coupe(p1, p2) {
+      return R.some(function (r) {
+        var t0 = 0, t1 = 1, d = [p2.x - p1.x, p2.y - p1.y], pp = [-d[0], d[0], -d[1], d[1]], qq = [p1.x - r.x0, r.x1 - p1.x, p1.y - r.y0, r.y1 - p1.y], m, t;
+        for (m = 0; m < 4; m++) {
+          if (!pp[m]) { if (qq[m] < 0) return false; continue; }
+          t = qq[m] / pp[m];
+          if (pp[m] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+        }
+        return true;
+      });
+    }
+    /* plus grand paquet de valeurs égales (à tol près) : { n, v } */
+    function paquet(v) {
+      var t = v.slice().sort(function (p, r) { return p - r; }), m, d = 0, best = { n: 0, v: 0 }, somme;
+      for (m = 0; m < t.length; m++) {
+        if (m && t[m] - t[d] > tol) { while (t[m] - t[d] > tol) d++; }
+        if (m - d + 1 > best.n) { best.n = m - d + 1; somme = 0; for (k = d; k <= m; k++) somme += t[k]; best.v = somme / best.n; }
+      }
+      return best;
+    }
+    if (n < 2) return false;
+    bb = C.map(bboxMonde);
+    /* sens : forme de la zone (vertical = colonne), sinon forme du bloc */
+    zx0 = Math.min.apply(null, R.map(function (r) { return r.x0; })); zx1 = Math.max.apply(null, R.map(function (r) { return r.x1; }));
+    zy0 = Math.min.apply(null, R.map(function (r) { return r.y0; })); zy1 = Math.max.apply(null, R.map(function (r) { return r.y1; }));
+    if (R.length && Math.abs((zy1 - zy0) - (zx1 - zx0)) > 0.1 * Math.max(zx1 - zx0, zy1 - zy0)) ax = (zy1 - zy0) > (zx1 - zx0) ? 1 : 0;
+    else {
+      sx = Math.max.apply(null, bb.map(function (e) { return (e[0] + e[2]) / 2; })) - Math.min.apply(null, bb.map(function (e) { return (e[0] + e[2]) / 2; }));
+      sy = Math.max.apply(null, bb.map(function (e) { return (e[1] + e[3]) / 2; })) - Math.min.apply(null, bb.map(function (e) { return (e[1] + e[3]) / 2; }));
+      ax = sy > sx ? 1 : 0;
+    }
+    q = 1 - ax; nom = ax ? 'colonne' : 'rangée';
+    cc = bb.map(function (e) { return (e[ax] + e[ax + 2]) / 2; });
+    lng = bb.map(function (e) { return e[ax + 2] - e[ax]; });
+    ep = bb.map(function (e) { return e[q + 2] - e[q]; });
+    gapMin = B.isolement || 0.2;
+    for (i = 1; i < n && !motif; i++) if (!!C[i].dessous !== !!C[0].dessous) motif = 'composants des deux faces';
+    if (!motif) {
+      mini = Math.max.apply(null, bb.map(function (e) { return e[q]; })); maxi = Math.min.apply(null, bb.map(function (e) { return e[q + 2]; }));
+      if (mini >= maxi) motif = 'les composants ne sont pas sur une même ' + nom;
+    }
+    ordre = C.map(function (e, i2) { return i2; }).sort(function (p, r) { return cc[p] - cc[r]; });
+    /* bord commun : le plus partagé */
+    if (!motif) {
+      cand = [paquet(bb.map(function (e) { return e[q]; })), paquet(bb.map(function (e) { return e[q + 2]; }))];
+      if (cand[0].n === cand[1].n) {
+        mem = ax ? dxS(w, g) : dyS(w, g);
+        cote = mem > 0 ? 1 : 0;
+      } else cote = cand[1].n > cand[0].n ? 1 : 0;
+      cl = cand[cote];
+      if (n > 2 && (cl.n < 2 || cl.n * 2 < n)) motif = 'aucun bord commun à la majorité des composants (' + cl.n + ' sur ' + n + ')';
+      ref = cl.v;
+      nomCote = ax ? (cote ? 'droite' : 'gauche') : (cote ? 'haut' : 'bas');
+    }
+    if (!motif) {
+      tot = 0; for (i = 0; i < n; i++) tot += lng[i];
+      esp = (bb[ordre[n - 1]][ax + 2] - bb[ordre[0]][ax] - tot) / (n - 1);
+      if (esp < gapMin) motif = 'composants trop serrés (espace ' + esp.toFixed(2) + ' mm < ' + gapMin.toFixed(2) + ' mm)';
+    }
+    if (!motif) {
+      pos = bb[ordre[0]][ax];
+      for (k = 0; k < n; k++) {
+        i = ordre[k];
+        dep[i] = [pos - bb[i][ax], ref - bb[i][q + cote * 2]];
+        pos += lng[i] + esp;
+        if (Math.abs(dep[i][1]) > tol) nbRamenes++;
+      }
+      /* collision avec un composant hors du groupe qui n'y était pas avant */
+      for (i = 0; i < n && !motif; i++) {
+        nb = bb[i].slice(); nb[ax] += dep[i][0]; nb[ax + 2] += dep[i][0]; nb[q] += dep[i][1]; nb[q + 2] += dep[i][1];
+        for (j = 0; j < B.comps.length; j++) {
+          o = B.comps[j]; if (C.indexOf(o) >= 0) continue;
+          bo = bboxMonde(o);
+          if (nb[0] < bo[2] && nb[2] > bo[0] && nb[1] < bo[3] && nb[3] > bo[1] && !(bb[i][0] < bo[2] && bb[i][2] > bo[0] && bb[i][1] < bo[3] && bb[i][3] > bo[1])) { motif = 'collision de ' + C[i].ref + ' avec ' + o.ref; break; }
+        }
+      }
+    }
+    if (motif) return refuser(motif);
+    for (i = 0; i < n; i++) if (Math.abs(dep[i][0]) > 1e-4 || Math.abs(dep[i][1]) > 1e-4) bouge = true;
+    if (!bouge) { restituer(); message('Alignement ' + nom + ' : déjà aligné, rien à faire'); toutRafraichir(); return true; }
+    /* cuivre de la zone, puis cuivre des pattes (positions d'avant), en chevelu */
+    avP = B.pistes.length + B.vias.length;
+    B.pistes = B.pistes.filter(function (t) { var m; if (t.pont !== undefined) return true; for (m = 0; m < t.pts.length; m++) { if (dans(t.pts[m].x, t.pts[m].y)) return false; if (m && coupe(t.pts[m - 1], t.pts[m])) return false; } return true; });
+    B.vias = B.vias.filter(function (v) { return v.pont !== undefined || !dans(v.x, v.y); });
+    nbCuivre = g.retires.length + avP - B.pistes.length - B.vias.length;
+    for (i = 0; i < n; i++) nbCuivre += derouterComposant(C[i]) || 0;
+    for (i = 0; i < n; i++) {
+      C[i].x = arr(C[i].x + (ax ? dep[i][1] : dep[i][0]));
+      C[i].y = arr(C[i].y + (ax ? dep[i][0] : dep[i][1]));
+    }
+    empiler(g.avant); ajusterTextes(); figerContour(); OPT = null;
+    message('Alignement ' + nom + ' : ' + n + ' composants, espaces égaux de ' + esp.toFixed(2) + ' mm, bords ' + (ax ? 'à ' + nomCote : 'en ' + nomCote) + ' (' + cl.n + ' déjà alignés, ' + nbRamenes + ' ramené(s))' + (nbCuivre ? ' · ' + nbCuivre + ' élément(s) de cuivre remis en chevelu : à recâbler' : '') + ' · Ctrl+Z annule');
+    toutRafraichir();
+    return true;
+  }
+  /* sens du moindre mouvement de la souris depuis l'armement du groupe : > 0 droite / bas-écran..., 0 si aucun */
+  function dxS(w, g) { return Math.abs(w.x - g.cx0) >= 1 / B.z ? (w.x - g.cx0) : 0; }
+  function dyS(w, g) { return Math.abs(w.y - g.cy0) >= 1 / B.z ? (w.y - g.cy0) : 0; }
+  /* Clic droit sur un groupe Ctrl+rectangle : alignement (le groupe revient d'abord à sa place) ; moins de deux composants : annulation */
+  function alignerOuAnnuler(w) {
+    var g = B.groupe;
+    deplacerGroupe({ x: g.ax0, y: g.ay0 });
+    B.groupe = null; OPT = null;
+    if (!alignerGroupe(g, w)) { B.groupe = g; annulerGroupe(); }
+  }
   function poserGroupe() {
     var g = B.groupe;
     if (g.user) {
       B.groupe = null; OPT = null;
-      if (g.ax === g.ax0 && g.ay === g.ay0) { g.retires.forEach(function (t) { B.pistes.push(t); }); message('Groupe non déplacé'); toutRafraichir(); return; }
+            if (g.ax === g.ax0 && g.ay === g.ay0) { g.retires.forEach(function (t) { B.pistes.push(t); }); message('Groupe non déplacé'); toutRafraichir(); return; }
       empiler(g.avant); ajusterTextes(); figerContour();
       message('Groupe posé : ' + g.comps.length + ' composant(s), ' + g.pistes.length + ' piste(s), ' + g.vias.length + ' via(s) · Ctrl+Z annule');
       toutRafraichir();
