@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-23
- Version    : 1.76.2
+ Date       : 2026-11-25
+ Version    : 1.78.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.4.0, Schéma 1.21.0, Circuit 1.61.2 (cartouche et
+ Modules    : Bibliothèque 1.4.0, Schéma 1.21.0, Circuit 1.63.1 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -371,6 +371,19 @@
                       à égalité, mouvement de la souris, sinon gauche / haut ; extrémités fixes
    1.76.2 2026-11-23  Circuit 1.61.2 : clic droit aussi pendant que Ctrl est encore enfoncé (zone dessinée) ;
                       consignes en tête du message (la barre d'état coupait la fin) ; essai sur tvp5150-essai
+   1.77.0 2026-11-24  Circuit 1.62.0 : Place ▸ « Aligner sur la grille » : composants et vias libres de toute la carte
+                      (hors lignes 50 Ω) vers la grille sans rerouter (pistes accrochées étirées, angles conservés,
+                      refus si défaut d'isolement) ; liste des passifs à patte libre (erreur de schéma)
+   1.78.0 2026-11-24  Circuit 1.63.0 : Faces et plans ▸ « Renforcer les vias de puissance » : pastille CMS d'inductance,
+                      de résistance ou de régulateur à découpage sur un réseau à plan, qui n'a qu'une via : 2 à 4 vias
+                      alignées dans la pastille (0,3/0,6, sinon 0,25/0,5, sinon 0,2/0,4), via d'origine déplacée ;
+                      « Retirer les vias de renfort » ; drapeau RENFORT=1 dans le DXF
+   1.78.1 2026-11-25  Circuit 1.63.1 : Gerber des plans et faces remplies, couche du dessous : sous un boîtier à billes
+                      le cuivre n'est plus aminci (comme les couches internes) ; les ponts de cuivre entre les
+                      dégagements des vias, plus étroits que le seuil d'amincissement, n'étaient plus reliés à rien
+                      et sortaient du Gerber en rectangles clairs, ce qui isolait les vias de masse du plan
+   1.76.3 2026-11-23  Circuit 1.61.3 : alignement : les vias posées sur une pastille (masse comprise) suivent
+                      leur composant au lieu d'être supprimées ; les autres vias de la zone restent
 
  Utilisation :
    Créer un projet (nom) : onglet Bibliothèque ; ouvrir une bibliothèque de
@@ -449,7 +462,7 @@
 <body>
 
 <div id="onglets">
-  <span class="marque">azs-cad<span class="version" id="versionAzs">1.76.2</span><span id="nomProjet"></span></span>
+  <span class="marque">azs-cad<span class="version" id="versionAzs">1.78.0</span><span id="nomProjet"></span></span>
   <button class="onglet" data-m="lib">Bibliothèque</button>
   <button class="onglet" data-m="sch">Schéma</button>
   <button class="onglet" data-m="brd">Circuit</button>
@@ -7791,8 +7804,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-23
- Version    : 1.61.2
+ Date       : 2026-11-25
+ Version    : 1.63.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -8436,6 +8449,10 @@ function traduire(s) {
                       pistes et vias de la zone, et cuivre des pattes déplacées, remis en chevelu
    1.61.1 2026-11-23  Alignement refondu : sens = forme de la zone, bord commun = majorité (voir 1.76.1)
    1.61.2 2026-11-23  Clic droit possible Ctrl enfoncé ; consignes en tête du message
+   1.61.3 2026-11-23  Alignement : vias sur pastille suivent leur composant, autres vias gardées
+   1.62.0 2026-11-24  Aligner sur la grille sans rerouter (toute la carte) ; passifs à patte libre
+   1.63.0 2026-11-24  Renforcer les vias de puissance (L, R, régulateurs) ; retirer les vias de renfort
+   1.63.1 2026-11-25  Gerber du dessous : cuivre non aminci sous un boîtier à billes (ponts entre vias gardés)
    1.59.1 2026-11-20  Via d'une patte CMS (bille, circuit, passif) : au centre exact de sa pastille, dans
                       tous les tracés (re-routage, tronçons, forcé, négocié, chevelu) ; la piste interne
                       part de cette via ; via déjà dans la pastille reprise ; plus aucune via posée à
@@ -8677,7 +8694,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.61.2</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.63.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -8811,6 +8828,7 @@ var TRAD_EN = [
   ['Dessous : cuivre GND plein · couches internes vides dans la zone', 'Bottom: solid GND copper · inner layers empty in the zone'],
   ['Un patch reste sur le dessus (masse au dessous).', 'A patch stays on top (ground underneath).'], ['masse GND remplie · signaux à coût élevé (dessous)', 'filled GND ground · signals at high cost (bottom)'],
   ['(dessous · masse)', '(bottom · ground)'], [' · plan de masse rempli · signaux en dernier recours (dessous)', ' · filled ground plane · signals as a last resort (bottom)'], [' · plan rempli · signaux en dernier recours', ' · filled plane · signals as a last resort'], [' en chevelu', ' left as ratsnest'], [' (plan)', ' (plane)'], [' (aucune)', ' (none)'], ['Pistes sur les couches internes ', 'Traces on inner layers '], [' : en supprimer d\'abord.', ': delete some first.'], [' rempli · signaux admis', ' filled · signals allowed'], [' en chevelu (dessus)', ' left as ratsnest (top)'], ['référence le dessous', 'referenced to bottom'], ['internes dégagées sur', 'inner layers cleared'], ['de chaque côté', 'each side'],
+  ['Renforcer les vias de puissance', 'Reinforce power vias'], ['Retirer les vias de renfort', 'Remove reinforcement vias'], ['via(s) ajoutée(s) sur', 'via(s) added on'], ['pastille(s) de puissance', 'power pad(s)'], ['vias de renfort : ', 'reinforcement vias: '], ['via(s) de renfort retirée(s)', 'reinforcement via(s) removed'], ['Aucune pastille à renforcer (une seule via, réseau à plan, place libre).', 'No pad to reinforce (single via, plane net, free room).'],
   ['via(s) thermique(s)', 'thermal via(s)'], ['Étape 1/3 · sorties de masse et d\'alimentation', 'Step 1/3 · ground and supply fan-outs'], ['Étape 2/3 · passe 1/2 · sens horaire, dessus seul, sans via', 'Step 2/3 · pass 1/2 · clockwise, top only, no via'],
   ['Étape 3/3 · passe 2/2 · sens anti-horaire, couches internes', 'Step 3/3 · pass 2/2 · counter-clockwise, inner layers'], ['Étape 4/4 · ré-irrigation des plans d\'alimentation', 'Step 4/4 · feeding supply planes'], ['Terminé, avec alerte', 'Done, with a warning'], ['Terminé', 'Done'], ['Re-routage', 'Re-routing'], ['Passe ', 'Pass '], [' re-routée(s)', ' re-routed'], ['Via déplacée', 'Via moved'], ['Zone(s) non irriguée(s) en rouge : relier par une piste de 2 mm entre deux vias', 'Unfed zone(s) in red: join with a 2 mm trace between two vias'], ['Saisie…', 'Entry…'], ['Pas de grille (mm)', 'Grid pitch (mm)'], ['Auto : moitié du pas le plus fin des IC du circuit', 'Auto: half the finest IC pitch on the board'], ['Déplacement refusé : ', 'Move refused: '], ['via trop près du cuivre voisin', 'via too close to nearby copper'], ['piste trop près du cuivre voisin', 'trace too close to nearby copper'], ['isolement', 'clearance'], [' · ATTENTION plan d\'alimentation coupé, vias non irriguées : ', ' · WARNING supply plane split, vias not fed: '], [' — relier par une piste de 2 mm entre deux vias (Router le chevelu le tente)', ' — join with a 2 mm trace between two vias (Route ratsnest tries it)'],
   ['jumper(s) de ré-irrigation 2 mm', '2 mm feed jumper(s)'], [' zones non reliées', ' unconnected zones'], [' · ATTENTION plan d\'alimentation coupé, vias non irriguées, aucun jumper possible : ', ' · WARNING supply plane split, vias not fed, no jumper possible: '], [' — relier à la main par une piste de 2 mm entre deux vias', ' — join by hand with a 2 mm trace between two vias'], [' zones', ' zones'], ['plan ', 'plane '], ['patte(s) de masse au carré central', 'ground pin(s) to the center pad'], ['sortie(s) vers plan', 'fan-out(s) to plane'], ['Alimentation principale (dessus)', 'Main supply (top)'], ['Sans plan, routées en pistes : ', 'No plane, routed as traces: '],
@@ -8965,6 +8983,8 @@ var TRAD_EN = [
   ['texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber', 'text(s) on a pad: framed in red, clipped on the pads in the Gerber'], ['texte(s) qui se chevauchent', 'overlapping text(s)'],
   ['texte(s) sur une pastille, coupé(s) dans le Gerber', 'text(s) on a pad, clipped in the Gerber'], ['Sérigraphie : textes replacés automatiquement', 'Silkscreen: texts re-placed automatically'], ['chevauchement(s)', 'overlap(s)'], ['rappel', 'leader'], ['au-delà de', 'beyond'], ['des pastilles', 'from the pads'], ['Trait', 'Stroke'],
   ['Tous les passifs en 0805', 'All passives to 0805'],
+  ['Aligner sur la grille', 'Align to grid'],
+  ['Composants et vias libres vers la grille, sans rerouter (hors lignes 50 Ω)', 'Components and free vias to the grid, without re-routing (not 50 Ω lines)'],
   ['Auto (format supérieur)', 'Auto (next size up)'],
   ['Auto : moitié du pas le plus fin des gabarits du circuit', 'Auto: half of the finest pitch among the board footprints'],
   ['Carte de crédit', 'Credit card'],
@@ -10546,6 +10566,21 @@ function traduire(s) {
     }
     $('titreListe').textContent = 'Composants (' + B.comps.length + ') · ' + B.nets.length + ' équipot.';
   }
+  /* Rapport d'alignement et passifs à patte libre, dans la fiche Circuit */
+  function blocGrille(b) {
+    var l = pattesLibres(), r = RAPPORT_GRILLE, d;
+    if (r) {
+      b.appendChild(E('div', 'stat', 'Grille ' + String(r.grille).replace('.', ',') + ' mm : ' + r.nbC + ' composant(s) et ' + r.nbV + ' via(s) alignés, ' + r.deja + ' déjà alignés'));
+      if (r.refus.length || r.viasRefus) b.appendChild(E('div', 'stat', 'Non alignables sans rerouter : ' + r.refus.length + ' composant(s)' + (r.refus.length ? ' (' + r.refus.slice(0, 12).join(', ') + (r.refus.length > 12 ? '…' : '') + ')' : '') + ', ' + r.viasRefus + ' via(s)'));
+    }
+    if (!l.length) return;
+    b.appendChild(E('div', 'avert', l.length + ' passif(s) avec une patte libre (erreur de schéma ?)'));
+    l.slice(0, 40).forEach(function (x) {
+      d = E('div', 'lien', x.txt);
+      d.addEventListener('click', function () { B.sel = x.c; B.selT = -1; centrerSur(x.c); toutRafraichir(); });
+      b.appendChild(d);
+    });
+  }
   function fiche() {
     var f = $('fiche'), b, c = B.sel, sel, l, i, o, bs, bt, rf = 0, gl, gn;
     f.textContent = '';
@@ -10561,6 +10596,8 @@ function traduire(s) {
       b.appendChild(E('div', 'stat', 'Dessous : ' + B.comps.filter(function (x) { return x.dessous; }).length));
       bs = E('div', 'boutons'); b.appendChild(bs);
       bt = E('button', '', 'Tous les passifs en 0805'); bt.addEventListener('click', function () { tousPassifsEn('0805'); }); bs.appendChild(bt);
+      bt = E('button', '', 'Aligner sur la grille'); bt.title = 'Composants et vias libres vers la grille, sans rerouter (hors lignes 50 Ω)'; bt.addEventListener('click', alignerSurGrille); bs.appendChild(bt);
+      blocGrille(b);
       blocSerigraphie(f);
       blocContour(f);
       return;
@@ -10704,7 +10741,9 @@ function traduire(s) {
     d = E('div', 'boutons'); b.appendChild(d);
     va = E('button', '', 'Poser les vias de couture'); va.title = 'Le long du contour, retrait 2 mm, pas 5 mm'; va.addEventListener('click', poserCouture); d.appendChild(va);
     if (B.vias.some(function (v) { return v.couture; })) { va = E('button', '', 'Retirer les vias de couture'); va.addEventListener('click', retirerCouture); d.appendChild(va); }
-    b.appendChild(E('div', 'stat', 'Faces et plans : dégagement ' + String(B.degPlan).replace('.', ',') + ' mm, rayons thermiques, îlots isolés supprimés à l\'export · vias de couture : ' + B.vias.filter(function (v) { return v.couture; }).length));
+    va = E('button', '', 'Renforcer les vias de puissance'); va.title = 'Inductances, résistances et régulateurs sur un réseau à plan : plusieurs vias alignées dans la pastille (0,3/0,6 si la place le permet)'; va.addEventListener('click', renforcerVias); d.appendChild(va);
+    if (B.vias.some(function (v) { return v.renfort; })) { va = E('button', '', 'Retirer les vias de renfort'); va.addEventListener('click', retirerRenforts); d.appendChild(va); }
+    b.appendChild(E('div', 'stat', 'Faces et plans : dégagement ' + String(B.degPlan).replace('.', ',') + ' mm, rayons thermiques, îlots isolés supprimés à l\'export · vias de couture : ' + B.vias.filter(function (v) { return v.couture; }).length + ' · vias de renfort : ' + B.vias.filter(function (v) { return v.renfort; }).length));
     va = tousPads().filter(function (p) { return enPlein(p.ref, p.nom) && coucheRaccord(p); }).length;
     b.appendChild(E('div', 'stat', 'Clic droit sur une pastille : frein thermique ou plein' + (va ? ' · ' + va + ' pastille(s) en plein' : '')));
     if (B.nc === 2) return;
@@ -11385,6 +11424,68 @@ function traduire(s) {
     if (!n) return;
     empiler(); B.vias = B.vias.filter(function (v) { return !v.couture; });
     message(n + ' via(s) de couture retirée(s)'); toutRafraichir();
+  }
+  /* Renfort des vias de puissance : pastille CMS d'inductance (L), de résistance (R) ou de régulateur à découpage (U relié à
+     une inductance), sur un réseau à plan (alimentation ou masse), qui n'a qu'une via : vias alignés le long du grand côté
+     de la pastille, centrés, de la plus grosse taille qui en met au moins 2 (4 au plus) ; la via d'origine est déplacée sur
+     l'une d'elles, les autres portent le drapeau renfort (retirables) ; une via qui ne tient pas (isolement, bord) est omise */
+  var VIAS_RENFORT = [{ perc: 0.3, diam: 0.6, pas: 0.9 }, { perc: 0.25, diam: 0.5, pas: 0.6 }, { perc: 0.2, diam: 0.4, pas: 0.6 }];
+  function refsRegulateurs() {
+    var r = {};
+    B.nets.forEach(function (n) {
+      if (n.pins.length !== 2 || !n.pins.some(function (k) { return /^L/.test(k); })) return;
+      n.pins.forEach(function (k) { if (/^U/.test(k)) r[k.split(':')[0]] = true; });
+    });
+    return r;
+  }
+  function renforcerVias() {
+    var avant = instantane(), reg = refsRegulateurs(), nb = 0, np = 0, iso = B.isolement;
+    optDebut();
+    OPT.pads.forEach(function (p) {
+      var e = p.e, nt, bx, horiz, a0, a1, ws, ctr, own, v0, k, c, pos, n, j, s, q, sel;
+      if (e.t !== 'smd' || estBille(p) || !(/^[LR]/.test(p.ref) || reg[p.ref])) return;
+      nt = netDe(p.ref + ':' + p.nom);
+      if (!nt || !(estNetPlan(nt.nom) || relieMasse(nt.nom, e.x, e.y))) return;
+      bx = cadrePad(e); horiz = bx[2] - bx[0] >= bx[3] - bx[1];
+      a0 = horiz ? bx[0] : bx[1]; a1 = horiz ? bx[2] : bx[3]; ws = horiz ? bx[3] - bx[1] : bx[2] - bx[0];
+      ctr = { x: (bx[0] + bx[2]) / 2, y: (bx[1] + bx[3]) / 2 };
+      own = B.vias.filter(function (v) { return v.net === nt.nom && v.x > bx[0] - 1e-6 && v.x < bx[2] + 1e-6 && v.y > bx[1] - 1e-6 && v.y < bx[3] + 1e-6; });
+      if (own.length !== 1) return;
+      v0 = own[0];
+      if (v0.renfort || v0.couture || v0.thermique || estPont(v0)) return;
+      pos = null;
+      for (k = 0; k < VIAS_RENFORT.length; k++) {
+        c = VIAS_RENFORT[k]; pos = null;
+        if (ws < c.diam - 1e-6) continue;
+        n = Math.min(4, Math.floor((a1 - a0 - c.diam) / c.pas + 1e-6) + 1);
+        if (n < 2) continue;
+        pos = [];
+        for (j = 0; j < n; j++) { s = (j - (n - 1) / 2) * c.pas; pos.push(horiz ? { x: arr(ctr.x + s), y: arr(ctr.y) } : { x: arr(ctr.x), y: arr(ctr.y + s) }); }
+        pos = pos.filter(function (q) {
+          if (!optDansCarte(q, c.diam / 2)) return false;
+          if (B.vias.some(function (v) { return v !== v0 && dist(v, q) < (v.diam + c.diam) / 2 + iso - 1e-6; })) return false;
+          return optJeu(q, q, c.diam / 2, 0, nt.nom, iso) >= iso - 1e-6;
+        });
+        if (pos.length >= 2) break;
+        pos = null;
+      }
+      if (!pos) return;
+      sel = 0; for (j = 1; j < pos.length; j++) if (dist(pos[j], v0) < dist(pos[sel], v0)) sel = j;
+      pos.forEach(function (q, j) {
+        if (j === sel) { v0.x = q.x; v0.y = q.y; v0.perc = c.perc; v0.diam = c.diam; }
+        else B.vias.push({ x: q.x, y: q.y, perc: c.perc, diam: c.diam, net: nt.nom, renfort: true });
+      });
+      OPT.obs = {}; nb += pos.length - 1; np++;
+    });
+    if (!np) { message('Aucune pastille à renforcer (une seule via, réseau à plan, place libre).', true); return; }
+    empiler(avant);
+    message(nb + ' via(s) ajoutée(s) sur ' + np + ' pastille(s) de puissance'); toutRafraichir();
+  }
+  function retirerRenforts() {
+    var n = B.vias.filter(function (v) { return v.renfort; }).length;
+    if (!n) return;
+    empiler(); B.vias = B.vias.filter(function (v) { return !v.renfort; });
+    message(n + ' via(s) de renfort retirée(s)'); toutRafraichir();
   }
   /* Outil Coupe : clics accrochés à la grille ; double-clic, clic droit ou Échap : fin */
   function outilCoupe() {
@@ -12481,7 +12582,7 @@ function traduire(s) {
      dans le sens de la rangée. Bloc incohérent : on le dit, rien n'est changé. Accepté : pistes et vias de la zone,
      et cuivre des pattes des composants, remis en chevelu. Renvoie false si moins de deux composants */
   function alignerGroupe(g, w) {
-    var C = g.comps, n = C.length, R = g.R || [], bb, ax, q, nom, cote, lng, ep, cc, ordre, i, j, k, o, bo, nb, pos, esp, tot, mini, maxi, motif = '', dep = [], nbCuivre = 0, avP, gapMin, bouge = false, dx, dy, sx, sy, zx0, zy0, zx1, zy1, ref, cand = [], cl, tol = 0.05, nbRamenes = 0, cible, mem, nomCote;
+    var C = g.comps, n = C.length, R = g.R || [], bb, ax, q, nom, cote, lng, ep, cc, ordre, i, j, k, o, bo, nb, pos, esp, tot, mini, maxi, motif = '', dep = [], nbCuivre = 0, avP, gapMin, bouge = false, dx, dy, sx, sy, zx0, zy0, zx1, zy1, ref, cand = [], cl, tol = 0.05, nbRamenes = 0, cible, mem, nomCote, suivre, pg, fm, dxm = [], dym = [];
     function restituer() { g.retires.forEach(function (t) { B.pistes.push(t); }); }
     function refuser(m) { restituer(); message('Alignement ' + nom + ' refusé : ' + m + ' · rien n\'est modifié', true); toutRafraichir(); return true; }
     function dans(x, y) { return R.some(function (r) { return x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1; }); }
@@ -12568,13 +12669,25 @@ function traduire(s) {
     /* cuivre de la zone, puis cuivre des pattes (positions d'avant), en chevelu */
     avP = B.pistes.length + B.vias.length;
     B.pistes = B.pistes.filter(function (t) { var m; if (t.pont !== undefined) return true; for (m = 0; m < t.pts.length; m++) { if (dans(t.pts[m].x, t.pts[m].y)) return false; if (m && coupe(t.pts[m - 1], t.pts[m])) return false; } return true; });
-    B.vias = B.vias.filter(function (v) { return v.pont !== undefined || !dans(v.x, v.y); });
-    nbCuivre = g.retires.length + avP - B.pistes.length - B.vias.length;
-    for (i = 0; i < n; i++) nbCuivre += derouterComposant(C[i]) || 0;
+    /* vias posées sur une pastille d'un composant du groupe (masse comprise) : elles suivent le composant */
+    suivre = [];
     for (i = 0; i < n; i++) {
-      C[i].x = arr(C[i].x + (ax ? dep[i][1] : dep[i][0]));
-      C[i].y = arr(C[i].y + (ax ? dep[i][0] : dep[i][1]));
+      pg = gab(C[i]);
+      if (!pg) continue;
+      for (j = 0; j < pg.el.length; j++) {
+        if (!estPad(pg.el[j])) continue;
+        fm = elMonde(C[i], pg.el[j]);
+        for (k = 0; k < B.vias.length; k++) if (B.vias[k].pont === undefined && dansForme(fm, B.vias[k].x, B.vias[k].y, 0) && !suivre.some(function (e) { return e.v === B.vias[k]; })) suivre.push({ v: B.vias[k], i: i });
+      }
     }
+    for (i = 0; i < n; i++) derouterComposant(C[i]);
+    for (i = 0; i < n; i++) {
+      dxm[i] = ax ? dep[i][1] : dep[i][0]; dym[i] = ax ? dep[i][0] : dep[i][1];
+      C[i].x = arr(C[i].x + dxm[i]);
+      C[i].y = arr(C[i].y + dym[i]);
+    }
+    suivre.forEach(function (e) { e.v.x = arr(e.v.x + dxm[e.i]); e.v.y = arr(e.v.y + dym[e.i]); if (B.vias.indexOf(e.v) < 0) B.vias.push(e.v); });
+    nbCuivre = g.retires.length + avP - B.pistes.length - B.vias.length;
     empiler(g.avant); ajusterTextes(); figerContour(); OPT = null;
     message('Alignement ' + nom + ' : ' + n + ' composants, espaces égaux de ' + esp.toFixed(2) + ' mm, bords ' + (ax ? 'à ' + nomCote : 'en ' + nomCote) + ' (' + cl.n + ' déjà alignés, ' + nbRamenes + ' ramené(s))' + (nbCuivre ? ' · ' + nbCuivre + ' élément(s) de cuivre remis en chevelu : à recâbler' : '') + ' · Ctrl+Z annule');
     toutRafraichir();
@@ -12583,6 +12696,271 @@ function traduire(s) {
   /* sens du moindre mouvement de la souris depuis l'armement du groupe : > 0 droite / bas-écran..., 0 si aucun */
   function dxS(w, g) { return Math.abs(w.x - g.cx0) >= 1 / B.z ? (w.x - g.cx0) : 0; }
   function dyS(w, g) { return Math.abs(w.y - g.cy0) >= 1 / B.z ? (w.y - g.cy0) : 0; }
+  /* ======================================================================
+     Place ▸ Aligner sur la grille, sans rerouter : composants et vias libres de toute la carte
+     (hors ce qui touche une ligne 50 Ω). Le bout des pistes accrochées suit la pastille ou la via ;
+     les angles des pistes sont conservés (le sommet suivant glisse sur son axe) ; refusé si un défaut
+     d'isolement apparaît, si un angle ne peut pas être conservé ou si deux composants se chevauchent.
+     ====================================================================== */
+  var RAPPORT_GRILLE = null;
+  function boiteForme(f) {
+    var i, r = [1e9, 1e9, -1e9, -1e9];
+    if (f.disque) return [f.disque.x - f.disque.r, f.disque.y - f.disque.r, f.disque.x + f.disque.r, f.disque.y + f.disque.r];
+    for (i = 0; i < f.pts.length; i++) { r[0] = Math.min(r[0], f.pts[i][0]); r[1] = Math.min(r[1], f.pts[i][1]); r[2] = Math.max(r[2], f.pts[i][0]); r[3] = Math.max(r[3], f.pts[i][1]); }
+    return r;
+  }
+  function padsGrille(c) {
+    var p = gab(c), r = [], j, e, f, we;
+    if (!p) return r;
+    for (j = 0; j < p.el.length; j++) {
+      e = p.el[j]; if (!estPad(e)) continue;
+      we = elMonde(c, e); f = formePad(we);
+      r.push({ c: c, ref: c.ref, nom: e.nom, e: we, f: f, bb: boiteForme(f), net: (netDe(c.ref + ':' + e.nom) || {}).nom || '', couches: e.t === 'pad' ? toutesCouches() : [c.dessous ? bas() : 1] });
+    }
+    return r;
+  }
+  /* Obstacles (autres équipotentielles) dans une boîte ; ex = { c, pads } : composant en cours, nouvelles pastilles */
+  function obsGrille(G, net, bx, ex) {
+    var r = [], i, k, t, p, v, a, b, h, L = G.pads;
+    function ajoutPad(q) {
+      if (q.net && q.net === net) return;
+      if (q.bb[0] > bx[2] || q.bb[2] < bx[0] || q.bb[1] > bx[3] || q.bb[3] < bx[1]) return;
+      if (q.f.disque) r.push({ k: 'd', c: { x: q.f.disque.x, y: q.f.disque.y }, r: q.f.disque.r, couches: q.couches });
+      else r.push({ k: 'p', pts: q.f.pts.map(function (z) { return { x: z[0], y: z[1] }; }), couches: q.couches });
+    }
+    for (i = 0; i < L.length; i++) { if (ex && L[i].c === ex.c) continue; ajoutPad(L[i]); }
+    if (ex) for (i = 0; i < ex.pads.length; i++) ajoutPad(ex.pads[i]);
+    for (i = 0; i < B.pistes.length; i++) {
+      t = B.pistes[i]; if (t.net === net) continue; h = t.w / 2;
+      for (k = 0; k + 1 < t.pts.length; k++) {
+        a = t.pts[k]; b = t.pts[k + 1];
+        if (Math.min(a.x, b.x) - h > bx[2] || Math.max(a.x, b.x) + h < bx[0] || Math.min(a.y, b.y) - h > bx[3] || Math.max(a.y, b.y) + h < bx[1]) continue;
+        r.push({ k: 's', a: a, b: b, r: h, couches: [t.couche] });
+      }
+    }
+    for (i = 0; i < B.vias.length; i++) {
+      v = B.vias[i]; if (v.net === net) continue; h = v.diam / 2;
+      if (v.x - h > bx[2] || v.x + h < bx[0] || v.y - h > bx[3] || v.y + h < bx[1]) continue;
+      r.push({ k: 'd', c: { x: v.x, y: v.y }, r: h, couches: toutesCouches() });
+    }
+    return r;
+  }
+  function boiteSeg(a, b, h) { var m = B.isolement + 0.02; return [Math.min(a.x, b.x) - h - m, Math.min(a.y, b.y) - h - m, Math.max(a.x, b.x) + h + m, Math.max(a.y, b.y) + h + m]; }
+  function conflitPad(q, obs) {
+    var l, i, j, n, pts, o;
+    for (l = 0; l < q.couches.length; l++) {
+      if (q.f.disque) { if (conflits({ x: q.f.disque.x, y: q.f.disque.y }, { x: q.f.disque.x, y: q.f.disque.y }, q.f.disque.r, q.couches[l], obs).length) return true; continue; }
+      pts = q.f.pts.map(function (z) { return { x: z[0], y: z[1] }; }); n = pts.length;
+      for (i = 0; i < n; i++) if (conflits(pts[i], pts[(i + 1) % n], 0, q.couches[l], obs).length) return true;
+      for (j = 0; j < obs.length; j++) {
+        o = obs[j]; if (obs[j].couches.indexOf(q.couches[l]) < 0) continue;
+        if ((o.k === 'd' && dansPoly(pts, o.c)) || (o.k === 's' && dansPoly(pts, o.a))) return true;
+      }
+    }
+    return false;
+  }
+  /* Déplace les sommets d'une piste à partir du sommet m dans le sens s ; true si tous les angles sont conservés */
+  function chaineGrille(pts, orig, m, s, d, cap) {
+    var M = m, N, O, u, w, cr, Mp, t, Np, len, L2;
+    for (;;) {
+      N = M + s;
+      if (N < 0 || N >= orig.length) return true;
+      len = Math.sqrt((orig[N].x - orig[M].x) * (orig[N].x - orig[M].x) + (orig[N].y - orig[M].y) * (orig[N].y - orig[M].y));
+      if (len < 1e-9) return false;
+      u = { x: (orig[N].x - orig[M].x) / len, y: (orig[N].y - orig[M].y) / len };
+      Mp = { x: orig[M].x + d.x, y: orig[M].y + d.y };
+      O = N + s;
+      if (O < 0 || O >= orig.length) {
+        if (Math.abs(d.x * u.y - d.y * u.x) > 1e-7) return false;
+        return (orig[N].x - Mp.x) * u.x + (orig[N].y - Mp.y) * u.y > 1e-6;
+      }
+      L2 = Math.sqrt((orig[O].x - orig[N].x) * (orig[O].x - orig[N].x) + (orig[O].y - orig[N].y) * (orig[O].y - orig[N].y));
+      if (L2 < 1e-9) return false;
+      w = { x: (orig[O].x - orig[N].x) / L2, y: (orig[O].y - orig[N].y) / L2 };
+      cr = u.x * w.y - u.y * w.x;
+      if (Math.abs(cr) < 1e-6) { pts[N] = { x: arr(orig[N].x + d.x), y: arr(orig[N].y + d.y) }; M = N; continue; }
+      t = ((orig[N].x - Mp.x) * w.y - (orig[N].y - Mp.y) * w.x) / cr;
+      if (t < 1e-6) return false;
+      Np = { x: Mp.x + t * u.x, y: Mp.y + t * u.y };
+      if (Math.sqrt((Np.x - orig[N].x) * (Np.x - orig[N].x) + (Np.y - orig[N].y) * (Np.y - orig[N].y)) > cap) return false;
+      if ((orig[O].x - Np.x) * w.x + (orig[O].y - Np.y) * w.y < 1e-6) return false;
+      pts[N] = { x: arr(Np.x), y: arr(Np.y) };
+      return true;
+    }
+  }
+  /* Nombre de morceaux de cuivre d'une équipotentielle (mêmes règles de contact que la connexité) */
+  function nbComposantes(G, net, ex) {
+    var par = {}, ps = [], ts = [], vs = [], i, j, k, t, v, p, n = 0, r = {};
+    function f(x) { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; }
+    function un(a, b) { var ra = f(a), rb = f(b); if (ra !== rb) par[ra] = rb; }
+    for (i = 0; i < G.pads.length; i++) if (G.pads[i].net === net && !(ex && G.pads[i].c === ex.c)) ps.push(G.pads[i]);
+    if (ex) for (i = 0; i < ex.pads.length; i++) if (ex.pads[i].net === net) ps.push(ex.pads[i]);
+    for (i = 0; i < B.pistes.length; i++) if (B.pistes[i].net === net) ts.push(B.pistes[i]);
+    for (i = 0; i < B.vias.length; i++) if (B.vias[i].net === net) vs.push(B.vias[i]);
+    for (i = 0; i < ps.length; i++) par['P' + i] = 'P' + i;
+    for (i = 0; i < ts.length; i++) par['T' + i] = 'T' + i;
+    for (i = 0; i < vs.length; i++) par['V' + i] = 'V' + i;
+    for (i = 0; i < ts.length; i++) {
+      t = ts[i];
+      [t.pts[0], t.pts[t.pts.length - 1]].forEach(function (q) {
+        for (j = 0; j < ps.length; j++) if (ps[j].couches.indexOf(t.couche) >= 0 && dansForme(ps[j].e, q.x, q.y, 0.01)) un('T' + i, 'P' + j);
+        for (j = 0; j < ts.length; j++) {
+          if (j === i || ts[j].couche !== t.couche) continue;
+          for (k = 0; k + 1 < ts[j].pts.length; k++) if (distSeg(q.x, q.y, ts[j].pts[k], ts[j].pts[k + 1]) <= Math.max(t.w, ts[j].w) / 2) { un('T' + i, 'T' + j); break; }
+        }
+      });
+    }
+    for (j = 0; j < vs.length; j++) {
+      v = vs[j];
+      for (i = 0; i < ps.length; i++) if (dansForme(ps[i].e, v.x, v.y, 0)) un('V' + j, 'P' + i);
+      for (i = 0; i < ts.length; i++) for (k = 0; k + 1 < ts[i].pts.length; k++) if (distSeg(v.x, v.y, ts[i].pts[k], ts[i].pts[k + 1]) <= Math.max(ts[i].w / 2, v.diam / 2)) { un('T' + i, 'V' + j); break; }
+    }
+    for (p in par) { k = f(p); if (!r[k]) { r[k] = 1; n++; } }
+    return n;
+  }
+  /* Essai de déplacement de (dx, dy) d'un composant (it.c) ou d'une via libre (it.v) ; true si accepté */
+  function deplacerSansRerouter(G, it, dx, dy) {
+    var mp = [], mv = [], att = {}, i, j, k, t, q, p, ok = true, d = { x: dx, y: dy }, sav = [], newPads = null, c = it.c, ex = null, groupes = [], items = [], netsDe, o, bx, nb, cap = Math.max(1, 4 * Math.sqrt(dx * dx + dy * dy)), nrf;
+    function netRf(nom) { var n = netParNom(nom); return !!(n && n.type === 'rf'); }
+    function proche(a, b) { return Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6; }
+    if (c) {
+      mp = G.pads.filter(function (z) { return z.c === c; });
+      for (i = 0; i < mp.length; i++) if (mp[i].net && netRf(mp[i].net)) return false;
+      for (i = 0; i < B.vias.length; i++) for (j = 0; j < mp.length; j++)
+        if (B.vias[i].pont === undefined && B.vias[i].x >= mp[j].bb[0] && B.vias[i].x <= mp[j].bb[2] && B.vias[i].y >= mp[j].bb[1] && B.vias[i].y <= mp[j].bb[3] && dansForme(mp[j].e, B.vias[i].x, B.vias[i].y, 0)) { mv.push(B.vias[i]); break; }
+    } else mv = [it.v];
+    for (i = 0; i < mv.length; i++) if (mv[i].net && netRf(mv[i].net)) return false;
+    /* sommets accrochés */
+    for (i = 0; i < B.pistes.length; i++) {
+      t = B.pistes[i];
+      for (k = 0; k < t.pts.length; k++) {
+        q = t.pts[k]; ok = false;
+        for (j = 0; j < mv.length && !ok; j++) if (proche(q, mv[j])) ok = true;
+        for (j = 0; j < mp.length && !ok; j++)
+          if (mp[j].net && mp[j].net === t.net && mp[j].couches.indexOf(t.couche) >= 0 && q.x >= mp[j].bb[0] - 1e-6 && q.x <= mp[j].bb[2] + 1e-6 && q.y >= mp[j].bb[1] - 1e-6 && q.y <= mp[j].bb[3] + 1e-6 && dansForme(mp[j].e, q.x, q.y, 1e-6)) ok = true;
+        if (ok) { if (t.pont !== undefined || netRf(t.net)) return false; (att[i] = att[i] || []).push(k); }
+      }
+    }
+    /* nouvelles pistes */
+    for (i in att) {
+      t = B.pistes[i]; q = att[i];
+      o = t.pts.map(function (z) { return { x: z.x, y: z.y }; }); nb = o.map(function (z) { return { x: z.x, y: z.y }; });
+      if (q.length === 2 && q[0] === 0 && q[1] === t.pts.length - 1) { for (k = 0; k < nb.length; k++) nb[k] = { x: arr(o[k].x + dx), y: arr(o[k].y + dy) }; }
+      else if (q.length === 1) {
+        k = q[0]; nb[k] = { x: arr(o[k].x + dx), y: arr(o[k].y + dy) };
+        if (!chaineGrille(nb, o, k, 1, d, cap) || !chaineGrille(nb, o, k, -1, d, cap)) return false;
+      } else return false;
+      groupes.push({ t: t, pts: nb, ancien: t.pts });
+    }
+    /* morceaux de cuivre avant déplacement, par équipotentielle concernée */
+    netsDe = [];
+    mp.forEach(function (z) { if (z.net && netsDe.indexOf(z.net) < 0) netsDe.push(z.net); });
+    mv.forEach(function (z) { if (z.net && netsDe.indexOf(z.net) < 0) netsDe.push(z.net); });
+    groupes.forEach(function (z) { if (netsDe.indexOf(z.t.net) < 0) netsDe.push(z.t.net); });
+    nrf = netsDe.map(function (n) { return nbComposantes(G, n, null); });
+    /* application provisoire */
+    if (c) { c.x = arr(c.x + dx); c.y = arr(c.y + dy); newPads = padsGrille(c); ex = { c: c, pads: newPads }; }
+    for (i = 0; i < mv.length; i++) { sav.push({ v: mv[i], x: mv[i].x, y: mv[i].y }); mv[i].x = arr(mv[i].x + dx); mv[i].y = arr(mv[i].y + dy); }
+    for (i = 0; i < groupes.length; i++) groupes[i].t.pts = groupes[i].pts;
+    function annuler() {
+      var m;
+      if (c) { c.x = arr(c.x - dx); c.y = arr(c.y - dy); }
+      for (m = 0; m < sav.length; m++) { sav[m].v.x = sav[m].x; sav[m].v.y = sav[m].y; }
+      for (m = 0; m < groupes.length; m++) groupes[m].t.pts = groupes[m].ancien;
+      return false;
+    }
+    /* contrôle d'isolement local */
+    for (i = 0; i < groupes.length; i++) {
+      t = groupes[i].t;
+      for (k = 0; k + 1 < t.pts.length; k++) {
+        bx = boiteSeg(t.pts[k], t.pts[k + 1], t.w / 2);
+        if (conflits(t.pts[k], t.pts[k + 1], t.w / 2, t.couche, obsGrille(G, t.net, bx, ex)).length) return annuler();
+      }
+    }
+    for (i = 0; i < mv.length; i++) {
+      bx = boiteSeg(mv[i], mv[i], mv[i].diam / 2);
+      if (conflits({ x: mv[i].x, y: mv[i].y }, { x: mv[i].x, y: mv[i].y }, mv[i].diam / 2, 0, obsGrille(G, mv[i].net, bx, ex)).length) return annuler();
+    }
+    for (i = 0; i < netsDe.length; i++) if (nbComposantes(G, netsDe[i], ex) > nrf[i]) return annuler();
+    if (c) {
+      for (i = 0; i < newPads.length; i++) {
+        if (!newPads[i].net) continue;
+        bx = [newPads[i].bb[0] - B.isolement - 0.02, newPads[i].bb[1] - B.isolement - 0.02, newPads[i].bb[2] + B.isolement + 0.02, newPads[i].bb[3] + B.isolement + 0.02];
+        if (conflitPad(newPads[i], obsGrille(G, newPads[i].net, bx, ex))) return annuler();
+      }
+      /* chevauchement nouveau avec un autre composant */
+      nb = bboxMonde(c);
+      for (i = 0; i < B.comps.length; i++) {
+        o = B.comps[i]; if (o === c) continue;
+        q = bboxMonde(o);
+        if (nb[0] < q[2] && nb[2] > q[0] && nb[1] < q[3] && nb[3] > q[1]) {
+          /* déjà en recouvrement avant le déplacement ? */
+          if (!(nb[0] - dx < q[2] && nb[2] - dx > q[0] && nb[1] - dy < q[3] && nb[3] - dy > q[1])) return annuler();
+        }
+      }
+      G.pads = G.pads.filter(function (z) { return z.c !== c; }).concat(newPads);
+    }
+    return true;
+  }
+  /* Positions de grille candidates : la plus proche d'abord, puis les voisines */
+  function candidatsGrille(x0, y0) {
+    var g = B.grille, cx = [], cy = [], r = [], nx = Math.round(x0 / g), ny = Math.round(y0 / g), i, j;
+    cx.push(nx); if (Math.abs(x0 - nx * g) > 1e-4) cx.push(nx + (x0 / g > nx ? 1 : -1));
+    cy.push(ny); if (Math.abs(y0 - ny * g) > 1e-4) cy.push(ny + (y0 / g > ny ? 1 : -1));
+    for (i = 0; i < cx.length; i++) for (j = 0; j < cy.length; j++) r.push({ x: arr(cx[i] * g), y: arr(cy[j] * g) });
+    r.sort(function (a, b) { return Math.abs(a.x - x0) + Math.abs(a.y - y0) - Math.abs(b.x - x0) - Math.abs(b.y - y0); });
+    return r;
+  }
+  function essaiGrille(G, it) {
+    var x0 = it.c ? it.c.x : it.v.x, y0 = it.c ? it.c.y : it.v.y, l = candidatsGrille(x0, y0), i;
+    if (Math.abs(l[0].x - x0) < 1e-4 && Math.abs(l[0].y - y0) < 1e-4) return 'deja';
+    for (i = 0; i < l.length; i++) if (deplacerSansRerouter(G, it, arr(l[i].x - x0), arr(l[i].y - y0))) return 'ok';
+    return 'non';
+  }
+  /* Passifs dont une patte n'est reliée à rien (erreur de schéma probable) */
+  function pattesLibres() {
+    var r = [], i, c, p, j, e, n;
+    for (i = 0; i < B.comps.length; i++) {
+      c = B.comps[i];
+      if (c.type !== 'R' && c.type !== 'L' && c.type !== 'C' && c.type !== 'D') continue;
+      p = gab(c); if (!p) continue;
+      for (j = 0; j < p.el.length; j++) {
+        e = p.el[j]; if (!estPad(e)) continue;
+        n = netDe(c.ref + ':' + e.nom);
+        if (!n || n.pins.length < 2) r.push({ c: c, txt: c.ref + '.' + e.nom + (c.val ? ' (' + c.val + ')' : '') });
+      }
+    }
+    return r;
+  }
+  function alignerSurGrille() {
+    var t0 = Date.now(), av = instantane(), G = { pads: [] }, items = [], vus = {}, i, j, c, v, it, res, nbC = 0, nbV = 0, deja = 0, refus = [], reste, rf, libres;
+    if (!B.comps.length) return;
+    B.comps.forEach(function (x) { G.pads = G.pads.concat(padsGrille(x)); });
+    for (i = 0; i < B.comps.length; i++) {
+      c = B.comps[i]; if (c.type === 'PATCH' || c.type === 'PONT') continue;
+      rf = G.pads.some(function (z) { return z.c === c && z.net && (netParNom(z.net) || {}).type === 'rf'; });
+      if (!rf) items.push({ c: c, nom: c.ref });
+    }
+    for (i = 0; i < B.vias.length; i++) {
+      v = B.vias[i]; if (v.pont !== undefined) continue;
+      for (j = 0; j < G.pads.length; j++) if (v.x >= G.pads[j].bb[0] && v.x <= G.pads[j].bb[2] && v.y >= G.pads[j].bb[1] && v.y <= G.pads[j].bb[3] && dansForme(G.pads[j].e, v.x, v.y, 0)) break;
+      if (j < G.pads.length) continue;
+      if (v.net && (netParNom(v.net) || {}).type === 'rf') continue;
+      items.push({ v: v, nom: 'via' });
+    }
+    reste = items;
+    for (i = 0; i < 2 && reste.length; i++) {
+      var suite = [];
+      reste.forEach(function (x) { var r = essaiGrille(G, x); if (r === 'ok') { if (x.c) nbC++; else nbV++; } else if (r === 'deja') deja++; else suite.push(x); });
+      reste = suite;
+    }
+    reste.forEach(function (x) { if (x.c) refus.push(x.c.ref); });
+    if (nbC + nbV) { empiler(av); ajusterTextes(); figerContour(); OPT = null; }
+    libres = pattesLibres();
+    RAPPORT_GRILLE = { grille: B.grille, nbC: nbC, nbV: nbV, deja: deja, refus: refus, viasRefus: reste.filter(function (x) { return !x.c; }).length, ms: Date.now() - t0 };
+    message('Grille ' + String(B.grille).replace('.', ',') + ' mm : ' + nbC + ' composant(s) et ' + nbV + ' via(s) alignés' + (refus.length || RAPPORT_GRILLE.viasRefus ? ' · ' + refus.length + ' composant(s) et ' + RAPPORT_GRILLE.viasRefus + ' via(s) non alignables sans rerouter' : '') + (libres.length ? ' · ' + libres.length + ' patte(s) libre(s) de passif' : '') + (nbC + nbV ? ' · Ctrl+Z annule' : ''), !nbC && !nbV && !deja);
+    toutRafraichir();
+  }
   /* Clic droit sur un groupe Ctrl+rectangle : alignement (le groupe revient d'abord à sa place) ; moins de deux composants : annulation */
   function alignerOuAnnuler(w) {
     var g = B.groupe;
@@ -13315,7 +13693,7 @@ function traduire(s) {
     return l;
   }
   /* Zones des boîtiers à billes où le cuivre d'une couche interne (plan ou remplissage) n'est pas aminci */
-  function mailleBga(n) { return n > 1 && n < bas() ? zonesBga() : []; }
+  function mailleBga(n) { return n > 1 ? zonesBga() : []; }
   function degEn(q, zb) { return zb.some(function (b) { return q.x >= b[0] && q.x <= b[2] && q.y >= b[1] && q.y <= b[3]; }) ? Math.min(B.degPlan, B.isolement) : B.degPlan; }
   function retirerIlots(G, n, ct, plan) {
     var res = ilots(function (Gt) { return phaseMasse(Gt, n, ct, plan); }, ct, mailleBga(n));
@@ -14288,7 +14666,7 @@ function traduire(s) {
      bord) ou si une piste ne tient plus ; renvoie true si fait */
   function optGlisserVia(i, jv, V, suite, fin) {
     var v = B.vias[jv], t = B.pistes[i], aut = [], ok = true, np, j, u, e0, e1, nps = [];
-    if (v.couture || v.thermique || estPont(v) || optViaSurPastille(v, 0)) return false;
+    if (v.couture || v.thermique || v.renfort || estPont(v) || optViaSurPastille(v, 0)) return false;
     if (!optDansCarte(V, v.diam / 2) || optViaSurPastille(V, B.isolement + v.diam / 2)) return false;
     if (optJeu(V, V, v.diam / 2, 0, v.net, B.isolement) < B.isolement - 1e-6) return false;
     for (j = 0; j < B.pistes.length && ok; j++) {
@@ -17696,7 +18074,7 @@ function traduire(s) {
       for (j = 1; j <= B.nc; j++) d.disque('CUIVRE_' + j, f.x, f.y, f.diam / 2);
       d.cercle('PERCAGE', f.x, f.y, f.perc / 2);
       d.g(0, 'POINT').g(8, 'AZSCAD').g(10, nb(f.x)).g(20, nb(f.y)).g(30, 0);
-      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net].concat(f.couture ? ['COUTURE=1'] : []).concat(f.thermique ? ['THERMIQUE=1'] : []).concat(estPont(f) ? ['PONT=' + f.pont] : []));
+      d.xdata(['VIA', 'X=' + f.x, 'Y=' + f.y, 'PERC=' + f.perc, 'DIAM=' + f.diam, 'NET=' + f.net].concat(f.couture ? ['COUTURE=1'] : []).concat(f.thermique ? ['THERMIQUE=1'] : []).concat(f.renfort ? ['RENFORT=1'] : []).concat(estPont(f) ? ['PONT=' + f.pont] : []));
     }
     /* Textes libres de sérigraphie */
     for (i = 0; i < B.textes.length; i++) {
@@ -17727,7 +18105,7 @@ function traduire(s) {
         if (k.ARC) { m = k.ARC.split(',').map(parseFloat); if (m.length === 5 && m.every(isFinite)) dern.arc = { x: m[0], y: m[1], r: m[2], a0: m[3], da: m[4] }; }
       }
       else if (xd[0] === 'TEXTE') { r.textes.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, h: lireNb(k.H) || 1.5, rot: lireNb(k.ROT) || 0, dessous: k.FACE === 'dessous', txt: k.TXT || '' }); if (parseInt(k.PONT, 10) > 0) r.textes[r.textes.length - 1].pont = parseInt(k.PONT, 10); }
-      else if (xd[0] === 'VIA') { r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' }); if (k.THERMIQUE === '1') r.vias[r.vias.length - 1].thermique = true; if (k.COUTURE === '1') r.vias[r.vias.length - 1].couture = true; if (parseInt(k.PONT, 10) > 0) r.vias[r.vias.length - 1].pont = parseInt(k.PONT, 10); }
+      else if (xd[0] === 'VIA') { r.vias.push({ x: lireNb(k.X) || 0, y: lireNb(k.Y) || 0, perc: lireNb(k.PERC) || 0.8, diam: lireNb(k.DIAM) || 1.6, net: k.NET || '' }); if (k.THERMIQUE === '1') r.vias[r.vias.length - 1].thermique = true; if (k.RENFORT === '1') r.vias[r.vias.length - 1].renfort = true; if (k.COUTURE === '1') r.vias[r.vias.length - 1].couture = true; if (parseInt(k.PONT, 10) > 0) r.vias[r.vias.length - 1].pont = parseInt(k.PONT, 10); }
       else if (xd[0] === 'BOARD') {
         r.ok = true; r.lib = k.LIB || ''; r.sch = k.SCH || '';
         if (lireNb(k.LARGEUR)) r.largeur = lireNb(k.LARGEUR);
