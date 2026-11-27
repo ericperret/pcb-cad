@@ -6,13 +6,13 @@
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
  Date       : 2026-11-27
- Version    : 1.85.1
+ Version    : 1.86.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.4.1, Schéma 1.21.0, Circuit 1.70.1 (cartouche et
+ Modules    : Bibliothèque 1.4.1, Schéma 1.21.0, Circuit 1.71.2 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -431,6 +431,14 @@
                       (Dégrouper dans le panneau du texte)
    1.85.1 2026-11-27  Circuit 1.70.1 : groupe de sérigraphie fait aussi quand l'alignement est refusé ; menu Texte :
                       « Grouper automatiquement » (toute la carte, voisins à moins de 2 mm) et « Dégrouper tout »
+   1.86.0 2026-11-27  Circuit 1.71.0 : contrôle ERC / DRC lancé à l'ouverture de l'aperçu Gerber, « Télécharger le
+                      zip » grisé tant qu'une erreur n'est pas corrigée ou en dérogation ; DRC indépendant du
+                      routeur, sur les fichiers relus (connectivité / netlist, isolement, largeur, couronnes,
+                      trous, bord)
+   1.86.1 2026-11-27  Circuit 1.71.1 : via d'alimentation prise dans un évidement de plan (couloir 50 Ω, carré
+                      central) reliée au plan par un pont (U3.10 +3V3 isolé sous le couloir de N58 / N59)
+   1.86.2 2026-11-27  Circuit 1.71.2 : ERC, source d'alimentation reconnue au travers d'une self ou d'une ferrite
+                      (patte SW / LX d'un convertisseur à découpage, ex. TLV62569)
    1.76.3 2026-11-23  Circuit 1.61.3 : alignement : les vias posées sur une pastille (masse comprise) suivent
                       leur composant au lieu d'être supprimées ; les autres vias de la zone restent
 
@@ -7861,7 +7869,7 @@ function traduire(s) {
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
  Date       : 2026-11-27
- Version    : 1.70.1
+ Version    : 1.71.2
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -8523,6 +8531,20 @@ function traduire(s) {
                       consécutifs) : un texte « R10..22.33R » autour des pastilles du groupe ; DXF GS= et TM=
    1.70.1 2026-11-27  Groupe de sérigraphie aussi sur alignement refusé ; Texte ▸ Grouper automatiquement
                       (séries consécutives, voisins à moins de 2 mm), Dégrouper tout
+   1.71.0 2026-11-27  Contrôle ERC / DRC avant le zip Gerber (usage : zéro erreur sans dérogation). ERC sur la
+                      netlist : passif à patte libre, broche d'alimentation non reliée (erreurs) ; équipotentielle
+                      à une patte, alimentation sans source apparente, noms d'alimentation voisins (avert.).
+                      DRC sur les Gerber / Excellon relus, rasterisés (pas ≥ 10 µm, 20 Mpx au plus) : courts-
+                      circuits, réseaux coupés ou non routés, pastilles absentes, isolement (règle du projet),
+                      largeur (minimum de fabrication ; liseré dans un remplissage = avert.), couronnes, trou à
+                      trou 0,25, cuivre au bord 0,26, trou au bord 0,26 via / 0,52 ; cuivre sans équipotentielle
+                      (avert.). Clic sur un défaut : vue agrandie centrée, cerclée de rouge. Dérogation par case
+                      à cocher, enregistrée avec le circuit (DXF EXCL=)
+   1.71.1 2026-11-27  Remplissage : via de l'équipotentielle prise dans un évidement (couloir 50 Ω d'une couche
+                      interne, carré central sous un boîtier) reliée au cuivre du plan par un pont perpendiculaire
+                      au bord le plus proche, à l'isolement des autres équipotentielles
+   1.71.2 2026-11-27  ERC : alimentation sourcée aussi au travers d'une self ou d'une ferrite (L, FB) reliée à une
+                      patte SW / LX de convertisseur à découpage ou à une autre alimentation sourcée
    1.59.1 2026-11-20  Via d'une patte CMS (bille, circuit, passif) : au centre exact de sa pastille, dans
                       tous les tracés (re-routage, tronçons, forcé, négocié, chevelu) ; la piste interne
                       part de cette via ; via déjà dans la pastille reprise ; plus aucune via posée à
@@ -8748,6 +8770,14 @@ function traduire(s) {
   .apBarre .espace{flex:1}
   #apInfo{color:#9a9a9a}
   #apCorps{flex:1; min-height:0; display:flex}
+  #apDrc{width:360px; flex:none; overflow:auto; padding:10px 12px; border-left:1px solid #333; font-size:12px; line-height:1.35}
+  #apDrc .stat{color:#aaa; margin:3px 0} #apDrc .avert{color:#ff8a80; font-weight:600; margin:3px 0}
+  .apDrcTitre{font-weight:600; color:#fff; font-size:13px; margin-bottom:6px}
+  .apDrcSec{margin:10px 0 4px; color:#ccc; font-weight:600}
+  .apDef{display:flex; gap:6px; align-items:flex-start; padding:3px 2px; cursor:pointer; border-radius:4px}
+  .apDef:hover{background:#262626} .apDef input{margin-top:2px}
+  .apDef.err span{color:#ff8a80} .apDef.avt span{color:#e6c35c} .apDef.exc span{color:#8a8a8a; text-decoration:line-through}
+  #apTelecharger:disabled{opacity:.4; cursor:not-allowed}
   #apPlanche{flex:1; overflow:auto; padding:16px; display:flex; flex-wrap:wrap; gap:16px; align-content:flex-start}
   #apPlanche.cache,#apVue.cache,#apRetour.cache{display:none}
   .apMini{background:#1c1c1c; border:1px solid #333; border-radius:6px; padding:8px; cursor:pointer}
@@ -8769,7 +8799,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.70.1</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.71.2</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -8831,6 +8861,7 @@ function traduire(s) {
   <div id="apCorps">
     <div id="apPlanche"></div>
     <div id="apVue" class="cache"><div id="apCouches"></div><div id="apCadre"><canvas id="apCv"></canvas><div id="apCoord"></div></div></div>
+    <div id="apDrc"></div>
   </div>
 </div>
 <div id="bulle"></div>
@@ -9059,7 +9090,20 @@ var TRAD_EN = [
   ['texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber', 'text(s) on a pad: framed in red, clipped on the pads in the Gerber'], ['texte(s) qui se chevauchent', 'overlapping text(s)'],
   ['texte(s) sur une pastille, coupé(s) dans le Gerber', 'text(s) on a pad, clipped in the Gerber'], ['Sérigraphie : textes replacés automatiquement', 'Silkscreen: texts re-placed automatically'], ['chevauchement(s)', 'overlap(s)'], ['rappel', 'leader'], ['au-delà de', 'beyond'], ['des pastilles', 'from the pads'], ['Trait', 'Stroke'],
   ['Tous les passifs en 0805', 'All passives to 0805'],
-  ['Groupe de sérigraphie : ', 'Silkscreen group: '], ['Dégrouper', 'Ungroup'], ['Texte non affiché : il chevauchait un texte de plus petit numéro', 'Text not shown: it overlapped a lower-numbered text'],
+  ['Groupe de sérigraphie : ', 'Silkscreen group: '],
+  ['Contrôle ERC / DRC en cours', 'ERC / DRC check running'], ['Contrôle ERC / DRC', 'ERC / DRC check'], ['erreur(s) sans dérogation : zip bloqué', 'error(s) without waiver: zip blocked'],
+  ['Aucune erreur sans dérogation : zip autorisé', 'No error without waiver: zip allowed'], ['Règles : ', 'Rules: '], [' · piste ', ' · track '], [' · couronne ', ' · annular ring '],
+  [' · trou à trou ', ' · hole to hole '], [' · bord ', ' · edge '], [' · pas de relecture ', ' · read-back pitch '], [') · case = dérogation', ') · box = waiver'], ['Erreurs (', 'Errors ('], ['Avertissements (', 'Warnings ('],
+  ['ERC · broche d\'alimentation non reliée : ', 'ERC · power pin not connected: '], ['ERC · passif à patte libre : ', 'ERC · passive with a free pin: '],
+  ['ERC · équipotentielle à une seule patte : ', 'ERC · single-pin net: '], ['ERC · alimentation sans source apparente (connecteur, sortie de régulateur) : ', 'ERC · supply with no apparent source (connector, regulator output): '],
+  ['ERC · noms d\'alimentation voisins, deux réseaux distincts : ', 'ERC · near-identical supply names, two separate nets: '], ['DRC · court-circuit : ', 'DRC · short circuit: '],
+  ['DRC · réseau coupé ou non routé : ', 'DRC · net broken or unrouted: '], [' morceaux (isolé : ', ' pieces (isolated: '], ['DRC · isolement ', 'DRC · clearance '], ['cuivre isolé', 'isolated copper'],
+  ['DRC · cuivre à moins de ', 'DRC · copper closer than '], [' mm du bord · ', ' mm to the edge · '], ['DRC · liseré de cuivre plus fin que ', 'DRC · copper sliver thinner than '], [' mm (remplissage) · ', ' mm (fill) · '],
+  ['DRC · cuivre plus fin que ', 'DRC · copper thinner than '], ['DRC · couronne ', 'DRC · annular ring '], [') · perçage ', ') · drill '], ['DRC · pastille absente du Gerber : ', 'DRC · pad missing from the Gerber: '],
+  ['DRC · trous trop proches : ', 'DRC · holes too close: '], ['superposés', 'overlapping'], [' mm bord à bord', ' mm edge to edge'], ['DRC · trou trop près du bord de carte : ', 'DRC · hole too close to the board edge: '],
+  ['DRC · cuivre sans équipotentielle · ', 'DRC · copper without net · '], ['autre(s) morceau(x) de cuivre sans équipotentielle', 'other piece(s) of copper without net'], ['Contrôle interrompu : ', 'Check interrupted: '],
+  ['Contour ou cuivre absent des fichiers relus', 'Outline or copper missing from the read-back files'], [' erreur(s) sans dérogation : corriger, ou cocher « Dérogation »', ' error(s) without waiver: fix them, or tick "Waiver"'],
+  ['Dérogation : erreur acceptée, enregistrée avec le circuit', 'Waiver: error accepted, saved with the board'], ['préparation', 'preparation'], ['Dégrouper', 'Ungroup'], ['Texte non affiché : il chevauchait un texte de plus petit numéro', 'Text not shown: it overlapped a lower-numbered text'],
   ['texte(s) non affiché(s) : chevauchement, le plus grand numéro cède', 'text(s) not shown: overlap, the highest number gives way'], ['sérigraphie groupée : ', 'silkscreen grouped: '], ['Sérigraphie groupée : ', 'Silkscreen grouped: '], ['Grouper automatiquement (R10..22.33R)', 'Group automatically (R10..22.33R)'], ['Dégrouper tout', 'Ungroup all'], ['Sérigraphie : aucun groupe à faire (même valeur, numéros consécutifs, voisins à moins de ', 'Silkscreen: no group to make (same value, consecutive numbers, neighbours within '], ['Sérigraphie : aucun groupe', 'Silkscreen: no group'], ['Sérigraphie : groupes défaits', 'Silkscreen: groups undone'], ['déjà aligné', 'already aligned'],
   ['Aligner sur la grille', 'Align to grid'],
   ['Composants et vias libres vers la grille, sans rerouter (hors lignes 50 Ω)', 'Components and free vias to the grid, without re-routing (not 50 Ω lines)'],
@@ -9218,7 +9262,7 @@ function traduire(s) {
     grille: 1.27, z: 6, ox: 0, oy: 0, dpr: 1, W: 0, H: 0,
     pistes: [], vias: [], mode: 'placer', couche: 1, largeur: 0.1, via: { perc: 0.2, diam: 0.4 },
     substrat: 0.8, isolement: 0.1, nc: 6, reglesAuto: false, planVcc: '', plansAl: '', degPlan: 0.4, hDiel: 0.2, coupe: null, outilCoupe: null, remp: '', route: null, selP: null, selV: null,
-    textes: [], selT: -1, selPont: 0, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }, serig: { h: 1.0, contenu: 'ref', orient: 0 },
+    textes: [], selT: -1, selPont: 0, outilTexte: false, contour: { type: 'auto', l: 100, h: 80 }, serig: { h: 1.0, contenu: 'ref', orient: 0 }, excl: [],
     poids: null
   };
   var $ = function (id) { return document.getElementById(id); };
@@ -13846,16 +13890,20 @@ function traduire(s) {
      claire (autres équipotentielles, zones des patchs, saignée de la coupe, mires, « AZS »), rayons
      thermiques en polarité sombre ; renvoie les points d'ancrage (cuivre de l'équipotentielle) */
   function phaseMasse(G, n, ct, plan) {
-    var pads = tousPads(), m = mires(ct), dg = B.degPlan, zb = zonesBga(), r = RETRAIT_PLAN, ancres = [], i, p, t, v, nt, meme, obsNet = {}, a, saignee = B.coupe && netRemp(n) === 'GND' ? coupeEtendue() : null;
+    var pads = tousPads(), m = mires(ct), dg = B.degPlan, zb = zonesBga(), r = RETRAIT_PLAN, ancres = [], i, p, t, v, nt, meme, obsNet = {}, a, saignee = B.coupe && netRemp(n) === 'GND' ? coupeEtendue() : null, evid = [];
     function relie(net, x, y) { return relieRemp(n, net, x, y); }
     G.region(contourPts(ct, r));
     G.polarite(false);
     patchs().forEach(function (c) { var z = cuivrePatch(c).zone; if (z) G.region(z); });
     /* plan d'alimentation évidé sous le carré central de masse d'un boîtier */
-    if (netRemp(n) && netRemp(n) !== 'GND') carresCentraux().forEach(function (c) { var b = c.bx; G.region([[b[0] - dg, b[1] - dg], [b[2] + dg, b[1] - dg], [b[2] + dg, b[3] + dg], [b[0] - dg, b[3] + dg]]); });
+    if (netRemp(n) && netRemp(n) !== 'GND') carresCentraux().forEach(function (c) { var b = c.bx; evid.push({ k: 'r', b: [b[0] - dg, b[1] - dg, b[2] + dg, b[3] + dg] }); G.region([[b[0] - dg, b[1] - dg], [b[2] + dg, b[1] - dg], [b[2] + dg, b[3] + dg], [b[0] - dg, b[3] + dg]]); });
     if (B.coupe && netRemp(n) === 'GND') G.trait(coupeEtendue(), 2 * dg);
     /* couches internes évidées sous les lignes 50 Ω (référence : le dessous) */
-    if (n > 1 && n < bas()) B.pistes.forEach(function (t2) { if (optRfNet(t2.net)) G.trait(t2.pts, t2.w + 2 * couloir50() + 2 * dg); });
+    if (n > 1 && n < bas()) B.pistes.forEach(function (t2) {
+      if (!optRfNet(t2.net)) return;
+      G.trait(t2.pts, t2.w + 2 * couloir50() + 2 * dg);
+      for (var k2 = 0; k2 + 1 < t2.pts.length; k2++) evid.push({ k: 's', a: t2.pts[k2], b: t2.pts[k2 + 1], h: t2.w / 2 + couloir50() + dg });
+    });
     for (i = 0; i < m.length; i++) G.flash(m[i].x, m[i].y, MIRE.cuivre + 2 * dg);
     for (i = 0; i < pads.length; i++) {
       p = pads[i];
@@ -13874,6 +13922,32 @@ function traduire(s) {
     }
     G.region(boiteAzs(ct));
     G.polarite(true);
+    /* via de l'équipotentielle prise dans un évidement (couloir 50 Ω, carré central) : pont jusqu'au cuivre du plan,
+       perpendiculaire au bord le plus proche, à l'isolement des autres équipotentielles ; sans pont elle resterait
+       isolée (alimentation non reçue : contrôle DRC « réseau coupé ») */
+    if (evid.length) B.vias.forEach(function (v2) {
+      var c = { x: v2.x, y: v2.y }, rv = v2.diam / 2, e, k2, dir = null, L = 0, d, q, t2, u, fin, o, w = RAYON_THERMIQUE;
+      for (k2 = 0; k2 < evid.length && !dir; k2++) {
+        e = evid[k2];
+        if (e.k === 'r') {
+          if (c.x < e.b[0] - rv || c.x > e.b[2] + rv || c.y < e.b[1] - rv || c.y > e.b[3] + rv) continue;
+          d = [[c.x - e.b[0], -1, 0], [e.b[2] - c.x, 1, 0], [c.y - e.b[1], 0, -1], [e.b[3] - c.y, 0, 1]].sort(function (x, y) { return x[0] - y[0]; })[0];
+          dir = { x: d[1], y: d[2] }; L = d[0] + 0.1;
+        } else {
+          if (distSeg(c.x, c.y, e.a, e.b) >= e.h + rv) continue;
+          u = { x: e.b.x - e.a.x, y: e.b.y - e.a.y }; t2 = u.x * u.x + u.y * u.y;
+          t2 = t2 ? Math.max(0, Math.min(1, ((c.x - e.a.x) * u.x + (c.y - e.a.y) * u.y) / t2)) : 0;
+          q = { x: e.a.x + t2 * u.x, y: e.a.y + t2 * u.y }; d = Math.sqrt((c.x - q.x) * (c.x - q.x) + (c.y - q.y) * (c.y - q.y));
+          if (d < 1e-6) continue;
+          dir = { x: (c.x - q.x) / d, y: (c.y - q.y) / d }; L = e.h - d + 0.1;
+        }
+      }
+      if (!dir || !relie(v2.net, v2.x, v2.y) || L <= rv) return;
+      fin = { x: c.x + dir.x * L, y: c.y + dir.y * L };
+      o = obsNet[v2.net] || (obsNet[v2.net] = obstacles(v2.net));
+      for (k2 = 0; k2 < o.length; k2++) if (o[k2].couches.indexOf(n) >= 0 && ecart(c, fin, w / 2, o[k2]).d < dg - 1e-6) return;
+      G.trait([c, fin], w); ancres.push(fin);
+    });
     for (i = 0; i < pads.length; i++) {
       p = pads[i];
       if ((plan ? p.e.t !== 'pad' : p.couches.indexOf(n) < 0) || p.e.via || padPlein(p)) continue;
@@ -18210,12 +18284,13 @@ function traduire(s) {
     $('apInfo').textContent = fichiers.length + ' fichier(s) · ' + ct.nom + ' ' + String(arr(ct.l)).replace('.', ',') + ' × ' + String(arr(ct.h)).replace('.', ',') + ' mm · vue de dessus';
     $('apercu').className = '';
     planche();
+    drcLancer();
   }
-  function fermerApercu() { $('apercu').className = 'cache'; AP.couches = []; AP.fichiers = []; }
+  function fermerApercu() { $('apercu').className = 'cache'; AP.couches = []; AP.fichiers = []; DRC = null; }
   /* Vue agrandie : couches superposables, transparence, zoom, déplacement, coordonnées, distance (Maj + clic) */
   function ouvrirVueAp(i) {
     var l = $('apCouches'), k, L, d, cb, rg;
-    AP.vue = i;
+    AP.vue = i; AP.mark = null;
     for (k = 0; k < AP.couches.length; k++) AP.couches[k].vis = k === i;
     l.textContent = '';
     for (k = 0; k < AP.couches.length; k++) {
@@ -18264,6 +18339,12 @@ function traduire(s) {
       x.setTransform(AP.dpr, 0, 0, AP.dpr, 0, 0); x.strokeStyle = '#C04DFF'; x.lineWidth = 1;
       x.beginPath(); x.moveTo(s.x - 8, s.y); x.lineTo(s.x + 8, s.y); x.moveTo(s.x, s.y - 8); x.lineTo(s.x, s.y + 8); x.stroke();
     }
+    if (AP.mark) {
+      s = { x: AP.ox + AP.mark.x * AP.z, y: AP.oy - AP.mark.y * AP.z };
+      x.setTransform(AP.dpr, 0, 0, AP.dpr, 0, 0); x.strokeStyle = '#FF3B3B'; x.lineWidth = 2;
+      x.beginPath(); x.arc(s.x, s.y, 16, 0, Math.PI * 2); x.stroke();
+      x.beginPath(); x.moveTo(s.x - 24, s.y); x.lineTo(s.x - 18, s.y); x.moveTo(s.x + 18, s.y); x.lineTo(s.x + 24, s.y); x.moveTo(s.x, s.y - 24); x.lineTo(s.x, s.y - 18); x.moveTo(s.x, s.y + 18); x.lineTo(s.x, s.y + 24); x.stroke();
+    }
   }
   function posAp(ev) { var r = $('apCv').getBoundingClientRect(), m = { x: ev.clientX - r.left, y: ev.clientY - r.top }; return { m: m, w: { x: (m.x - AP.ox) / AP.z, y: (AP.oy - m.y) / AP.z } }; }
   $('apCv').addEventListener('wheel', function (ev) {
@@ -18297,6 +18378,421 @@ function traduire(s) {
   }, true);
   $('apRetour').addEventListener('click', planche);
   $('apFermer').addEventListener('click', fermerApercu);
+  /* ======================================================================
+     Contrôle ERC / DRC avant le zip (usage : aucune erreur sans dérogation avant la sortie fabrication)
+     ERC sur la netlist de la carte. DRC indépendant du routeur, sur les fichiers Gerber et Excellon relus :
+     couches cuivre rasterisées (pas ≥ 10 µm, 20 Mpx au plus), îlots étiquetés (4-connexité) et reliés par les
+     perçages ; connectivité comparée à la netlist (courts-circuits, réseaux coupés ou non routés, pastilles
+     absentes) ; isolement entre îlots d'équipotentielles différentes (fronts propagés depuis le cuivre, distance
+     exacte entre pixels sources) ; largeur minimale (ouverture morphologique, chanfrein 3-4) ; couronnes ; trou à
+     trou ; cuivre et trous trop près du bord. Erreur : zip grisé tant qu'elle n'est pas en dérogation (case
+     cochée, enregistrée avec le circuit, DXF EXCL=) ; avertissement : information
+     ====================================================================== */
+  /* Trou à trou bord à bord ; cuivre au bord (PCBCart 0,2 détouré + 30 %) ; bord de trou au bord (via 0,2 / trou 0,4 + 30 %) */
+  var DRC_MINI = { trous: 0.25, bord: 0.26, bordVia: 0.26, bordTrou: 0.52, via: 0.45 };
+  var DRC = null;
+  function drcExclu(d) { return (B.excl || []).indexOf(d.sig) >= 0; }
+  function drcPos(x, y) { return '(' + mmTxt(x) + ' ; ' + mmTxt(y) + ')'; }
+  function drcLancer() {
+    var D = { fini: false, err: [], avt: [], etape: 'préparation' }, cu = [], trous = [], ctr = null, i, m, L, R, etapes = [];
+    DRC = D;
+    for (i = 0; i < AP.couches.length; i++) {
+      L = AP.couches[i];
+      if ((m = /-cuivre(\d+)[.-]/.exec(L.nom))) cu.push({ n: parseInt(m[1], 10), L: L, i: i });
+      else if (L.drl) trous = L.drl.trous;
+      else if (/-contour\./.test(L.nom) && L.ger && L.ger.ops.length && L.ger.ops[0].pts) ctr = L.ger.ops[0].pts;
+    }
+    cu.sort(function (a, b) { return a.n - b.n; });
+    D.cu = cu; D.trous = trous;
+    majDrc();
+    etapes.push(function () { drcErc(D); });
+    if (!ctr || !cu.length) {
+      etapes.push(function () { D.err.push({ sig: 'FICHIERS', txt: 'Contour ou cuivre absent des fichiers relus', x: AP.ct.x0, y: AP.ct.y0, n: 0 }); });
+    } else {
+      etapes.push(function () { R = drcPreparer(D, ctr); });
+      cu.forEach(function (C, j) {
+        etapes.push(function () { D.etape = 'DRC · ' + nomCouche(C.n) + ' (' + (j + 1) + '/' + cu.length + ')'; majDrc(); });
+        etapes.push(function () { drcCouche(D, R, C, j); });
+      });
+      etapes.push(function () { drcBilan(D, R); R = null; });
+    }
+    (function suivant(k) {
+      if (DRC !== D) return;
+      if (k >= etapes.length) { D.fini = true; D.etape = ''; majDrc(); return; }
+      try { etapes[k](); }
+      catch (e) { D.err.push({ sig: 'INTERROMPU', txt: 'Contrôle interrompu : ' + (e && e.message ? e.message : e), x: AP.ct.x0, y: AP.ct.y0, n: 0 }); D.fini = true; D.etape = ''; R = null; majDrc(); return; }
+      setTimeout(function () { suivant(k + 1); }, 0);
+    })(0);
+  }
+  /* ---------- ERC : netlist de la carte ---------- */
+  var ERC_ALIM = /^(?:[ADP]?(?:VCC|VDD|VEE|VSS|GND)|VIN|VBAT|VCORE)|^[+-]\d/i;
+  /* Source d'une alimentation : connecteur, pastille, sortie de régulateur linéaire (OUT, VO…) ; ou, au travers d'une
+     self ou d'une ferrite (L, FB), la patte SW / LX d'un convertisseur à découpage ou une autre alimentation sourcée */
+  function sourceDirecte(p) {
+    var r = p.split(':'), c = compParRef(r[0]), cmp = c && c.type === 'IC' ? cmpParNom(c.val) : null;
+    return /^(J|CN|CON|X|P|K)\d/i.test(r[0]) || (c && c.type === 'PAD') || (!!cmp && /OUT|^VO$|^SW\d*$|^LX\d*$/i.test(cmp.f[r[1]] || ''));
+  }
+  function sourceAlim(n, prof) {
+    return n.pins.some(function (p) {
+      var r = p.split(':'), autre, m;
+      if (sourceDirecte(p)) return true;
+      if (!prof || !/^(L|FB)\d/i.test(r[0])) return false;
+      autre = r[0] + ':' + (r[1] === '1' ? '2' : '1');
+      m = B.nets.filter(function (x) { return x !== n && x.pins.indexOf(autre) >= 0; })[0];
+      return !!m && (m.pins.some(sourceDirecte) || (estAlim(m) && sourceAlim(m, prof - 1)));
+    });
+  }
+  function drcErc(D) {
+    var pin = {}, pos = {}, vus = {}, norm = {}, k, l;
+    B.nets.forEach(function (n) { n.pins.forEach(function (p) { pin[p] = n; }); });
+    tousPads().forEach(function (p) { if (!pos[p.ref + ':' + p.nom]) pos[p.ref + ':' + p.nom] = { x: p.e.x, y: p.e.y, n: p.couches[0] }; });
+    function ici(p) { return pos[p] || { x: AP.ct.x0, y: AP.ct.y0, n: 0 }; }
+    function aj(liste, sig, txt, p) { var q = ici(p); liste.push({ sig: sig, txt: txt, x: q.x, y: q.y, n: q.n }); }
+    pattesLibres().forEach(function (x) {
+      var p = x.txt.split(' ')[0], pp = x.c.ref + ':' + p.slice(x.c.ref.length + 1);
+      vus[pp] = true;
+      aj(D.err, 'PASSIF|' + pp, 'ERC · passif à patte libre : ' + x.txt, pp);
+    });
+    B.comps.forEach(function (c) {
+      var cmp = c.type === 'IC' ? cmpParNom(c.val) : null, p, n;
+      if (!cmp) return;
+      for (p in cmp.f) {
+        if (!cmp.f.hasOwnProperty(p) || !ERC_ALIM.test(cmp.f[p]) || !pos[c.ref + ':' + p]) continue;
+        n = pin[c.ref + ':' + p];
+        if (n && n.pins.length > 1) continue;
+        vus[c.ref + ':' + p] = true;
+        aj(D.err, 'ALIM|' + c.ref + ':' + p, 'ERC · broche d\'alimentation non reliée : ' + c.ref + '.' + p + ' (' + cmp.f[p] + ')', c.ref + ':' + p);
+      }
+    });
+    B.nets.forEach(function (n) {
+      if (n.pins.length === 1 && !vus[n.pins[0]]) aj(D.avt, 'UNE|' + n.nom, 'ERC · équipotentielle à une seule patte : ' + n.nom + ' (' + n.pins[0].replace(':', '.') + ')', n.pins[0]);
+      if (estAlim(n) && n.pins.length > 1 && !sourceAlim(n, 1)) aj(D.avt, 'SOURCE|' + n.nom, 'ERC · alimentation sans source apparente (connecteur, sortie de régulateur) : ' + n.nom, n.pins[0]);
+      if (estAlimNom(n.nom) || estMasseNom(n.nom)) {
+        k = n.nom.toUpperCase().replace(/^\+/, '').replace(/[\s_\-]/g, '').replace(/(\d)[.,](\d)/, '$1V$2').replace(/V0?$/, '');
+        (norm[k] = norm[k] || []).push(n);
+      }
+    });
+    for (k in norm) {
+      if (!norm.hasOwnProperty(k) || norm[k].length < 2) continue;
+      l = norm[k].map(function (n) { return n.nom; }).sort(triNat);
+      aj(D.avt, 'NOMS|' + l.join('|'), 'ERC · noms d\'alimentation voisins, deux réseaux distincts : ' + l.join(' / '), norm[k][0].pins[0]);
+    }
+  }
+  /* ---------- DRC : préparation (cadre, tampons, zone du bord, trous) ---------- */
+  function drcPreparer(D, ctr) {
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, R, c, d, i, j, a, b, t, h, g, dd, k;
+    ctr.forEach(function (q) { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); });
+    R = { X0: x0 - 0.6, Y1: y1 + 0.6 };
+    R.px = Math.max(0.01, Math.sqrt((x1 - x0 + 1.2) * (y1 - y0 + 1.2) / 2e7));
+    R.W = Math.ceil((x1 - x0 + 1.2) / R.px); R.H = Math.ceil((y1 - y0 + 1.2) / R.px); R.N = R.W * R.H;
+    R.cv = document.createElement('canvas'); R.cv.width = R.W; R.cv.height = R.H;
+    R.c = R.cv.getContext('2d', { willReadFrequently: true });
+    R.cu = new Uint8Array(R.N); R.lab = new Int32Array(R.N); R.own = new Int32Array(R.N); R.dt = new Uint16Array(R.N); R.bord = new Uint8Array(R.N);
+    R.off = []; R.tot = 0; R.prem = []; R.paires = []; R.bords = []; R.fins = [];
+    D.px = R.px;
+    /* zone interdite au cuivre : hors contour, et bande de DRC_MINI.bord de part et d'autre du trait de contour */
+    c = R.c;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.fillStyle = '#fff'; c.fillRect(0, 0, R.W, R.H);
+    c.setTransform(1 / R.px, 0, 0, -1 / R.px, -R.X0 / R.px, R.Y1 / R.px);
+    c.beginPath(); ctr.forEach(function (q, k2) { if (k2) c.lineTo(q.x, q.y); else c.moveTo(q.x, q.y); }); c.closePath();
+    c.globalCompositeOperation = 'destination-out'; c.fill();
+    c.globalCompositeOperation = 'source-over'; c.strokeStyle = '#fff'; c.lineJoin = 'round'; c.lineWidth = 2 * DRC_MINI.bord; c.stroke();
+    d = c.getImageData(0, 0, R.W, R.H).data;
+    for (i = 0; i < R.N; i++) R.bord[i] = d[4 * i + 3] >= 128 ? 1 : 0;
+    d = null;
+    /* vérité terrain : pastilles de la carte et leur équipotentielle */
+    D.pads = tousPads().map(function (p) { var n = netDe(p.ref + ':' + p.nom); return { ref: p.ref, nom: p.nom, net: n ? n.nom : '', np: n ? n.pins.length : 0, e: p.e, couches: p.couches, g: [], manque: [] }; });
+    /* trous : index par maille de 1 mm ; trou à trou et trou au bord (géométrie exacte, Excellon relu) */
+    R.grille = {};
+    D.trous.forEach(function (o, k2) { o.g = []; o.ann = null; t = Math.floor(o.x) + ',' + Math.floor(o.y); (R.grille[t] = R.grille[t] || []).push(k2); });
+    for (i = 0; i < D.trous.length; i++) {
+      a = D.trous[i];
+      for (j = i + 1; j < D.trous.length; j++) {
+        b = D.trous[j];
+        if (Math.abs(a.x - b.x) > 3 || Math.abs(a.y - b.y) > 3) continue;
+        dd = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)) - a.d / 2 - b.d / 2;
+        if (dd < DRC_MINI.trous - 0.001) D.err.push({ sig: 'TROU|' + a.x.toFixed(2) + ',' + a.y.toFixed(2) + '|' + b.x.toFixed(2) + ',' + b.y.toFixed(2),
+          txt: 'DRC · trous trop proches : ' + (dd < 0 ? 'superposés' : mmTxt(dd) + ' mm bord à bord') + ' (minimum ' + mmTxt(DRC_MINI.trous) + ') ' + drcPos((a.x + b.x) / 2, (a.y + b.y) / 2), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, n: 1 });
+      }
+      h = a.d <= DRC_MINI.via ? DRC_MINI.bordVia : DRC_MINI.bordTrou;
+      g = 1e9;
+      for (k = 0; k < ctr.length - 1; k++) g = Math.min(g, distSeg(a.x, a.y, ctr[k], ctr[k + 1]));
+      g -= a.d / 2;
+      if (g < h - 0.001) D.err.push({ sig: 'TBORD|' + a.x.toFixed(2) + ',' + a.y.toFixed(2), txt: 'DRC · trou trop près du bord de carte : ' + mmTxt(g) + ' mm (minimum ' + mmTxt(h) + ') ' + drcPos(a.x, a.y), x: a.x, y: a.y, n: 1 });
+    }
+    return R;
+  }
+  function drcLab(R, x, y) { var ix = Math.floor((x - R.X0) / R.px), iy = Math.floor((R.Y1 - y) / R.px); return ix < 0 || iy < 0 || ix >= R.W || iy >= R.H ? 0 : R.lab[iy * R.W + ix]; }
+  function drcCuivre(R, x, y) { var ix = Math.floor((x - R.X0) / R.px), iy = Math.floor((R.Y1 - y) / R.px); return ix >= 0 && iy >= 0 && ix < R.W && iy < R.H && (R.cu[iy * R.W + ix] & 1); }
+  function drcAnneau(R, x, y, r) { var l = [], k, v, a; for (k = 0; k < 16; k++) { a = k * Math.PI / 8; v = drcLab(R, x + r * Math.cos(a), y + r * Math.sin(a)); if (v && l.indexOf(v) < 0) l.push(v); } return l; }
+  function drcPx(R, i) { return { x: R.X0 + (i % R.W + 0.5) * R.px, y: R.Y1 - (Math.floor(i / R.W) + 0.5) * R.px }; }
+  /* ---------- DRC : une couche cuivre ---------- */
+  function drcCouche(D, R, C, j) {
+    var c = R.c, d, i, N = R.N, W = R.W, cu = R.cu, lab = R.lab, pile = R.own, n = 0, s, p, x, prem = [0], off, mp, bd = {};
+    /* rasterisation de la couche relue (perçages déduits du cuivre) */
+    c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, R.W, R.H);
+    c.setTransform(1 / R.px, 0, 0, -1 / R.px, -R.X0 / R.px, R.Y1 / R.px);
+    tracerCouche(c, { nom: C.L.nom, ger: C.L.ger, coul: '#fff' }, D.trous);
+    d = c.getImageData(0, 0, R.W, R.H).data;
+    for (i = 0; i < N; i++) cu[i] = d[4 * i + 3] >= 128 ? 1 : 0;
+    d = null;
+    /* îlots (4-connexité) */
+    lab.fill(0);
+    for (i = 0; i < N; i++) {
+      if (!cu[i] || lab[i]) continue;
+      n++; prem.push(i); s = 0; pile[s++] = i; lab[i] = n;
+      while (s) {
+        p = pile[--s]; x = p % W;
+        if (x > 0 && cu[p - 1] && !lab[p - 1]) { lab[p - 1] = n; pile[s++] = p - 1; }
+        if (x < W - 1 && cu[p + 1] && !lab[p + 1]) { lab[p + 1] = n; pile[s++] = p + 1; }
+        if (p >= W && cu[p - W] && !lab[p - W]) { lab[p - W] = n; pile[s++] = p - W; }
+        if (p + W < N && cu[p + W] && !lab[p + W]) { lab[p + W] = n; pile[s++] = p + W; }
+      }
+    }
+    off = R.tot - 1; R.off[j] = off; R.tot += n; R.prem[j] = prem;
+    /* pastilles de la couche : îlot sous la pastille (au bord du trou pour une traversante ou une via dans la pastille) */
+    D.pads.forEach(function (q) {
+      var l, h, k;
+      if (q.couches.indexOf(C.n) < 0) return;
+      if (q.e.t === 'pad') l = drcAnneau(R, q.e.x, q.e.y, q.e.perc / 2 + 1.5 * R.px);
+      else {
+        l = drcLab(R, q.e.x, q.e.y) ? [drcLab(R, q.e.x, q.e.y)] : [];
+        if (!l.length) { h = drcTrouPres(D, R, q.e.x, q.e.y, 0.35); if (h) l = drcAnneau(R, h.x, h.y, h.d / 2 + 1.5 * R.px); }
+        for (k = 1; !l.length && k <= 2; k++) l = drcAnneau(R, q.e.x, q.e.y, k * R.px);
+      }
+      if (l.length) q.g.push(off + l[0]); else q.manque.push(C.n);
+    });
+    /* trous : îlots touchés (liaison entre couches) et couronne */
+    D.trous.forEach(function (h) {
+      var l = drcAnneau(R, h.x, h.y, h.d / 2 + 1.5 * R.px), k, a, t, mn = 1e9, lim = h.d / 2 + MINI.couronne + 2 * R.px;
+      if (!l.length) return;
+      l.forEach(function (v) { h.g.push(off + v); });
+      for (k = 0; k < 24; k++) {
+        a = k * Math.PI / 12; t = h.d / 2 + 0.75 * R.px;
+        while (t <= lim && drcCuivre(R, h.x + t * Math.cos(a), h.y + t * Math.sin(a))) t += R.px / 2;
+        mn = Math.min(mn, t - h.d / 2);
+      }
+      if (mn < MINI.couronne - R.px && (!h.ann || mn < h.ann.v)) h.ann = { v: mn, n: C.n };
+    });
+    /* cuivre dans la zone du bord : un relevé par îlot */
+    for (i = 0; i < N; i++) if (cu[i] && R.bord[i] && !bd[lab[i]]) bd[lab[i]] = i + 1;
+    R.bords[j] = bd;
+    /* isolement puis largeur */
+    mp = drcIsolement(R);
+    R.paires[j] = [];
+    mp.forEach(function (v) { R.paires[j].push(v); });
+    R.fins[j] = drcLargeur(R, MINI.piste);
+  }
+  function drcTrouPres(D, R, x, y, r) {
+    var best = null, bd = r, i, j, l, k, h, e;
+    for (i = -1; i <= 1; i++) for (j = -1; j <= 1; j++) {
+      l = R.grille[(Math.floor(x) + i) + ',' + (Math.floor(y) + j)] || [];
+      for (k = 0; k < l.length; k++) { h = D.trous[l[k]]; e = Math.sqrt((h.x - x) * (h.x - x) + (h.y - y) * (h.y - y)); if (e < bd) { bd = e; best = h; } }
+    }
+    return best;
+  }
+  /* Isolement : fronts propagés depuis chaque pixel de cuivre (propriétaire = pixel source), K anneaux ; quand deux
+     fronts d'îlots différents se touchent, distance exacte entre leurs sources ; minimum gardé par paire d'îlots */
+  function drcIsolement(R) {
+    var W = R.W, N = R.N, cu = R.cu, lab = R.lab, own = R.own, rg = R.dt, iso = B.isolement || MINI.isolement,
+        K = Math.ceil(iso / R.px / 2) + 2, lim2 = Math.pow(iso / R.px + 2, 2), m = new Map(),
+        dp = [-1, 1, -W, W, -W - 1, -W + 1, W - 1, W + 1], dx = [-1, 1, 0, 0, -1, 1, -1, 1], k, p, q, o, x, sp, sq, la, lb, a, b, d2, key, e;
+    for (p = 0; p < N; p++) { if (cu[p]) { own[p] = p; rg[p] = 0; } else { own[p] = -1; rg[p] = 65535; } }
+    for (k = 1; k <= K; k++) {
+      for (p = 0; p < N; p++) {
+        if (rg[p] !== k - 1) continue;
+        sp = own[p]; la = lab[sp]; x = p % W;
+        for (o = 0; o < 8; o++) {
+          if ((dx[o] < 0 && x === 0) || (dx[o] > 0 && x === W - 1)) continue;
+          q = p + dp[o];
+          if (q < 0 || q >= N) continue;
+          if (rg[q] === 65535) { rg[q] = k; own[q] = sp; continue; }
+          sq = own[q]; lb = lab[sq];
+          if (lb === la) continue;
+          a = sp % W - sq % W; b = (sp - sp % W) / W - (sq - sq % W) / W; d2 = a * a + b * b;
+          if (d2 > lim2) continue;
+          key = la < lb ? la * 4194304 + lb : lb * 4194304 + la;
+          e = m.get(key);
+          if (!e || d2 < e.d2) m.set(key, { a: Math.min(la, lb), b: Math.max(la, lb), d2: d2, sp: sp, sq: sq });
+        }
+      }
+    }
+    return m;
+  }
+  /* Largeur : ouverture par un disque de rayon largeur mini / 2 (distance chanfrein 3-4) ; cuivre non couvert = trop fin ;
+     taches de surface notable seulement (les coins des pastilles rectangulaires ne comptent pas) */
+  function drcLargeur(R, wmin) {
+    var W = R.W, H = R.H, N = R.N, cu = R.cu, d = R.own, t = R.dt, pile = R.lab, r3 = Math.round(3 * (wmin / 2 / R.px - 0.75)),
+        amin = Math.max(8, Math.round(Math.pow(wmin / R.px, 2))), res = [], x, y, p, v, s, a, q, BIG = 1e9;
+    if (r3 < 3) return res;
+    function g(i, xx, yy) { return xx < 0 || yy < 0 || xx >= W || yy >= H ? 0 : d[i]; }
+    for (p = 0; p < N; p++) d[p] = cu[p] ? BIG : 0;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      p = y * W + x; if (!d[p]) continue; v = d[p];
+      v = Math.min(v, g(p - 1, x - 1, y) + 3, g(p - W - 1, x - 1, y - 1) + 4, g(p - W, x, y - 1) + 3, g(p - W + 1, x + 1, y - 1) + 4);
+      d[p] = v;
+    }
+    for (y = H - 1; y >= 0; y--) for (x = W - 1; x >= 0; x--) {
+      p = y * W + x; if (!d[p]) continue; v = d[p];
+      v = Math.min(v, g(p + 1, x + 1, y) + 3, g(p + W + 1, x + 1, y + 1) + 4, g(p + W, x, y + 1) + 3, g(p + W - 1, x - 1, y + 1) + 4);
+      d[p] = v;
+    }
+    function h(i, xx, yy) { return xx < 0 || yy < 0 || xx >= W || yy >= H ? 65000 : t[i]; }
+    for (p = 0; p < N; p++) t[p] = cu[p] && d[p] >= r3 ? 0 : 65000;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      p = y * W + x; if (!t[p]) continue;
+      t[p] = Math.min(t[p], h(p - 1, x - 1, y) + 3, h(p - W - 1, x - 1, y - 1) + 4, h(p - W, x, y - 1) + 3, h(p - W + 1, x + 1, y - 1) + 4);
+    }
+    for (y = H - 1; y >= 0; y--) for (x = W - 1; x >= 0; x--) {
+      p = y * W + x; if (!t[p]) continue;
+      t[p] = Math.min(t[p], h(p + 1, x + 1, y) + 3, h(p + W + 1, x + 1, y + 1) + 4, h(p + W, x, y + 1) + 3, h(p + W - 1, x - 1, y + 1) + 4);
+    }
+    for (p = 0; p < N; p++) if (cu[p] && t[p] > r3 + 3) cu[p] |= 2;
+    for (p = 0; p < N; p++) {
+      if ((cu[p] & 6) !== 2) continue;
+      s = 0; a = 0; pile[s++] = p; cu[p] |= 4;
+      while (s) {
+        q = pile[--s]; a++; x = q % W;
+        if (x > 0 && (cu[q - 1] & 6) === 2) { cu[q - 1] |= 4; pile[s++] = q - 1; }
+        if (x < W - 1 && (cu[q + 1] & 6) === 2) { cu[q + 1] |= 4; pile[s++] = q + 1; }
+        if (q >= W && (cu[q - W] & 6) === 2) { cu[q - W] |= 4; pile[s++] = q - W; }
+        if (q + W < N && (cu[q + W] & 6) === 2) { cu[q + W] |= 4; pile[s++] = q + W; }
+      }
+      if (a >= amin) res.push(drcPx(R, p));
+    }
+    return res;
+  }
+  /* ---------- DRC : bilan (connectivité, isolement, bord, largeur, couronnes) ---------- */
+  function drcBilan(D, R) {
+    var par = new Int32Array(R.tot), id = {}, rac = {}, parNet = {}, i, j, k, r, l, n, q, g, iso = B.isolement || MINI.isolement, agr = {}, mi = mires(AP.ct), az = cadreAzs(), cnt = 0;
+    for (i = 0; i < R.tot; i++) par[i] = i;
+    function fd(a) { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; }
+    function un(a, b) { a = fd(a); b = fd(b); if (a !== b) par[b] = a; }
+    D.trous.forEach(function (h) { for (var k2 = 1; k2 < h.g.length; k2++) un(h.g[0], h.g[k2]); });
+    D.pads.forEach(function (p) { for (var k2 = 1; k2 < p.g.length; k2++) un(p.g[0], p.g[k2]); });
+    /* pastilles absentes du cuivre relu */
+    D.pads.forEach(function (p) {
+      if (p.manque.length) D.err.push({ sig: 'PAD|' + p.ref + ':' + p.nom, txt: 'DRC · pastille absente du Gerber : ' + p.ref + '.' + p.nom + ' (' + p.manque.map(nomCouche).join(', ') + ')', x: p.e.x, y: p.e.y, n: p.manque[0] });
+      if (!p.net || !p.g.length) return;
+      r = fd(p.g[0]);
+      (rac[r] = rac[r] || { nets: [], pads: [] });
+      if (rac[r].nets.indexOf(p.net) < 0) rac[r].nets.push(p.net);
+      rac[r].pads.push(p);
+      if (p.np > 1) { (parNet[p.net] = parNet[p.net] || {}); (parNet[p.net][r] = parNet[p.net][r] || []).push(p); }
+    });
+    function ident(gl) { var x = rac[fd(gl)]; return x ? x.nets.slice().sort(triNat).join('+') : ''; }
+    /* courts-circuits */
+    for (r in rac) {
+      if (!rac.hasOwnProperty(r) || rac[r].nets.length < 2) continue;
+      l = rac[r].nets.slice().sort(triNat);
+      q = rac[r].pads.filter(function (p) { return p.net === l[1]; })[0];
+      D.err.push({ sig: 'COURT|' + l.join('|'), txt: 'DRC · court-circuit : ' + l.slice(0, 4).join(' / ') + (l.length > 4 ? '…' : '') + ' (' + rac[r].pads.filter(function (p, k2, t) { return t.findIndex(function (z) { return z.net === p.net; }) === k2; }).slice(0, 4).map(function (p) { return p.ref + '.' + p.nom; }).join(', ') + ')', x: q.e.x, y: q.e.y, n: q.couches[0] });
+    }
+    /* réseaux coupés ou non routés */
+    for (n in parNet) {
+      if (!parNet.hasOwnProperty(n)) continue;
+      l = Object.keys(parNet[n]).map(function (k2) { return parNet[n][k2]; });
+      if (l.length < 2) continue;
+      l.sort(function (a, b) { return b.length - a.length; });
+      q = l[l.length - 1];
+      D.err.push({ sig: 'COUPE|' + n, txt: 'DRC · réseau coupé ou non routé : ' + n + ' · ' + l.length + ' morceaux (isolé : ' + q.slice(0, 4).map(function (p) { return p.ref + '.' + p.nom; }).join(', ') + (q.length > 4 ? '…' : '') + ')', x: q[0].e.x, y: q[0].e.y, n: q[0].couches[0] });
+    }
+    /* isolement */
+    D.cu.forEach(function (C, j2) {
+      R.paires[j2].forEach(function (v) {
+        var ia = ident(R.off[j2] + v.a), ib = ident(R.off[j2] + v.b), gap, cle, a, b;
+        if (ia === ib || (!ia && !ib)) return;
+        gap = (Math.sqrt(v.d2) - 1) * R.px;
+        if (gap >= iso - 0.75 * R.px) return;
+        cle = C.n + '|' + (ia < ib ? ia + '|' + ib : ib + '|' + ia);
+        a = drcPx(R, v.sp); b = drcPx(R, v.sq);
+        if (!agr[cle] || gap < agr[cle].gap) agr[cle] = { gap: Math.max(0, gap), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, n: C.n, ia: ia || 'cuivre isolé', ib: ib || 'cuivre isolé' };
+      });
+    });
+    for (k in agr) if (agr.hasOwnProperty(k)) {
+      q = agr[k];
+      D.err.push({ sig: 'ISO|' + k, txt: 'DRC · isolement ' + mmTxt(q.gap) + ' mm (minimum ' + mmTxt(iso) + ') · ' + nomCouche(q.n) + ' · ' + q.ia + ' / ' + q.ib + ' ' + drcPos(q.x, q.y), x: q.x, y: q.y, n: q.n });
+    }
+    /* cuivre trop près du bord, largeur, couronnes */
+    D.cu.forEach(function (C, j2) {
+      var vu = {};
+      for (var lb in R.bords[j2]) {
+        if (!R.bords[j2].hasOwnProperty(lb)) continue;
+        g = ident(R.off[j2] + parseInt(lb, 10)) || 'cuivre isolé';
+        if (vu[g]) continue;
+        vu[g] = true; q = drcPx(R, R.bords[j2][lb] - 1);
+        D.err.push({ sig: 'BORD|' + C.n + '|' + g, txt: 'DRC · cuivre à moins de ' + mmTxt(DRC_MINI.bord) + ' mm du bord · ' + nomCouche(C.n) + ' · ' + g + ' ' + drcPos(q.x, q.y), x: q.x, y: q.y, n: C.n });
+      }
+      R.fins[j2].forEach(function (q2) {
+        if (remplit(C.n)) D.avt.push({ sig: 'LISERE|' + C.n + '|' + q2.x.toFixed(1) + ',' + q2.y.toFixed(1), txt: 'DRC · liseré de cuivre plus fin que ' + mmTxt(MINI.piste) + ' mm (remplissage) · ' + nomCouche(C.n) + ' ' + drcPos(q2.x, q2.y), x: q2.x, y: q2.y, n: C.n });
+        else D.err.push({ sig: 'LARG|' + C.n + '|' + q2.x.toFixed(1) + ',' + q2.y.toFixed(1), txt: 'DRC · cuivre plus fin que ' + mmTxt(MINI.piste) + ' mm · ' + nomCouche(C.n) + ' ' + drcPos(q2.x, q2.y), x: q2.x, y: q2.y, n: C.n });
+      });
+    });
+    D.trous.forEach(function (h) {
+      if (h.ann) D.err.push({ sig: 'ANN|' + h.x.toFixed(2) + ',' + h.y.toFixed(2), txt: 'DRC · couronne ' + mmTxt(Math.max(0, h.ann.v)) + ' mm (minimum ' + mmTxt(MINI.couronne) + ') · perçage ' + mmTxt(h.d) + ' · ' + nomCouche(h.ann.n) + ' ' + drcPos(h.x, h.y), x: h.x, y: h.y, n: h.ann.n });
+    });
+    /* cuivre sans équipotentielle (hors pattes non connectées, mires et marque AZS) */
+    D.pads.forEach(function (p) { if (!p.net && p.g.length) id[fd(p.g[0])] = true; });
+    mi.forEach(function (m) { var h = drcTrouPres(D, R, m.x, m.y, 0.05); if (h && h.g.length) id[fd(h.g[0])] = true; });
+    D.cu.forEach(function (C, j2) {
+      var k2, gl, rr, p;
+      for (k2 = 1; k2 < R.prem[j2].length; k2++) {
+        gl = R.off[j2] + k2; rr = fd(gl);
+        if (rac[rr] || id[rr]) continue;
+        id[rr] = true;
+        p = drcPx(R, R.prem[j2][k2]);
+        if (p.x >= az.x0 && p.x <= az.x1 && p.y >= az.y0 && p.y <= az.y1) continue;
+        if (++cnt > 60) continue;
+        D.avt.push({ sig: 'FLOT|' + C.n + '|' + p.x.toFixed(1) + ',' + p.y.toFixed(1), txt: 'DRC · cuivre sans équipotentielle · ' + nomCouche(C.n) + ' ' + drcPos(p.x, p.y), x: p.x, y: p.y, n: C.n });
+      }
+    });
+    if (cnt > 60) D.avt.push({ sig: 'FLOT+', txt: 'DRC · ' + (cnt - 60) + ' autre(s) morceau(x) de cuivre sans équipotentielle', x: AP.ct.x0, y: AP.ct.y0, n: 0 });
+  }
+  /* ---------- Fiche du contrôle dans l'aperçu ; zip grisé tant qu'une erreur est sans dérogation ---------- */
+  function majDrc() {
+    var b = $('apDrc'), bt = $('apTelecharger'), D = DRC, n;
+    if (!b) return;
+    b.textContent = '';
+    b.appendChild(E('div', 'apDrcTitre', 'Contrôle ERC / DRC'));
+    if (!D) return;
+    if (!D.fini) {
+      b.appendChild(E('div', 'stat', (D.etape || 'en cours') + '…'));
+      bt.disabled = true; bt.title = 'Contrôle ERC / DRC en cours';
+      return;
+    }
+    n = D.err.filter(function (e) { return !drcExclu(e); }).length;
+    bt.disabled = n > 0;
+    bt.title = n ? n + ' erreur(s) sans dérogation : corriger, ou cocher « Dérogation »' : '';
+    b.appendChild(E('div', n ? 'avert' : 'stat', n ? n + ' erreur(s) sans dérogation : zip bloqué' : 'Aucune erreur sans dérogation : zip autorisé'));
+    b.appendChild(E('div', 'stat', 'Règles : isolement ' + mmTxt(B.isolement || MINI.isolement) + ' · piste ' + mmTxt(MINI.piste) + ' · couronne ' + mmTxt(MINI.couronne) + ' · trou à trou ' + mmTxt(DRC_MINI.trous) + ' · bord ' + mmTxt(DRC_MINI.bord) + ' mm' + (D.px ? ' · pas de relecture ' + Math.round(D.px * 1000) + ' µm' : '')));
+    function ligne(e, err) {
+      var d = E('div', 'apDef ' + (err ? (drcExclu(e) ? 'exc' : 'err') : 'avt')), cb, s;
+      if (err) {
+        cb = E('input'); cb.type = 'checkbox'; cb.checked = drcExclu(e); cb.title = 'Dérogation : erreur acceptée, enregistrée avec le circuit';
+        cb.addEventListener('click', function (ev) { ev.stopPropagation(); });
+        cb.addEventListener('change', function () {
+          var l = B.excl = B.excl || [], k = l.indexOf(e.sig);
+          if (this.checked && k < 0) l.push(e.sig); else if (!this.checked && k >= 0) l.splice(k, 1);
+          marquer(); majDrc();
+        });
+        d.appendChild(cb);
+      }
+      s = E('span', '', e.txt);
+      d.appendChild(s);
+      d.addEventListener('click', function () { allerDefaut(e); });
+      b.appendChild(d);
+    }
+    if (D.err.length) { b.appendChild(E('div', 'apDrcSec', 'Erreurs (' + D.err.length + ') · case = dérogation')); D.err.forEach(function (e) { ligne(e, true); }); }
+    if (D.avt.length) { b.appendChild(E('div', 'apDrcSec', 'Avertissements (' + D.avt.length + ')')); D.avt.forEach(function (e) { ligne(e, false); }); }
+  }
+  function allerDefaut(e) {
+    var k = -1, i, m;
+    for (i = 0; i < AP.couches.length; i++) if ((m = /-cuivre(\d+)[.-]/.exec(AP.couches[i].nom)) && (parseInt(m[1], 10) === e.n || (k < 0 && !e.n))) { k = i; if (parseInt(m[1], 10) === e.n) break; }
+    if (k < 0) k = 0;
+    ouvrirVueAp(k);
+    AP.z = Math.max(AP.z, 40); AP.ox = AP.w / 2 - e.x * AP.z; AP.oy = AP.h / 2 + e.y * AP.z; AP.mark = { x: e.x, y: e.y };
+    vueAp();
+  }
   /* ======================================================================
      Archive ZIP (méthode « stockée », sans compression) : en-têtes locaux,
      répertoire central, fin de répertoire ; CRC-32 polynôme EDB88320
@@ -18442,7 +18938,7 @@ function traduire(s) {
     for (k in B.memoGab) if (B.memoGab.hasOwnProperty(k)) memo.push(k + ':' + B.memoGab[k]);
     d.g(0, 'POINT').g(8, 'AZSCAD').g(10, 0).g(20, 0).g(30, 0);
     d.xdata(['BOARD', 'VERSION=0.8.0', 'LIB=' + B.libNom, 'SCH=' + B.schNom, 'MEMO=' + memo.join(';'),
-             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'POIDS=' + poidsTxt(poids()), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'SERIG=' + B.serig.h + '/' + B.serig.contenu + '/' + B.serig.orient, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : ''), 'BORD=' + margeContour() + '/' + coinsContour() + '/' + rayonCoin()]);
+             'LARGEUR=' + B.largeur, 'VIA=' + B.via.perc + '/' + B.via.diam, 'SUBSTRAT=' + B.substrat, 'ISOLEMENT=' + B.isolement, 'REGLESAUTO=' + (B.reglesAuto ? 1 : 0), 'POIDS=' + poidsTxt(poids()), 'COUCHES=' + B.nc, 'GRILLE=' + ($('selGrille').value === 'auto' ? 'auto' : B.grille), 'PLANVCC=' + B.planVcc, 'PLANSAL=' + B.plansAl, 'DEGPLAN=' + B.degPlan, 'HDIEL=' + B.hDiel, 'REMP=' + B.remp, 'SERIG=' + B.serig.h + '/' + B.serig.contenu + '/' + B.serig.orient, 'COUPE=' + (B.coupe ? (B.coupe.agndG ? 'G' : 'D') + ':' + B.coupe.pts.map(function (q) { return q.x + ',' + q.y; }).join(';') : ''), 'CONTOUR=' + B.contour.type + ':' + B.contour.l + 'x' + B.contour.h + (typeof B.contour.x0 === 'number' ? '@' + B.contour.x0 + ',' + B.contour.y0 : ''), 'BORD=' + margeContour() + '/' + coinsContour() + '/' + rayonCoin(), 'EXCL=' + (B.excl || []).join('~')]);
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
@@ -18527,6 +19023,7 @@ function traduire(s) {
         if (m) { r.contour = { type: m[1], l: parseFloat(m[2]), h: parseFloat(m[3]) }; if (m[4] !== undefined) { r.contour.x0 = parseFloat(m[4]); r.contour.y0 = parseFloat(m[5]); } }
         m = /^([\d.]+)\/(droits|convexes|concaves)\/([\d.]+)$/.exec(k.BORD || '');
         if (m) { r.contour.marge = parseFloat(m[1]); r.contour.coins = m[2]; r.contour.rayon = parseFloat(m[3]); }
+        r.excl = (k.EXCL || '').split('~').filter(function (z) { return z; });
         m = (k.MEMO || '').split(';');
         for (j = 0; j < m.length; j++) if (m[j].indexOf(':') > 0) r.memo[m[j].slice(0, m[j].indexOf(':'))] = m[j].slice(m[j].indexOf(':') + 1);
       } else if (xd[0] === 'COMP') {
@@ -18556,7 +19053,7 @@ function traduire(s) {
     if (!r.ok) { message('Aucun circuit azs-cad dans ' + nom, true); return; }
     B.comps = r.comps; B.nets = r.nets; B.memoGab = r.memo; B.schNom = r.sch; B.libAttendue = r.lib;
     B.pistes = r.pistes; B.vias = r.vias; B.largeur = r.largeur; B.via = r.via; B.substrat = r.substrat; B.isolement = r.isolement; B.reglesAuto = false; B.poids = r.poids || null;
-    B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour; B.serig = r.serig || { h: 1.0, contenu: 'ref', orient: 0 };
+    B.route = null; B.selP = null; B.selV = null; B.textes = r.textes; B.selT = -1; B.contour = r.contour; B.serig = r.serig || { h: 1.0, contenu: 'ref', orient: 0 }; B.excl = r.excl || [];
     B.planVcc = r.planVcc; B.plansAl = r.plansAl || ''; B.degPlan = r.degPlan; B.hDiel = r.hDiel; B.coupe = r.coupe || null; B.outilCoupe = null; B.remp = r.remp || '';
     if (r.nc) B.nc = r.nc;
     else if (!B.pistes.some(function (t) { return t.couche === 2 || t.couche === 3; })) { B.nc = 2; B.pistes.forEach(function (t) { if (t.couche === 4) t.couche = 2; }); }
