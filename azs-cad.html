@@ -5,14 +5,14 @@
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Page unique : bibliothèque, schéma et circuit d'un même projet
  Auteur     : Eric PERRET
- Date       : 2026-11-26
- Version    : 1.84.3
+ Date       : 2026-11-27
+ Version    : 1.85.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Fichiers   : <projet>.azs.zip, archive du projet qui contient
               <projet>.lib (composants et gabarits du projet),
               <projet>.sch.dxf (schéma), <projet>.brd.dxf (circuit),
               bibliothèques de gabarits .lib communes à tous les projets
- Modules    : Bibliothèque 1.4.1, Schéma 1.21.0, Circuit 1.69.0 (cartouche et
+ Modules    : Bibliothèque 1.4.1, Schéma 1.21.0, Circuit 1.70.1 (cartouche et
               historique de chacun en tête de sa section <template>)
  Historique :
    1.0.0  2026-11-02  Chantier 7 : bibliotheque.html, schema.html et board.html
@@ -425,6 +425,12 @@
                       (ex. ADL5375 → ADL5375-05ACPZ-R7, jamais la -15 par erreur)
    1.84.3 2026-11-26  Export de la nomenclature (CSV, XLS) : stock Mouser relevé d'abord s'il ne l'a pas été (clé
                       saisie), la colonne Comment est toujours remplie « Mouser <référence> (<stock>) »
+   1.85.0 2026-11-27  Circuit 1.70.0 : sérigraphie, texte sans place libre qui en chevauche un autre : non affiché
+                      (le plus grand numéro cède), ni à l'écran ni dans le Gerber ; alignement au clic droit :
+                      composants de même valeur à numéros consécutifs groupés en un seul texte « R10..22.33R »
+                      (Dégrouper dans le panneau du texte)
+   1.85.1 2026-11-27  Circuit 1.70.1 : groupe de sérigraphie fait aussi quand l'alignement est refusé ; menu Texte :
+                      « Grouper automatiquement » (toute la carte, voisins à moins de 2 mm) et « Dégrouper tout »
    1.76.3 2026-11-23  Circuit 1.61.3 : alignement : les vias posées sur une pastille (masse comprise) suivent
                       leur composant au lieu d'être supprimées ; les autres vias de la zone restent
 
@@ -7854,8 +7860,8 @@ function traduire(s) {
  Projet     : azs-cad - CAO de circuits imprimés
  Objet      : Circuit imprimé : import du schéma, gabarits, placement, chevelu
  Auteur     : Eric PERRET
- Date       : 2026-11-25
- Version    : 1.69.0
+ Date       : 2026-11-27
+ Version    : 1.70.1
  Dépendances: aucune (HTML/CSS/JavaScript natif, fonctionne hors ligne)
  Entrées    : bibliothèque .lib (bibliotheque.html), schéma .sch.dxf (schema.html)
  Fichier    : <nom>.brd.dxf (AutoCAD R12, AC1009)
@@ -8511,6 +8517,12 @@ function traduire(s) {
    1.67.1 2026-11-25  Contrôle d'isolement : via dans une bille ou une pastille jamais « entre les pattes »
    1.68.0 2026-11-25  Stock Mouser à la demande (clé Search API, bouton Stock, colonne dans la liste)
    1.69.0 2026-11-25  Clic droit sur une ligne 50 Ω courbe : saisie de la longueur, arc ajusté
+   1.70.0 2026-11-27  Sérigraphie : texte sans place libre qui chevauche un autre texte non affiché, le plus
+                      grand numéro cède (placement IC, groupes, puis numéros croissants) ; groupe de
+                      sérigraphie à l'alignement clic droit (même préfixe, même valeur, même face, numéros
+                      consécutifs) : un texte « R10..22.33R » autour des pastilles du groupe ; DXF GS= et TM=
+   1.70.1 2026-11-27  Groupe de sérigraphie aussi sur alignement refusé ; Texte ▸ Grouper automatiquement
+                      (séries consécutives, voisins à moins de 2 mm), Dégrouper tout
    1.59.1 2026-11-20  Via d'une patte CMS (bille, circuit, passif) : au centre exact de sa pastille, dans
                       tous les tracés (re-routage, tronçons, forcé, négocié, chevelu) ; la piste interne
                       part de cette via ; via déjà dans la pastille reprise ; plus aucune via posée à
@@ -8757,7 +8769,7 @@ function traduire(s) {
   #bulle{position:fixed; pointer-events:none; background:#1f2328; color:#fff; border-radius:5px; padding:3px 8px; font-size:12px; white-space:pre; display:none; z-index:25}
 </style>
 <div id="barre">
-  <span class="titre">azs-cad<span>Circuit 1.69.0</span></span>
+  <span class="titre">azs-cad<span>Circuit 1.70.1</span></span>
   <button id="btFichier" class="principal">Fichier ▾</button>
   <input type="file" id="fichierBrd" class="cache" accept=".dxf">
   <input type="file" id="fichierLib" class="cache" accept=".lib,.txt">
@@ -9047,6 +9059,8 @@ var TRAD_EN = [
   ['texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber', 'text(s) on a pad: framed in red, clipped on the pads in the Gerber'], ['texte(s) qui se chevauchent', 'overlapping text(s)'],
   ['texte(s) sur une pastille, coupé(s) dans le Gerber', 'text(s) on a pad, clipped in the Gerber'], ['Sérigraphie : textes replacés automatiquement', 'Silkscreen: texts re-placed automatically'], ['chevauchement(s)', 'overlap(s)'], ['rappel', 'leader'], ['au-delà de', 'beyond'], ['des pastilles', 'from the pads'], ['Trait', 'Stroke'],
   ['Tous les passifs en 0805', 'All passives to 0805'],
+  ['Groupe de sérigraphie : ', 'Silkscreen group: '], ['Dégrouper', 'Ungroup'], ['Texte non affiché : il chevauchait un texte de plus petit numéro', 'Text not shown: it overlapped a lower-numbered text'],
+  ['texte(s) non affiché(s) : chevauchement, le plus grand numéro cède', 'text(s) not shown: overlap, the highest number gives way'], ['sérigraphie groupée : ', 'silkscreen grouped: '], ['Sérigraphie groupée : ', 'Silkscreen grouped: '], ['Grouper automatiquement (R10..22.33R)', 'Group automatically (R10..22.33R)'], ['Dégrouper tout', 'Ungroup all'], ['Sérigraphie : aucun groupe à faire (même valeur, numéros consécutifs, voisins à moins de ', 'Silkscreen: no group to make (same value, consecutive numbers, neighbours within '], ['Sérigraphie : aucun groupe', 'Silkscreen: no group'], ['Sérigraphie : groupes défaits', 'Silkscreen: groups undone'], ['déjà aligné', 'already aligned'],
   ['Aligner sur la grille', 'Align to grid'],
   ['Composants et vias libres vers la grille, sans rerouter (hors lignes 50 Ω)', 'Components and free vias to the grid, without re-routing (not 50 Ω lines)'],
   ['Auto (format supérieur)', 'Auto (next size up)'], ['Ajusté (projet + marge)', 'Fitted (project + margin)'], ['Ajuster au projet', 'Fit to project'], ['Recalcule le contour : tout le projet plus la marge, puis le fige', 'Recomputes the outline: whole project plus margin, then freezes it'],
@@ -10280,21 +10294,87 @@ function traduire(s) {
     ctx.strokeRect(r[0] - 3, r[1] - 3, r[2] - r[0] + 6, r[3] - r[1] + 6); ctx.setLineDash([]);
   }
   function dessinerTexte(c) {
-    var coul = c.dessous ? COUL.serigDessous : COUL.serigDessus, r = rappel(c);
+    var coul = c.dessous ? COUL.serigDessous : COUL.serigDessus, r;
+    if (!texteSerig(c)) return;
+    r = rappel(c);
     tracerTraits(traitsComp(c), epTexte(hTexte(c)), coul);
     if (r) tracerTraits([[r.a, r.b]], EP_RAPPEL, coul);
     if (CONFLITS_SERIG.comps.indexOf(c) >= 0) cadreConflit(boiteComp(c));
   }
   /* Texte de sérigraphie d'un composant selon le format : référence (R1), référence.valeur (R1.100K) ou valeur (100K) */
   function texteSerig(c) {
+    if (c.gm || c.tm) return '';
+    if (c.gl) return c.gl;
     if (B.serig.contenu === 'refval') return libelle(c);
     if (B.serig.contenu === 'val' && c.val) return c.val;
     return c.ref;
   }
-  /* Boîte des pastilles du composant (le texte se place autour des pastilles, jamais du boîtier dessiné) */
+  /* Groupes de sérigraphie (alignement au clic droit) : c.gs = clé commune ; un seul texte « R10..22.33R » porté par le
+     plus petit numéro (c.gl), les autres sans texte (c.gm). Groupe incohérent (moins de deux, préfixe, valeur ou face
+     différents) : dissous */
+  function numRef(r) { var m = /^(.*?)(\d+)$/.exec(String(r)); return m ? { p: m[1], n: parseInt(m[2], 10) } : null; }
+  function triRefs(a, b) { var x = numRef(a.ref), y = numRef(b.ref); return x && y ? (x.n - y.n) || triNat(x.p, y.p) : triNat(a.ref, b.ref); }
+  function libelleGroupe(l) {
+    var n = l.map(function (c) { return numRef(c.ref).n; }), s = [], i, d;
+    for (i = 0; i < n.length; i = d + 1) { d = i; while (d + 1 < n.length && n[d + 1] === n[d] + 1) d++; s.push(d > i ? n[i] + '..' + n[d] : String(n[i])); }
+    return numRef(l[0].ref).p + s.join(',') + (l[0].val ? '.' + l[0].val : '');
+  }
+  function majGroupesSerig() {
+    var g = {}, k, l, n0, ok, i;
+    for (i = 0; i < B.comps.length; i++) { l = B.comps[i]; delete l.gl; delete l.gm; if (l.gs) (g[l.gs] = g[l.gs] || []).push(l); }
+    for (k in g) {
+      if (!g.hasOwnProperty(k)) continue;
+      l = g[k]; n0 = numRef(l[0].ref); ok = l.length >= 2 && !!n0;
+      for (i = 0; ok && i < l.length; i++) { n0 = numRef(l[i].ref); if (!n0 || n0.p !== numRef(l[0].ref).p || l[i].val !== l[0].val || !!l[i].dessous !== !!l[0].dessous) ok = false; }
+      if (!ok) { l.forEach(function (c) { delete c.gs; }); continue; }
+      l.sort(triRefs);
+      l[0].gl = libelleGroupe(l);
+      for (i = 1; i < l.length; i++) l[i].gm = true;
+    }
+  }
+  function membresGroupe(c) { return c.gs ? B.comps.filter(function (d) { return d.gs === c.gs; }) : [c]; }
+  /* Composants alignés : séries d'au moins deux de même préfixe, même valeur, même face, numéros consécutifs → un groupe.
+     Renvoie les libellés créés */
+  function grouperSerig(C, prox) {
+    var p = {}, k, l, i, d, r = [], run;
+    function suite(a, b) { return numRef(b.ref).n === numRef(a.ref).n + 1 && (!prox || ecartBoites(bboxMonde(a), bboxMonde(b)) <= PROX_GROUPE); }
+    C.forEach(function (c) { var n = numRef(c.ref); if (n && gab(c)) (p[n.p + '|' + c.val + '|' + (c.dessous ? 1 : 0)] = p[n.p + '|' + c.val + '|' + (c.dessous ? 1 : 0)] || []).push(c); });
+    for (k in p) {
+      if (!p.hasOwnProperty(k)) continue;
+      l = p[k].sort(triRefs);
+      for (i = 0; i < l.length; i = d + 1) {
+        d = i; while (d + 1 < l.length && suite(l[d], l[d + 1])) d++;
+        if (d === i) continue;
+        run = l.slice(i, d + 1);
+        run.forEach(function (c) { c.gs = 'G' + run[0].id; delete c.tm; });
+        run[0].ta = true;
+        r.push(libelleGroupe(run));
+      }
+    }
+    if (r.length) majGroupesSerig();
+    return r;
+  }
+  /* Texte ▸ Grouper automatiquement : toute la carte, séries consécutives dont les voisins sont à moins de PROX_GROUPE */
+  var PROX_GROUPE = 2;
+  function grouperTout() {
+    var av = instantane(), l = grouperSerig(B.comps.filter(function (c) { return !c.gs; }), true);
+    if (!l.length) { message('Sérigraphie : aucun groupe à faire (même valeur, numéros consécutifs, voisins à moins de ' + PROX_GROUPE + ' mm)'); return; }
+    empiler(av); ajusterTextes(); toutRafraichir();
+    message('Sérigraphie groupée : ' + l.join(' ') + ' · Ctrl+Z annule');
+  }
+  function degrouperTout() {
+    var l = B.comps.filter(function (c) { return c.gs; });
+    if (!l.length) { message('Sérigraphie : aucun groupe'); return; }
+    empiler(); l.forEach(function (c) { delete c.gs; c.ta = true; }); majGroupesSerig(); ajusterTextes(); toutRafraichir();
+    message('Sérigraphie : groupes défaits · Ctrl+Z annule');
+  }
+  function degrouperSerig(c) { var l = membresGroupe(c); empiler(); l.forEach(function (d) { delete d.gs; d.ta = true; }); majGroupesSerig(); ajusterTextes(); toutRafraichir(); }
+  /* Boîte des pastilles du composant (le texte se place autour des pastilles, jamais du boîtier dessiné) ;
+     meneur d'un groupe de sérigraphie : boîte des pastilles de tout le groupe */
   function bboxPads(c) {
     var p = gab(c), b = [Infinity, Infinity, -Infinity, -Infinity], j, f, w;
     function pt(x, y) { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+    if (c.gl) { membresGroupe(c).forEach(function (d) { var q = d === c ? null : bboxPads(d); if (q) { pt(q[0], q[1]); pt(q[2], q[3]); } }); }
     for (j = 0; p && j < p.el.length; j++) {
       if (!estPad(p.el[j])) continue;
       w = elMonde(c, p.el[j]); if (!w) continue;
@@ -10315,7 +10395,7 @@ function traduire(s) {
   }
   function rappel(c) {
     var pb, bx;
-    if (!gab(c)) return null;
+    if (!gab(c) || !texteSerig(c)) return null;
     pb = bboxPads(c); bx = boiteComp(c);
     return ecartBoites(pb, bx) > SEUIL_RAPPEL ? rappelSeg(pb, bx) : null;
   }
@@ -10366,13 +10446,14 @@ function traduire(s) {
   }
   function calculerConflits() {
     var v = viasSerig(), pf = { 0: padsFace(false).concat(v), 1: padsFace(true).concat(v) }, bx = [], i, j;
+    majGroupesSerig();
     CONFLITS_SERIG = {
-      comps: B.comps.filter(function (c) { return gab(c) && texteSurPastille(traitsComp(c), hTexte(c), boiteComp(c), pf[c.dessous ? 1 : 0]); }),
+      comps: B.comps.filter(function (c) { return gab(c) && texteSerig(c) && texteSurPastille(traitsComp(c), hTexte(c), boiteComp(c), pf[c.dessous ? 1 : 0]); }),
       libres: B.textes.filter(function (t) { return texteSurPastille(traitsLibre(t), t.h, boiteLibre(t), pf[t.dessous ? 1 : 0]); }),
-      chev: []
+      chev: [], masques: B.comps.filter(function (c) { return gab(c) && c.tm; }).length
     };
     /* textes qui se chevauchent (même face) */
-    B.comps.forEach(function (c) { if (gab(c)) bx.push({ o: c, f: !!c.dessous, b: boiteComp(c), nom: libelle(c) }); });
+    B.comps.forEach(function (c) { if (gab(c) && texteSerig(c)) bx.push({ o: c, f: !!c.dessous, b: boiteComp(c), nom: c.gl || libelle(c) }); });
     B.textes.forEach(function (t) { bx.push({ o: t, f: !!t.dessous, b: boiteLibre(t), nom: 'Texte libre « ' + t.txt + ' »' }); });
     for (i = 0; i < bx.length; i++) for (j = i + 1; j < bx.length; j++)
       if (bx[i].f === bx[j].f && croise(bx[i].b, bx[j].b)) { if (CONFLITS_SERIG.chev.indexOf(bx[i]) < 0) CONFLITS_SERIG.chev.push(bx[i]); if (CONFLITS_SERIG.chev.indexOf(bx[j]) < 0) CONFLITS_SERIG.chev.push(bx[j]); }
@@ -10401,7 +10482,7 @@ function traduire(s) {
     }
     [0.3, 0.8, 1.3].forEach(function (g) { cands.push([cx, pb[3] + g + hh], [cx, pb[1] - g - hh], [pb[2] + g + hw, cy], [pb[0] - g - hw, cy]); });
     [0.3, 0.8].forEach(function (g) { cands.push([pb[2] + g + hw, pb[3] + g + hh], [pb[0] - g - hw, pb[3] + g + hh], [pb[2] + g + hw, pb[1] - g - hh], [pb[0] - g - hw, pb[1] - g - hh]); });
-    for (i = 0; i < cands.length; i++) { poser(cands[i][0], cands[i][1]); if (libre(boiteComp(c), null)) return; }
+    for (i = 0; i < cands.length; i++) { poser(cands[i][0], cands[i][1]); if (libre(boiteComp(c), null)) return true; }
     for (r = SEUIL_RAPPEL + 0.5; r <= RAPPEL_MAX + 1e-9; r += 0.5) {
       n = Math.max(8, Math.ceil(2 * Math.PI * r / 0.6));
       for (i = 0; i < n; i++) {
@@ -10409,23 +10490,27 @@ function traduire(s) {
         poser(cx + Math.cos(a) * (pw + hw + r), cy + Math.sin(a) * (ph + hh + r));
         bx = boiteComp(c);
         seg = ecartBoites(pb, bx) > SEUIL_RAPPEL ? rappelSeg(pb, bx) : null;
-        if (libre(bx, seg)) { if (seg) rappels.push(seg); return; }
+        if (libre(bx, seg)) { if (seg) rappels.push(seg); return true; }
       }
     }
     poser(cands[0][0], cands[0][1]);
+    return false;
   }
-  /* Replace tous les textes automatiques (circuits d'abord) ; les textes placés à la main et leurs traits de rappel
-     servent d'obstacles */
+  /* Replace tous les textes automatiques (circuits, groupes, puis numéros croissants) ; les textes placés à la main et
+     leurs traits de rappel servent d'obstacles. Sans place libre, un texte qui en chevauche un autre n'est pas affiché
+     (le plus grand numéro cède) : ni à l'écran, ni dans le Gerber */
   function ajusterTextes() {
     var v = viasSerig(), pf = { 0: padsFace(false).concat(v), 1: padsFace(true).concat(v) }, obst = { 0: [], 1: [] }, rap = { 0: [], 1: [] }, ct = calculerContour(), l;
+    majGroupesSerig();
+    B.comps.forEach(function (c) { delete c.tm; });
     B.textes.forEach(function (t) { obst[t.dessous ? 1 : 0].push(boiteLibre(t)); });
-    B.comps.forEach(function (c) { var r; if (gab(c) && c.ta === false) { obst[c.dessous ? 1 : 0].push(boiteComp(c)); if ((r = rappel(c))) rap[c.dessous ? 1 : 0].push(r); } });
-    l = B.comps.filter(function (c) { return gab(c) && c.ta !== false; });
-    l.sort(function (x, y) { return (x.type === 'IC' ? 0 : 1) - (y.type === 'IC' ? 0 : 1); });
+    B.comps.forEach(function (c) { var r; if (gab(c) && c.ta === false && texteSerig(c)) { obst[c.dessous ? 1 : 0].push(boiteComp(c)); if ((r = rappel(c))) rap[c.dessous ? 1 : 0].push(r); } });
+    l = B.comps.filter(function (c) { return gab(c) && c.ta !== false && texteSerig(c); });
+    l.sort(function (x, y) { return ((x.type === 'IC' ? 0 : x.gl ? 1 : 2) - (y.type === 'IC' ? 0 : y.gl ? 1 : 2)) || triRefs(x, y); });
     l.forEach(function (c) {
-      var f = c.dessous ? 1 : 0;
-      placerTexte(c, pf[f], obst[f], rap[f], ct);
-      obst[f].push(boiteComp(c));
+      var f = c.dessous ? 1 : 0, ok = placerTexte(c, pf[f], obst[f], rap[f], ct), bx = boiteComp(c);
+      if (!ok && obst[f].some(function (o) { return croise(o, bx); })) { c.tm = true; return; }
+      obst[f].push(bx);
     });
   }
   /* Zoom sur un texte en défaut */
@@ -10453,6 +10538,7 @@ function traduire(s) {
     (function () { var bt = E('button', '', 'Replacer tout automatiquement'); bt.addEventListener('click', replacerTextes); sel.appendChild(bt); })();
     b = E('div', 'bloc'); f.appendChild(b);
     b.appendChild(E('h4', '', 'Sérigraphie · contrôle'));
+    if (CONFLITS_SERIG.masques) b.appendChild(E('div', 'stat', CONFLITS_SERIG.masques + ' texte(s) non affiché(s) : chevauchement, le plus grand numéro cède'));
     if (!n && !CONFLITS_SERIG.chev.length) { b.appendChild(E('div', 'stat', 'Aucun texte sur une pastille ni chevauchement')); return; }
     if (n) b.appendChild(E('div', 'avert', n + ' texte(s) sur une pastille : encadré(s) en rouge, coupé(s) sur les pastilles dans le Gerber'));
     CONFLITS_SERIG.comps.forEach(function (c) {
@@ -10480,12 +10566,14 @@ function traduire(s) {
     var m = $('menu'), r = $('btTexte').getBoundingClientRect();
     m.textContent = '';
     m.appendChild(E('div', 'titre', 'Sérigraphie'));
-    [['libre', 'Poser un texte libre (T)'], ['format', 'Format…'], ['replacer', 'Replacer tout automatiquement'], ['controle', 'Contrôle']].forEach(function (x) {
+    [['libre', 'Poser un texte libre (T)'], ['format', 'Format…'], ['replacer', 'Replacer tout automatiquement'], ['grouper', 'Grouper automatiquement (R10..22.33R)'], ['degrouper', 'Dégrouper tout'], ['controle', 'Contrôle']].forEach(function (x) {
       var o = E('div', 'option', x[1]);
       o.addEventListener('mousedown', function (e2) {
         e2.preventDefault(); e2.stopPropagation(); fermerMenu();
         if (x[0] === 'libre') { outilTexte(); return; }
         if (x[0] === 'replacer') { replacerTextes(); return; }
+        if (x[0] === 'grouper') { grouperTout(); return; }
+        if (x[0] === 'degrouper') { degrouperTout(); return; }
         if (B.route) terminerRoute();
         if (B.mode !== 'placer') choisirMode('placer');
         B.sel = null; B.selT = -1; B.selPont = 0; toutRafraichir();
@@ -10500,6 +10588,7 @@ function traduire(s) {
   }
   function dessiner() {
     var i, l, a, b, s1, s2, bm;
+    majGroupesSerig();
     dessinerGrille();
     dessinerContour();
     for (i = 0; i < B.comps.length; i++) if (B.comps[i].dessous) dessinerComposant(B.comps[i]);
@@ -11034,6 +11123,11 @@ function traduire(s) {
     sel.value = rotTexte(c);
     sel.addEventListener('change', function () { empiler(); c.trot = parseInt(this.value, 10); ajusterTextes(); toutRafraichir(); });
     b.appendChild(E('div', 'stat', c.ta === false ? 'Placé à la main (Maj + glisser)' : 'Placé automatiquement'));
+    if (c.gs) {
+      b.appendChild(E('div', 'stat', 'Groupe de sérigraphie : ' + (membresGroupe(c).filter(function (d) { return d.gl; }).map(function (d) { return d.gl; })[0] || '')));
+      (function () { var bg = E('div', 'boutons'), b2 = E('button', '', 'Dégrouper'); b2.addEventListener('click', function () { degrouperSerig(c); }); bg.appendChild(b2); b.appendChild(bg); })();
+    }
+    if (c.tm) b.appendChild(E('div', 'avert', 'Texte non affiché : il chevauchait un texte de plus petit numéro'));
     if (CONFLITS_SERIG.comps.indexOf(c) >= 0) b.appendChild(E('div', 'avert', 'Texte sur une pastille : le déplacer (Maj + glisser) ou le placer automatiquement'));
     bs = E('div', 'boutons'); b.appendChild(bs);
     bt = E('button', '', 'Placer automatiquement');
@@ -11130,7 +11224,7 @@ function traduire(s) {
   function pos(ev) { var r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
   function texteSous(m) {
     var i, r;
-    for (i = B.comps.length - 1; i >= 0; i--) { r = rectTexte(B.comps[i]); if (m.x >= r[0] - 3 && m.x <= r[2] + 3 && m.y >= r[1] - 3 && m.y <= r[3] + 3) return B.comps[i]; }
+    for (i = B.comps.length - 1; i >= 0; i--) { if (!texteSerig(B.comps[i])) continue; r = rectTexte(B.comps[i]); if (m.x >= r[0] - 3 && m.x <= r[2] + 3 && m.y >= r[1] - 3 && m.y <= r[3] + 3) return B.comps[i]; }
     return null;
   }
   function composantSous(w) {
@@ -12764,9 +12858,15 @@ function traduire(s) {
      dans le sens de la rangée. Bloc incohérent : on le dit, rien n'est changé. Accepté : pistes et vias de la zone,
      et cuivre des pattes des composants, remis en chevelu. Renvoie false si moins de deux composants */
   function alignerGroupe(g, w) {
-    var C = g.comps, n = C.length, R = g.R || [], bb, ax, q, nom, cote, lng, ep, cc, ordre, i, j, k, o, bo, nb, pos, esp, tot, mini, maxi, motif = '', dep = [], nbCuivre = 0, avP, gapMin, bouge = false, dx, dy, sx, sy, zx0, zy0, zx1, zy1, ref, cand = [], cl, tol = 0.05, nbRamenes = 0, cible, mem, nomCote, suivre, pg, fm, dxm = [], dym = [];
+    var C = g.comps, n = C.length, R = g.R || [], bb, ax, q, nom, cote, lng, ep, cc, ordre, i, j, k, o, bo, nb, pos, esp, tot, mini, maxi, motif = '', dep = [], nbCuivre = 0, avP, gapMin, bouge = false, dx, dy, sx, sy, zx0, zy0, zx1, zy1, ref, cand = [], cl, tol = 0.05, nbRamenes = 0, cible, mem, nomCote, suivre, pg, fm, dxm = [], dym = [], gsl;
     function restituer() { g.retires.forEach(function (t) { B.pistes.push(t); }); }
-    function refuser(m) { restituer(); message('Alignement ' + nom + ' refusé : ' + m + ' · rien n\'est modifié', true); toutRafraichir(); return true; }
+    function refuser(m) {
+      restituer();
+      gsl = grouperSerig(C);
+      if (gsl.length) { empiler(g.avant); ajusterTextes(); message('Alignement ' + nom + ' refusé : ' + m + ' · sérigraphie groupée : ' + gsl.join(' ') + ' · Ctrl+Z annule', true); }
+      else message('Alignement ' + nom + ' refusé : ' + m + ' · rien n\'est modifié', true);
+      toutRafraichir(); return true;
+    }
     function dans(x, y) { return R.some(function (r) { return x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1; }); }
     function coupe(p1, p2) {
       return R.some(function (r) {
@@ -12847,7 +12947,13 @@ function traduire(s) {
     }
     if (motif) return refuser(motif);
     for (i = 0; i < n; i++) if (Math.abs(dep[i][0]) > 1e-4 || Math.abs(dep[i][1]) > 1e-4) bouge = true;
-    if (!bouge) { restituer(); message('Alignement ' + nom + ' : déjà aligné, rien à faire'); toutRafraichir(); return true; }
+    if (!bouge) {
+      restituer();
+      gsl = grouperSerig(C);
+      if (gsl.length) { empiler(g.avant); ajusterTextes(); message('Alignement ' + nom + ' : déjà aligné · sérigraphie groupée : ' + gsl.join(' ') + ' · Ctrl+Z annule'); }
+      else message('Alignement ' + nom + ' : déjà aligné, rien à faire');
+      toutRafraichir(); return true;
+    }
     /* cuivre de la zone, puis cuivre des pattes (positions d'avant), en chevelu */
     avP = B.pistes.length + B.vias.length;
     B.pistes = B.pistes.filter(function (t) { var m; if (t.pont !== undefined) return true; for (m = 0; m < t.pts.length; m++) { if (dans(t.pts[m].x, t.pts[m].y)) return false; if (m && coupe(t.pts[m - 1], t.pts[m])) return false; } return true; });
@@ -12870,8 +12976,9 @@ function traduire(s) {
     }
     suivre.forEach(function (e) { e.v.x = arr(e.v.x + dxm[e.i]); e.v.y = arr(e.v.y + dym[e.i]); if (B.vias.indexOf(e.v) < 0) B.vias.push(e.v); });
     nbCuivre = g.retires.length + avP - B.pistes.length - B.vias.length;
+    gsl = grouperSerig(C);
     empiler(g.avant); ajusterTextes(); figerContour(); OPT = null;
-    message('Alignement ' + nom + ' : ' + n + ' composants, espaces égaux de ' + esp.toFixed(2) + ' mm, bords ' + (ax ? 'à ' + nomCote : 'en ' + nomCote) + ' (' + cl.n + ' déjà alignés, ' + nbRamenes + ' ramené(s))' + (nbCuivre ? ' · ' + nbCuivre + ' élément(s) de cuivre remis en chevelu : à recâbler' : '') + ' · Ctrl+Z annule');
+    message('Alignement ' + nom + ' : ' + n + ' composants, espaces égaux de ' + esp.toFixed(2) + ' mm, bords ' + (ax ? 'à ' + nomCote : 'en ' + nomCote) + ' (' + cl.n + ' déjà alignés, ' + nbRamenes + ' ramené(s))' + (gsl.length ? ' · sérigraphie groupée : ' + gsl.join(' ') : '') + (nbCuivre ? ' · ' + nbCuivre + ' élément(s) de cuivre remis en chevelu : à recâbler' : '') + ' · Ctrl+Z annule');
     toutRafraichir();
     return true;
   }
@@ -13977,6 +14084,7 @@ function traduire(s) {
   }
   function gerberSerig(dessous, ct) {
     var G = new Gerber('Sérigraphie ' + (dessous ? 'dessous' : 'dessus')), i, j, c, p, e, w, ep, tp, t, m = mires(ct);
+    majGroupesSerig();
     for (i = 0; i < B.comps.length; i++) {
       c = B.comps[i];
       if (!!c.dessous !== dessous) continue;
@@ -13995,6 +14103,7 @@ function traduire(s) {
           case 'point': G.flash(w.x, w.y, 2 * w.r); break;
         }
       }
+      if (!texteSerig(c)) continue;
       tp = posTexte(c);
       G.texte(texteSerig(c), tp.x, tp.y, hTexte(c), rotTexte(c), dessous);
       (function () { var r = rappel(c); if (r) G.trait([r.a, r.b], EP_RAPPEL); })();
@@ -17089,7 +17198,7 @@ function traduire(s) {
       bx = boiteLibre(t);
       ok = !ct || (bx[0] >= ct.x0 + 0.5 && bx[2] <= ct.x1 - 0.5 && bx[1] >= ct.y0 + 0.5 && bx[3] <= ct.y1 - 0.5);
       ok = ok && !texteSurPastille(traitsLibre(t), h, bx, pf) && !B.vias.some(function (v) { return v.x + v.diam / 2 + 0.2 > bx[0] && v.x - v.diam / 2 - 0.2 < bx[2] && v.y + v.diam / 2 + 0.2 > bx[1] && v.y - v.diam / 2 - 0.2 < bx[3]; });
-      ok = ok && !B.textes.some(function (t2) { return !t2.dessous && croise(boiteLibre(t2), bx); }) && !B.comps.some(function (d) { return gab(d) && !d.dessous && croise(boiteComp(d), bx); });
+      ok = ok && !B.textes.some(function (t2) { return !t2.dessous && croise(boiteLibre(t2), bx); }) && !B.comps.some(function (d) { return gab(d) && !d.dessous && texteSerig(d) && croise(boiteComp(d), bx); });
       if (ok) { B.textes.push(t); return; }
     }
     PONTS_SANS_TEXTE++;
@@ -17649,11 +17758,12 @@ function traduire(s) {
       /* sérigraphie : aucune pastille du condensateur sous un texte voisin, son propre texte placé hors pastilles et hors textes */
       var face = c.dessous ? bas() : 1, tx0 = c.tx, ty0 = c.ty,
           autres = formes(tousPads().filter(function (p2) { return p2.ref !== c.ref && p2.couches.indexOf(face) >= 0; }).map(function (p2) { return p2.e; })),
-          txts = B.comps.filter(function (d) { return d !== c && gab(d) && !!d.dessous === !!c.dessous; }).map(function (d) { return { l: traitsComp(d), h: hTexte(d), bx: boiteComp(d) }; })
+          txts = B.comps.filter(function (d) { return d !== c && gab(d) && texteSerig(d) && !!d.dessous === !!c.dessous; }).map(function (d) { return { l: traitsComp(d), h: hTexte(d), bx: boiteComp(d) }; })
             .concat(B.textes.filter(function (t) { return !!t.dessous === !!c.dessous; }).map(function (t) { return { l: traitsLibre(t), h: t.h, bx: boiteLibre(t) }; }));
       function serigOk() {
         var mes = formes(gab(c).el.filter(estPad).map(function (e) { return elMonde(c, e); })), tous = autres.concat(mes), bx;
         if (txts.some(function (t) { return texteSurPastille(t.l, t.h, t.bx, mes); })) return false;
+        if (!texteSerig(c)) return true;
         if (c.ta !== false) placerTexte(c, tous, txts.map(function (t) { return t.bx; }), [], null);
         bx = boiteComp(c);
         if (texteSurPastille(traitsComp(c), hTexte(c), bx, tous) || txts.some(function (t) { return croise(t.bx, bx); })) { c.tx = tx0; c.ty = ty0; return false; }
@@ -18337,10 +18447,10 @@ function traduire(s) {
       c = B.comps[i];
       d.g(0, 'INSERT').g(8, '0').g(2, 'P_' + c.id).g(10, nb(c.x)).g(20, nb(c.y)).g(30, 0).g(50, nb(c.rot));
       d.xdata(['COMP', 'ID=' + c.id, 'SID=' + c.sid, 'TYPE=' + c.type, 'REF=' + c.ref, 'VAL=' + c.val, 'POL=' + (c.pol || ''),
-               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)]
+               'GAB=' + c.gab, 'FACE=' + (c.dessous ? 'dessous' : 'dessus'), 'TX=' + (c.tx || 0), 'TY=' + (c.ty || 0), 'TH=' + hTexte(c), 'TR=' + rotTexte(c), 'TA=' + (c.ta === false ? 0 : 1)].concat(c.gs ? ['GS=' + c.gs] : [], c.tm ? ['TM=1'] : [])
                .concat(pattesPleines(c).map(function (q) { return 'PL=' + q; })));
       tp = posTexte(c);
-      d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, hTexte(c), texteSerig(c), c.dessous);
+      if (texteSerig(c)) d.texte(c.dessous ? 'TEXTE_DESSOUS' : 'TEXTE_DESSUS', tp.x, tp.y, hTexte(c), texteSerig(c), c.dessous);
     }
     for (i = 0; i < B.nets.length; i++) {
       f = B.nets[i];
@@ -18423,6 +18533,7 @@ function traduire(s) {
         r.comps.push({ id: parseInt(k.ID, 10), sid: parseInt(k.SID, 10), type: k.TYPE, ref: k.REF || '', val: k.VAL || '', pol: k.POL || '', gab: k.GAB || '',
                        dessous: k.FACE === 'dessous', tx: lireNb(k.TX) || 0, ty: lireNb(k.TY) || 0,
                        th: lireNb(k.TH) || 1.0, trot: lireNb(k.TR) || 0, ta: k.TA !== undefined ? k.TA !== '0' : !(lireNb(k.TX) || lireNb(k.TY)),
+                       gs: k.GS || undefined, tm: k.TM === '1' || undefined,
                        plein: xd.filter(function (q) { return q.indexOf('PL=') === 0 && q.length > 3; }).map(function (q) { return q.slice(3); }).join('|'),
                        x: lireNb(groupe(e, 10)) || 0, y: lireNb(groupe(e, 20)) || 0, rot: lireNb(groupe(e, 50)) || 0 });
       } else if (xd[0] === 'NET') r.nets.push({ nom: k.NOM || '', type: k.TYPE || 'n', pins: k.P });
